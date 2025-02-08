@@ -4,6 +4,7 @@ package com.whj.generate.model;
  * @author whj
  * @date 2025-01-01 下午9:47
  */
+
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -13,8 +14,17 @@ public class TestCase {
      * 用例涉及到的clazz信息
      */
     private final List<Class<?>> importClazzList;
-    private final String testName; // 用例名称
-    private final Method method;   // 目标方法
+    /**
+     * 用例名称
+     */
+    private final String testName;
+    /**
+     * 目标方法
+     */
+    private final Method method;
+    /**
+     * 用例逻辑
+     */
     private final String body;     // 用例逻辑
 
     public TestCase(List<Class<?>> importClazzList, String testName, Method method, String body) {

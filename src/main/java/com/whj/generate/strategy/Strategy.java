@@ -1,4 +1,4 @@
-package com.whj.generate.algorithm.strategy;
+package com.whj.generate.strategy;
 
 import com.whj.generate.model.MethodStructure;
 import com.whj.generate.model.TestCase;
