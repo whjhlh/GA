@@ -5,8 +5,8 @@
     <groupId>com.gm</groupId>
     <artifactId>generateTestClass</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>com.whj.generate.generate.MainSystem</name>
-    <description>com.whj.generate.generate.MainSystem</description>
+    <name>com.whj.generate.MainSystem</name>
+    <description>com.whj.generate.MainSystem</description>
     <properties>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

@@ -1,4 +1,4 @@
-package com.whj.generate.generate;
+package com.whj.generate;
 
 import com.whj.generate.actual.QueryController;
 import com.whj.generate.strategy.GeneticAlgorithmStrategy;
