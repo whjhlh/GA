@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  */
 public class MockitoTestCodeGenerator {
     // 生成测试文件
-    public String generateTestCode(Class<?> clazz, List<TestCase> testCases) {
+    public static String generateTestCode(Class<?> clazz, List<TestCase> testCases) {
         StringBuilder testClassContent = new StringBuilder();
         // 添加类声明
         Set<Class<?>> uniqueImportClazzList = testCases.stream()
@@ -38,7 +38,7 @@ public class MockitoTestCodeGenerator {
      * @param testClassContent 测试类内容
      * @param testCase         测试用例模型
      */
-    private void generateCaseCode(StringBuilder testClassContent, TestCase testCase) {
+    private static void generateCaseCode(StringBuilder testClassContent, TestCase testCase) {
         testClassContent.append(generateMethodDeclaration(testCase.getTestName()));
         testClassContent.append(testCase.getBody());
         testClassContent.append("\n    }\n");
@@ -47,7 +47,7 @@ public class MockitoTestCodeGenerator {
     /**
      * 生成引入路径代码
      */
-    private String generateImportClazzCode(Set<Class<?>> importClazzList) {
+    private static String generateImportClazzCode(Set<Class<?>> importClazzList) {
         StringBuilder importClazzContent = new StringBuilder();
         for (Class<?> clazz : importClazzList) {
             importClazzContent.append(String.format("import %s;\n", clazz.getName()));
@@ -61,7 +61,7 @@ public class MockitoTestCodeGenerator {
      * @param clazz
      * @return
      */
-    private String generateClassDeclaration(Class<?> clazz) {
+    private static String generateClassDeclaration(Class<?> clazz) {
         return String.format(
                 "public class %sTest {\n", clazz.getSimpleName());
     }
@@ -72,7 +72,7 @@ public class MockitoTestCodeGenerator {
      * @param methodName
      * @return
      */
-    private String generateMethodDeclaration(String methodName) {
+    private static String generateMethodDeclaration(String methodName) {
         return String.format("   @Test\n" +
                 "   public void test_%s() {\n", StringUtils.capitalize(methodName));
     }

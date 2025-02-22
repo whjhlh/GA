@@ -1,9 +1,11 @@
 package com.whj.generate.strategy;
 
+import com.whj.generate.generate.MockitoTestCodeGenerator;
 import com.whj.generate.model.Chromosome;
 import com.whj.generate.model.TestCase;
 import com.whj.generate.utill.GeneticUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class GeneticAlgorithmStrategy implements Strategy {
@@ -21,8 +23,11 @@ public class GeneticAlgorithmStrategy implements Strategy {
      * @return 生成的测试用例
      */
     @Override
-    public TestCase generateTestCase(Class<?> clazz) {
+    public String generateTestCase(Class<?> clazz) {
+        List<TestCase> testCases = new ArrayList<>();
         //利用遗传算法生成方法入参
         List<Chromosome> chromosomeList = GeneticUtil.initPopulation(clazz);
+        MockitoTestCodeGenerator.generateTestCode(clazz, testCases);
+        return MockitoTestCodeGenerator.generateTestCode(clazz, testCases);
     }
 }

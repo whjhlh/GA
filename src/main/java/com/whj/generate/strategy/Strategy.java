@@ -1,7 +1,5 @@
 package com.whj.generate.strategy;
 
-import com.whj.generate.model.TestCase;
-
 /**
  * 策略接口
  *
@@ -9,6 +7,6 @@ import com.whj.generate.model.TestCase;
  * @date 2025-01-01 下午7:09
  */
 public interface Strategy {
-    TestCase generateTestCase(Class<?> clazz);
+    String generateTestCase(Class<?> clazz);
 }
 

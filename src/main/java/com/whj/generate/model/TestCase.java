@@ -13,24 +13,33 @@ public class TestCase {
     /**
      * 用例涉及到的clazz信息
      */
-    private final List<Class<?>> importClazzList;
+    private  List<Class<?>> importClazzList;
     /**
      * 用例名称
      */
-    private final String testName;
+    private  String testName;
     /**
      * 目标方法
      */
-    private final Method method;
+    private  Method method;
     /**
      * 用例逻辑
      */
-    private final String body;     // 用例逻辑
+    private  String body;
 
-    public TestCase(List<Class<?>> importClazzList, String testName, Method method, String body) {
+    public void setImportClazzList(List<Class<?>> importClazzList) {
         this.importClazzList = importClazzList;
+    }
+
+    public void setTestName(String testName) {
         this.testName = testName;
+    }
+
+    public void setMethod(Method method) {
         this.method = method;
+    }
+
+    public void setBody(String body) {
         this.body = body;
     }
 
