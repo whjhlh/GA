@@ -25,9 +25,10 @@ public class GeneticAlgorithmStrategy implements Strategy {
     @Override
     public String generateTestCase(Class<?> clazz) {
         List<TestCase> testCases = new ArrayList<>();
-        //利用遗传算法生成方法入参
+        //【1】利用遗传算法生成方法入参
         List<Chromosome> chromosomeList = GeneticUtil.initPopulation(clazz);
-        MockitoTestCodeGenerator.generateTestCode(clazz, testCases);
+
+        //【3】利用testCase生成测试用例代码
         return MockitoTestCodeGenerator.generateTestCode(clazz, testCases);
     }
 }
