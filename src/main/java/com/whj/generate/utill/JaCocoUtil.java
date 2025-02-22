@@ -1,0 +1,66 @@
+package com.whj.generate.utill;
+
+import com.whj.generate.handle.CoverageInvocationHandler;
+import org.jacoco.core.analysis.Analyzer;
+import org.jacoco.core.analysis.CoverageBuilder;
+import org.jacoco.core.analysis.IClassCoverage;
+import org.jacoco.core.data.ExecutionDataStore;
+import org.jacoco.core.runtime.IRuntime;
+import org.jacoco.core.runtime.LoggerRuntime;
+import org.jacoco.core.runtime.RuntimeData;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Proxy;
+
+/**
+ * 覆盖率工具类
+ *
+ * @author whj
+ * @date 2025-02-22 下午7:47
+ */
+public class JaCocoUtil {
+    private static IRuntime runtime;
+    private static RuntimeData data;
+
+    static {
+        runtime = new LoggerRuntime();
+        data = new RuntimeData();
+        try {
+            runtime.startup(data);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 创建动态代理
+     * @param target 目标对象
+     */
+    public static Object createProxy(Object target) {
+        return Proxy.newProxyInstance(
+                target.getClass().getClassLoader(),
+                target.getClass().getInterfaces(),
+                new CoverageInvocationHandler(target));
+    }
+
+    /**
+     * 获取当前覆盖率数据
+     */
+    public static ExecutionDataStore getCurrentCoverage() {
+        ExecutionDataStore store = new ExecutionDataStore();
+        data.collect(store, null, false);
+        return store;
+    }
+
+    public static double analyzeCoverage(ExecutionDataStore coverageBefore, ExecutionDataStore coverageAfter) throws IOException {
+        CoverageBuilder coverageBuilder = new CoverageBuilder();
+        Analyzer analyzer = new Analyzer(coverageBefore, coverageBuilder);
+        analyzer.analyzeAll(new File("target/classes"));
+        //计算行覆盖
+        for(IClassCoverage coverage : coverageBuilder.getClasses()){
+
+        }
+        return 0;
+    }
+}
