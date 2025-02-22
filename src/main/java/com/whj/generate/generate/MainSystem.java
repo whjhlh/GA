@@ -1,7 +1,6 @@
 package com.whj.generate.generate;
 
 import com.whj.generate.actual.QueryController;
-import com.whj.generate.model.MethodStructure;
 import com.whj.generate.model.TestCase;
 import com.whj.generate.strategy.GeneticAlgorithmStrategy;
 import org.mockito.Mockito;
@@ -17,10 +16,8 @@ import java.util.List;
  */
 public class MainSystem {
     public static void main(String[] args) throws NoSuchMethodException {
-        MethodStructure methodStructure = new MethodStructure("query", List.of(String.class));
-        Class<QueryController> queryControllerClass1 = QueryController.class;
-        queryControllerClass1.getMethods();
-        TestCase testCase = new GeneticAlgorithmStrategy().generateTestCase(methodStructure);
+
+        TestCase testCase = new GeneticAlgorithmStrategy().generateTestCase(QueryController.class);
         ArrayList<TestCase> testCases = new ArrayList<>();
         Class<QueryController> queryControllerClass = QueryController.class;
         TestCase e = new TestCase(List.of(Mockito.class),"12", queryControllerClass.getMethod("query", String.class), "\"test\"");
