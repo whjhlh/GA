@@ -26,7 +26,7 @@ public class CoverageInvocationHandler implements InvocationHandler {
         ExecutionDataStore coverageBefore = JaCocoUtil.getCurrentCoverage();
         Object result = method.invoke(target, args);
         ExecutionDataStore coverageAfter = JaCocoUtil.getCurrentCoverage();
-        double coverage = JaCocoUtil.analyzeCoverage(coverageBefore, coverageAfter);
+        double coverage = JaCocoUtil.analyzeCoverage(target.getClass(),coverageBefore, coverageAfter);
         return null;
     }
 }

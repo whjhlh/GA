@@ -35,6 +35,7 @@ public class JaCocoUtil {
 
     /**
      * 创建动态代理
+     *
      * @param target 目标对象
      */
     public static Object createProxy(Object target) {
@@ -53,14 +54,30 @@ public class JaCocoUtil {
         return store;
     }
 
-    public static double analyzeCoverage(ExecutionDataStore coverageBefore, ExecutionDataStore coverageAfter) throws IOException {
+    /**
+     * 计算覆盖率
+     * @param className 计算类
+     * @param coverageBefore 覆盖前
+     * @param coverageAfter 覆盖后
+     * @return
+     * @throws IOException
+     */
+    public static double analyzeCoverage(Class<?> className, ExecutionDataStore coverageBefore, ExecutionDataStore coverageAfter) throws IOException {
         CoverageBuilder coverageBuilder = new CoverageBuilder();
         Analyzer analyzer = new Analyzer(coverageBefore, coverageBuilder);
         analyzer.analyzeAll(new File("target/classes"));
         //计算行覆盖
-        for(IClassCoverage coverage : coverageBuilder.getClasses()){
-
+        for (IClassCoverage coverage : coverageBuilder.getClasses()) {
+            String name = StringUtil.replace(className.getName(), ".", "/");
+            if (StringUtil.equals(coverage.getName(), name)) {
+                int totalLine = coverage.getLineCounter().getTotalCount();
+                int coveredLine = coverage.getLineCounter().getCoveredCount();
+                if (totalLine == 0) {
+                    return 0.0;
+                }
+                return (double) coveredLine / totalLine * 100;
+            }
         }
-        return 0;
+        throw new IllegalArgumentException(String.format("【jaCoco】未找到相关类[%s]的覆盖情况",className));
     }
 }
