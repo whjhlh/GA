@@ -1,6 +1,7 @@
 package com.whj.generate.generate;
 
 import com.whj.generate.model.TestCase;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -16,6 +17,9 @@ import java.util.stream.Collectors;
 public class MockitoTestCodeGenerator {
     // 生成测试文件
     public static String generateTestCode(Class<?> clazz, List<TestCase> testCases) {
+        if(null==clazz || CollectionUtils.isEmpty(testCases)){
+            return "生成对象未空";
+        }
         StringBuilder testClassContent = new StringBuilder();
         // 添加类声明
         Set<Class<?>> uniqueImportClazzList = testCases.stream()

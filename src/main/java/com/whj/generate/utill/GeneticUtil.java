@@ -21,9 +21,12 @@ public class GeneticUtil {
     public static List<Chromosome> initPopulation(Class<?> clazz) {
         Method[] methods = clazz.getMethods();
         List<Chromosome> chromosomeList = new ArrayList<>();
+        //每个方法意味着一个个体
         for (Method method : methods) {
-            //每个方法意味着一个个体
-            chromosomeList.add(randomChromosome(method));
+            //final方法不可动态调用
+            if (!ReflectionUtil.isFinalMethod(method)) {
+                chromosomeList.add(randomChromosome(method));
+            }
         }
         return chromosomeList;
     }

@@ -1,6 +1,5 @@
 package com.whj.generate.utill;
 
-import com.whj.generate.handle.CoverageInvocationHandler;
 import org.jacoco.core.analysis.Analyzer;
 import org.jacoco.core.analysis.CoverageBuilder;
 import org.jacoco.core.analysis.IClassCoverage;
@@ -11,7 +10,6 @@ import org.jacoco.core.runtime.RuntimeData;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Proxy;
 
 /**
  * 覆盖率工具类
@@ -33,17 +31,7 @@ public class JaCocoUtil {
         }
     }
 
-    /**
-     * 创建动态代理
-     *
-     * @param target 目标对象
-     */
-    public static Object createProxy(Object target) {
-        return Proxy.newProxyInstance(
-                target.getClass().getClassLoader(),
-                target.getClass().getInterfaces(),
-                new CoverageInvocationHandler(target));
-    }
+
 
     /**
      * 获取当前覆盖率数据
