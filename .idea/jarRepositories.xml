@@ -2,14 +2,24 @@
 <project version="4">
   <component name="RemoteRepositoriesConfiguration">
     <remote-repository>
-      <option name="id" value="central" />
-      <option name="name" value="Central Repository" />
-      <option name="url" value="http://maven.aliyun.com/nexus/content/groups/public/" />
+      <option name="id" value="Local Repository" />
+      <option name="name" value="Local Repository" />
+      <option name="url" value="file://$PROJECT_DIR$/local-repo" />
     </remote-repository>
     <remote-repository>
       <option name="id" value="central" />
       <option name="name" value="Central Repository" />
       <option name="url" value="https://repo.maven.apache.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="central" />
+      <option name="name" value="Central Repository" />
+      <option name="url" value="http://maven.aliyun.com/nexus/content/groups/public/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="Palantir" />
+      <option name="name" value="Palantir" />
+      <option name="url" value="https://dl.bintray.com/palantir/releases/" />
     </remote-repository>
     <remote-repository>
       <option name="id" value="archetype" />
@@ -25,6 +35,11 @@
       <option name="id" value="jboss.community" />
       <option name="name" value="JBoss Community repository" />
       <option name="url" value="https://repository.jboss.org/nexus/content/repositories/public/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="jcenter" />
+      <option name="name" value="jcenter" />
+      <option name="url" value="https://jcenter.bintray.com/" />
     </remote-repository>
   </component>
 </project>

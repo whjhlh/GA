@@ -13,13 +13,17 @@ public enum GenerateErrorEnum {
      * 反射调用异常
      */
     REFLECTION_EXCEPTION("1001", "反射调用异常", "反射调用异常"),
+    /**
+     * 创建代理失败
+     */
+    CREATE_PROXY_FAIL("1002", "创建代理失败", "创建代理失败"),
 
     ;
 
 
     private String code;
     private String desc;
-    private String message;
+    private final String message;
 
      GenerateErrorEnum(String code, String desc, String message) {
         this.code = code;

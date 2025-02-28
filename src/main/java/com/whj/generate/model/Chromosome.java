@@ -19,12 +19,12 @@ public class Chromosome {
     /**
      * 适应度
      */
-    double fitness;
+    Double fitness;
+
 
     public Chromosome(Method method) {
         this.method = method;
         genes = new Object[method.getParameterCount()];
-        fitness = 0;
     }
 
     public Object[] getGenes() {
@@ -39,7 +39,7 @@ public class Chromosome {
         return fitness;
     }
 
-    public void setFitness(double fitness) {
+    public void setFitness(Double fitness) {
         this.fitness = fitness;
     }
 
@@ -49,5 +49,12 @@ public class Chromosome {
 
     public void setMethod(Method method) {
         this.method = method;
+    }
+
+    /**
+     * 是否执行过，如果适应度为null,则认定为未执行过
+     */
+    public boolean isExecuted() {
+        return fitness != null;
     }
 }

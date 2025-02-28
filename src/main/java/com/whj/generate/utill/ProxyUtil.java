@@ -1,5 +1,7 @@
 package com.whj.generate.utill;
 
+import com.whj.generate.exception.ExceptionWrapper;
+import com.whj.generate.exception.GenerateErrorEnum;
 import com.whj.generate.handle.CoverageInvocationCGLIBHandler;
 import com.whj.generate.handle.CoverageInvocationJDKHandler;
 import org.springframework.cglib.proxy.Enhancer;
@@ -17,14 +19,14 @@ public class ProxyUtil {
      * 创建覆盖动态代理<br/>
      * cglib动态代理<br>
      * 调用快
-     *
-     * @param targetClass 目标对象
+
+     * @param
      */
-    public static Object createCoverageProxyCGLIB(Class<?> targetClass, MethodInterceptor handler) {
+    public static Object createCoverageProxyCGLIB(Object target, MethodInterceptor handler) {
         Enhancer enhancer = new Enhancer();
-        enhancer.setSuperclass(targetClass);
+        enhancer.setSuperclass(target.getClass());
         enhancer.setCallback(handler);
-        return enhancer.create();
+        return enhancer.create(new Class<?>[0], new Object[0]);
     }
     /**
      * 创建覆盖动态代理<br/>
@@ -40,18 +42,36 @@ public class ProxyUtil {
     /**
      * 动态调用动态代理
      */
-    public static Object createCoverageProxy(Class<?> clazz) {
-        if (clazz == null) {
-            return new Object();
+    /**
+     * 创建动态代理（基于目标实例）
+     */
+    public static Object createCoverageProxy(Object target) {
+        return ExceptionWrapper.process(() -> {
+            if (target == null) {
+                throw new IllegalArgumentException("Target object cannot be null");
+            }
+            Class<?> clazz = target.getClass();
+            if (clazz.isInterface()) {
+                return createCoverageProxyJDK(target);
+            } else {
+                return createCoverageProxyCGLIB(target, new CoverageInvocationCGLIBHandler(target));
+            }
+        }, GenerateErrorEnum.CREATE_PROXY_FAIL, "创建动态代理失败: %s", target.getClass().getName());
+
+    }
+    /**
+     * 创建 JDK 代理（需接口）
+     */
+    private static Object createCoverageProxyJDK(Object target) {
+        Class<?>[] interfaces = target.getClass().getInterfaces();
+        if (interfaces.length == 0) {
+            throw new IllegalArgumentException("JDK 代理需要目标类实现接口");
         }
-        //实现类接口
-        if (ReflectionUtil.isImplementsInterface(clazz) && ReflectionUtil.isFinalClass(clazz) ) {
-            return ProxyUtil.createCoverageProxyJDK(clazz, new CoverageInvocationJDKHandler());
-        }
-        if (ReflectionUtil.isFinalClass(clazz)) {
-            return ProxyUtil.createCoverageProxyCGLIB(clazz, new CoverageInvocationCGLIBHandler());
-        }
-        throw new RuntimeException("不支持的类");
+        return Proxy.newProxyInstance(
+                target.getClass().getClassLoader(),
+                interfaces,
+                new CoverageInvocationJDKHandler(target) // 传入目标实例
+        );
     }
 
 }

@@ -2,6 +2,7 @@ package com.whj.generate.utill;
 
 import com.whj.generate.exception.ExceptionWrapper;
 import com.whj.generate.exception.GenerateErrorEnum;
+import org.springframework.util.ClassUtils;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -28,7 +29,7 @@ public class ReflectionUtil {
             public Object call() throws Exception {
                 return method.invoke(obj, args);
             }
-        }, GenerateErrorEnum.REFLECTION_EXCEPTION, ",%s反射调用%s方法异常[%s]", obj.getClass().getName(), method.getName(), args);
+        }, GenerateErrorEnum.REFLECTION_EXCEPTION, ",%s反射调用%s方法异常%s", ClassUtils.getShortName(obj.getClass()), method.getName(), JsonUtil.toJson(args));
     }
 
     /**
@@ -62,5 +63,24 @@ public class ReflectionUtil {
             return false;
         }
         return clazz.getInterfaces().length > 0;
+    }
+
+
+    /**
+     * 获取原始目标类（处理 CGLIB 代理）
+     */
+    public static Class<?> getTargetClass(Object proxyObj) {
+        Class<?> clazz = proxyObj.getClass();
+        while (isCglibProxyClass(clazz)) {
+            clazz = clazz.getSuperclass(); // 获取原始类
+        }
+        return clazz;
+    }
+
+    /**
+     * 判断是否为 CGLIB 代理类
+     */
+    private static boolean isCglibProxyClass(Class<?> clazz) {
+        return clazz.getName().contains("$$EnhancerByCGLIB$$");
     }
 }

@@ -45,8 +45,8 @@ public class GeneticUtil {
         }
         //子染色体初始化
         Chromosome child = new Chromosome(chromosome1.getMethod());
-        int point = new Random().nextInt(chromosome1.getGenes().length);
         for (int i = 0; i < chromosome1.getGenes().length; i++) {
+            int point = new Random().nextInt(chromosome1.getGenes().length);
             if (i < point) {
                 child.getGenes()[i] = chromosome1.getGenes()[i];
             } else {
@@ -83,7 +83,7 @@ public class GeneticUtil {
      * @param chromosome2 染色体2
      */
     public static boolean isSamePopulation(Chromosome chromosome1, Chromosome chromosome2) {
-        if (null == chromosome1 || null == chromosome2) {
+        if (null == chromosome1) {
             return false;
         }
         return chromosome1.getMethod().equals(chromosome2.getMethod());

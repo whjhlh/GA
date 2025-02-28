@@ -6,3 +6,65 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+# 编译后的类文件
+*.class
+*.%cls*
+
+# 打包文件
+*.jar
+*.war
+*.ear
+
+# 日志文件
+*.log
+
+# 测试相关文件
+TEST-*.xml
+
+# IDE 相关文件
+### Eclipse ###
+.project
+.classpath
+.settings/
+bin/
+
+### IntelliJ ###
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+### VS Code ###
+.vscode/
+.settings/
+
+# 构建工具目录
+### Maven ###
+target/
+
+### Gradle ###
+build/
+.gradle/
+
+# 依赖项 (如果需要)
+lib/
+libs/
+
+# 配置文件 (按需取消注释)
+# *.properties
+# *.xml
+
+# 临时文件/目录
+temp/
+tmp/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 操作系统备份文件
+*~
+*.bak
+*.swp
+*.swo
