@@ -26,6 +26,7 @@ public class ProxyUtil {
         Enhancer enhancer = new Enhancer();
         enhancer.setSuperclass(target.getClass());
         enhancer.setCallback(handler);
+        enhancer.setUseFactory(false);
         return enhancer.create(new Class<?>[0], new Object[0]);
     }
     /**

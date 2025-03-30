@@ -8,10 +8,11 @@
 /Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/strategy/GeneticAlgorithmStrategy.java
 /Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/handle/CoverageInvocationJDKHandler.java
 /Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/dualPipeline/AbstractDualPipeline.java
-/Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/dualPipeline/geneticsTaskProcess.java
 /Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/utill/JaCocoUtil.java
 /Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/dualPipeline/NamePrefixThreadFactory.java
+/Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/utill/ConditionUtil.java
 /Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/utill/StringUtil.java
+/Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/dualPipeline/process/geneticsTaskProcess.java
 /Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/MainSystem.java
 /Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/model/BasePipeline.java
 /Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/model/condition/NodeTypeEnum.java
@@ -28,3 +29,4 @@
 /Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/utill/ReflectionUtil.java
 /Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/model/condition/ConditionNode.java
 /Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/model/ChromosomeTask.java
+/Users/b20210304129/Desktop/school/biyesheji/generatetestclass/src/main/java/com/whj/generate/utill/FileUtil.java
