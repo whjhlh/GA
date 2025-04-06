@@ -1,8 +1,15 @@
-# 忽略所有 target 目录
+
+# 编译输出目录
 target/
+bin/
+build/
 
-# 忽略 IntelliJ IDEA 的配置目录
+# IDE 特定文件
 .idea/
-
-# 忽略 IntelliJ IDEA 的模块文件（可选）
 *.iml
+*.ipr
+*.iws
+
+# 系统文件
+.DS_Store
+Thumbs.db
