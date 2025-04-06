@@ -4,9 +4,15 @@ import com.whj.generate.exception.ExceptionWrapper;
 import com.whj.generate.exception.GenerateErrorEnum;
 import org.springframework.util.ClassUtils;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.Callable;
+
+import static com.whj.generate.utill.PathUtils.getFilePath;
 
 /**
  * @author whj
@@ -82,5 +88,16 @@ public class ReflectionUtil {
      */
     private static boolean isCglibProxyClass(Class<?> clazz) {
         return clazz.getName().contains("$$EnhancerByCGLIB$$");
+    }
+
+    /**
+     * 获取代码
+     * @param clazz
+     * @return
+     * @throws IOException
+     */
+    public static String getCode(Class<?> clazz) throws IOException {
+        String filePath = getFilePath(clazz, StandardCharsets.UTF_8);
+        return new String(Files.readAllBytes(Paths.get(filePath)));
     }
 }

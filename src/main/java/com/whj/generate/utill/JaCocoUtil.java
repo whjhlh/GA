@@ -3,7 +3,7 @@ package com.whj.generate.utill;
 import org.jacoco.core.analysis.Analyzer;
 import org.jacoco.core.analysis.CoverageBuilder;
 import org.jacoco.core.analysis.IClassCoverage;
-import org.jacoco.core.analysis.ICounter;
+import org.jacoco.core.analysis.IMethodCoverage;
 import org.jacoco.core.data.ExecutionData;
 import org.jacoco.core.data.ExecutionDataStore;
 import org.jacoco.core.data.ISessionInfoVisitor;
@@ -13,9 +13,10 @@ import org.jacoco.core.runtime.LoggerRuntime;
 import org.jacoco.core.runtime.RuntimeData;
 import org.springframework.util.ClassUtils;
 
-import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+
 
 /**
  * 线程安全的 JaCoCo 覆盖率工具类
@@ -27,7 +28,10 @@ public class JaCocoUtil {
     private static final IRuntime runtime = new LoggerRuntime();
     private static final RuntimeData runtimeData = new RuntimeData();
     // 线程隔离的覆盖率存储
-    private static final ThreadLocal<ExecutionDataStore> threadCoverage = ThreadLocal.withInitial(ExecutionDataStore::new);
+    private static final ThreadLocal<ExecutionDataStore> threadCoverage = ThreadLocal.withInitial(()->{
+        ExecutionDataStore store = new ExecutionDataStore();
+        return store;
+    });
     static SessionInfo defaultSession;
 
     static {
@@ -57,27 +61,25 @@ public class JaCocoUtil {
      * @throws IOException
      */
     public static double analyzeCoverage(Class<?> clazz, ExecutionDataStore before, ExecutionDataStore after) throws IOException {
+        //合并数据
         ExecutionDataStore merged = mergeStores(before, after);
-        File classFileDir = FileUtil.getClassLocation(clazz);
-
-        // 调试输出路径
-        System.out.println("[JaCoCo] 类文件路径: " + classFileDir.getAbsolutePath());
-
+        // 1. 路径处理
+        final String decodedPath = PathUtils.getClassFilePath(clazz);
+        final String resource = PathUtils.toClassResourcePath(clazz).replace(".class", "");
         CoverageBuilder builder = new CoverageBuilder();
         Analyzer analyzer = new Analyzer(merged, builder);
-        analyzer.analyzeAll(classFileDir);
+        System.out.println("[JaCoCo] 开始分析类: " +decodedPath+"   \n"+resource);
+        analyzer.analyzeClass(new FileInputStream(decodedPath),resource);
 
         String expectedName = getOriginalClassName(clazz).replace('.', '/');
         for (IClassCoverage cc : builder.getClasses()) {
-            if (cc.getName().equals(expectedName)) {
-                System.out.println("[JaCoCo] 覆盖行详情:");
-                for (int i = cc.getFirstLine(); i <= cc.getLastLine(); i++) {
-                    int status = cc.getLine(i).getStatus();
-                    System.out.printf("Line %d: %s\n", i,
-                            status == ICounter.EMPTY ? "空行" :
-                                    status == ICounter.NOT_COVERED ? "未覆盖" :
-                                            status == ICounter.FULLY_COVERED ? "已覆盖" : "部分覆盖");
+            for(IMethodCoverage mc : cc.getMethods()){
+                if(mc.getName().equals("test")){
+                    System.out.println("[JaCoCo] 找到方法: "+mc.getName()+mc.getLineCounter().getCoveredCount()*100);
+                    break;
                 }
+            }
+            if (cc.getName().equals(expectedName)) {
                 int covered = cc.getLineCounter().getCoveredCount();
                 int missed = cc.getLineCounter().getMissedCount();
                 return covered * 100.0 / (covered + missed);

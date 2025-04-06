@@ -1,14 +1,15 @@
 com/whj/generate/utill/CodeSaverUtil.class
+com/whj/generate/dualPipeline/process/geneticsTaskProcess.class
 com/whj/generate/MainSystem.class
 com/whj/generate/utill/JaCocoUtil.class
 com/whj/generate/strategy/Strategy.class
 com/whj/generate/model/condition/ConditionNode.class
 com/whj/generate/actual/QueryController.class
 com/whj/generate/model/BasePipeline.class
+com/whj/generate/utill/FileUtil.class
 com/whj/generate/utill/ReflectionUtil$1.class
 com/whj/generate/handle/CoverageInvocationCGLIBHandler.class
 com/whj/generate/utill/GeneticUtil.class
-com/whj/generate/dualPipeline/geneticsTaskProcess.class
 com/whj/generate/generate/MockitoTestCodeGenerator.class
 com/whj/generate/exception/ExceptionWrapper.class
 com/whj/generate/utill/ReflectionUtil.class
@@ -30,3 +31,4 @@ com/whj/generate/model/condition/LogicalOperatorEnum.class
 com/whj/generate/utill/ProxyUtil.class
 com/whj/generate/dualPipeline/testForCover.class
 com/whj/generate/model/condition/ConditionNode$1.class
+com/whj/generate/utill/ConditionUtil.class

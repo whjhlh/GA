@@ -13,9 +13,15 @@ public class testForCover {
                 }else {
                     System.out.println("c!=3");
                 }
-            }else{
+            }else if(b>3){
                 System.out.println("b!=2");
             }
+        } else if(a<1){
+            System.out.println("a!=1");
+        }
+        else if(a>1){
+            System.out.println("a>1");
         }
     }
+
 }
