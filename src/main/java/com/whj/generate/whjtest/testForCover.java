@@ -1,4 +1,4 @@
-package com.whj.generate.dualPipeline;
+package com.whj.generate.whjtest;
 
 import com.whj.generate.model.bizenum.ComparisonOperatorEnum;
 import com.whj.generate.model.bizenum.LogicalOperatorEnum;
@@ -39,6 +39,28 @@ public class testForCover {
         } else if (a > 1) {
             System.out.println("a>1");
         }
+        if (a == 8) {
+            if (b == 12) {
+                if (c == 6) {
+                    System.out.println("a==1,b==2,c==3");
+                } else if (op.getCode().equals("minus")){
+                    System.out.println("c!=3");
+                }
+
+            }
+        }
+
+        if (a == 9) {
+            if (b == 13) {
+                if (c == 12) {
+                } else if (op.getCode().equals("minus")){
+                    System.out.println("c!=3");
+                }
+
+            }
+        }
+
+
     }
 
 }

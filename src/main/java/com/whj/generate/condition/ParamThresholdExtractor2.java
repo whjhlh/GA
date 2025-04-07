@@ -5,14 +5,18 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
 import com.github.javaparser.ast.stmt.IfStmt;
-import com.whj.generate.dualPipeline.testForCover;
-import com.whj.generate.utill.ReflectionUtil;
-import com.whj.generate.utill.StringUtil;
+import com.whj.generate.whjtest.testForCover;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.whj.generate.utill.EnumScannerUtil.findEnumsInMethod;
+import static com.whj.generate.utill.PathUtils.getFilePath;
+import static com.whj.generate.utill.ReflectionUtil.getJavaCode;
 import static com.whj.generate.utill.UltraFastParamScannerUtil.scanParamsUltraFast;
 
 /**
@@ -20,9 +24,13 @@ import static com.whj.generate.utill.UltraFastParamScannerUtil.scanParamsUltraFa
  * @date 2025-04-04 下午5:16
  */
 public class ParamThresholdExtractor2 {
+
     private static final Map<BinaryExpr.Operator, BinaryExpr.Operator> REVERSE_OP_CACHE = new EnumMap<>(BinaryExpr.Operator.class);
+
     private static final Map<String, List<String>> ENUM_CODE_MAP;
-    private static  Map<String, String> PARAM_NAME_SIMPLE_NAME_MAP;
+    private static final Map<String, CompilationUnit> FILE_CACHE = new ConcurrentHashMap<>();
+
+    private static Map<String, String> PARAM_NAME_SIMPLE_NAME_MAP;
 
     static {
         REVERSE_OP_CACHE.put(BinaryExpr.Operator.GREATER, BinaryExpr.Operator.LESS_EQUALS);
@@ -31,16 +39,23 @@ public class ParamThresholdExtractor2 {
         REVERSE_OP_CACHE.put(BinaryExpr.Operator.LESS_EQUALS, BinaryExpr.Operator.GREATER);
         REVERSE_OP_CACHE.put(BinaryExpr.Operator.EQUALS, BinaryExpr.Operator.NOT_EQUALS);
         try {
-            ENUM_CODE_MAP = findEnumsInMethod(testForCover.class,"test");
+            ENUM_CODE_MAP = findEnumsInMethod(testForCover.class, "test");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static Map<String, Set<Object>> genGenetic(Class<?> clazz, String methodName) throws IOException {
-        String code = ReflectionUtil.getCode(clazz);
-        PARAM_NAME_SIMPLE_NAME_MAP = scanParamsUltraFast(code, "test");
-        CompilationUnit cu = StaticJavaParser.parse(code);
+        String filePath = getFilePath(clazz, StandardCharsets.UTF_8);
+        String javaCode = getJavaCode(clazz, filePath);
+        PARAM_NAME_SIMPLE_NAME_MAP = scanParamsUltraFast(javaCode, "test");
+        CompilationUnit cu = FILE_CACHE.computeIfAbsent(filePath, p -> {
+            try {
+                return StaticJavaParser.parse(new File(p));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        });
         Map<String, Set<Object>> paramValues = new HashMap<>();
 
         cu.getClassByName(clazz.getSimpleName()).ifPresent(classDecl -> {
@@ -58,21 +73,26 @@ public class ParamThresholdExtractor2 {
         });
         return paramValues;
     }
+
     /**
      * 扁平化条件
-     * @param expression
+     *
+     * @param expr
      * @param atomicConditions
      */
-    private static void flattenConditions(Expression expression, List<Expression> atomicConditions) {
-        if (expression instanceof BinaryExpr binaryExpr) {
-            BinaryExpr.Operator op = binaryExpr.getOperator();
-            if (op == BinaryExpr.Operator.AND || op == BinaryExpr.Operator.OR) {
-                flattenConditions(binaryExpr.getLeft(), atomicConditions);
-                flattenConditions(binaryExpr.getRight(), atomicConditions);
-                return;
+    private static void flattenConditions(Expression expr, List<Expression> atomicConditions) {
+        Deque<Expression> stack = new ArrayDeque<>();
+        stack.push(expr);
+
+        while (!stack.isEmpty()) {
+            Expression current = stack.pop();
+            if (current instanceof BinaryExpr be && (be.getOperator() == BinaryExpr.Operator.AND || be.getOperator() == BinaryExpr.Operator.OR)) {
+                stack.push(be.getRight());
+                stack.push(be.getLeft());
+            } else {
+                atomicConditions.add(current);
             }
         }
-        atomicConditions.add(expression);
     }
 
     private static void extractThresholds(Expression expr, List<String> params, Map<String, Set<Object>> paramValues) {
@@ -91,11 +111,12 @@ public class ParamThresholdExtractor2 {
             handledThresholdsByInt(params, paramValues, right, left, reversedOp);
             handledThresholdsByEnumCode(params, paramValues, left, right, op);
             handledThresholdsByEnumCode(params, paramValues, right, left, reversedOp);
-        }else if(expr instanceof MethodCallExpr methodCall){
+        } else if (expr instanceof MethodCallExpr methodCall) {
             handleEnumMethodCall(methodCall, params, paramValues);
         }
 
     }
+
     private static void handleEnumMethodCall(MethodCallExpr methodCall, List<String> params, Map<String, Set<Object>> paramValues) {
         // 仅处理 equals 方法调用
         if (!methodCall.getNameAsString().equals("equals")) {
@@ -103,52 +124,47 @@ public class ParamThresholdExtractor2 {
         }
 
         // 检查是否为 enmu.getCode().equals("equals") 结构
-        if (methodCall.getScope().isPresent() &&
-                methodCall.getScope().get() instanceof MethodCallExpr scopeCall) {
-
+        if (methodCall.getScope().isEmpty()) return;
+        if (methodCall.getScope().get() instanceof MethodCallExpr scopeCall) {
             // 确认是 getCode() 方法调用
-            if (scopeCall.getNameAsString().equals("getCode") &&
-                    scopeCall.getScope().isPresent() &&
-                    scopeCall.getScope().get() instanceof NameExpr enumNameExpr) {
+            if (!scopeCall.getNameAsString().equals("getCode")) return;
+            if (scopeCall.getScope().isEmpty()) return;
+            if (scopeCall.getScope().get() instanceof NameExpr enumNameExpr) {
 
                 String paramName = enumNameExpr.getNameAsString();
-                if (params.contains(paramName)) {
-                    // 获取 equals 的参数值（如 "equals"）
-                    if (methodCall.getArgument(0).isStringLiteralExpr()) {
-                        String comparedValue = methodCall.getArgument(0).asStringLiteralExpr().getValue();
-                        // 添加枚举的 code 值到结果集
-                        addEnumCodeThresholds(paramName, comparedValue, paramValues);
-                    }
+                if (!params.contains(paramName)) return;
+                // 获取 equals 的参数值（如 "equals"）
+                if (methodCall.getArgument(0).isStringLiteralExpr()) {
+                    String comparedValue = methodCall.getArgument(0).asStringLiteralExpr().getValue();
+                    // 添加枚举的 code 值到结果集
+                    addEnumCodeThresholds(paramName, comparedValue, paramValues);
                 }
+
             }
         }
     }
+
     private static void addEnumCodeThresholds(String paramName, String comparedValue, Map<String, Set<Object>> paramValues) {
-        Set<Object> values = paramValues.computeIfAbsent(paramName, k -> new TreeSet<>());
-
-        // 从预加载的 ENUM_CODE_MAP 中获取该枚举的所有 code 值
-        String clazzSimpleName = PARAM_NAME_SIMPLE_NAME_MAP.getOrDefault(paramName, "");
-        if (StringUtil.isNotBlank(clazzSimpleName)) {
-            return;
-        }
-        List<String> allCodes = ENUM_CODE_MAP.getOrDefault(clazzSimpleName, Collections.emptyList());
-
-
+        Set<Object> values = paramValues.computeIfAbsent(paramName, k -> new HashSet<>());
         // 添加被比较的值（如 "equals"）
         values.add(comparedValue);
 
+        // 从预加载的 ENUM_CODE_MAP 中获取该枚举的所有 code 值
+        String clazzSimpleName = PARAM_NAME_SIMPLE_NAME_MAP.get(paramName);
+        List<String> allCodes = ENUM_CODE_MAP.getOrDefault(clazzSimpleName, Collections.emptyList());
+
         // 添加一个不同的值（用于测试不等于的情况）
-        for (String code : allCodes) {
-            if (!code.equals(comparedValue)) {
-                values.add(code);
-                break;
-            }
-        }
+        Optional<String> firstCode = allCodes.parallelStream()
+                .filter(code -> !code.equals(comparedValue))
+                .findFirst();
+        firstCode.ifPresent(values::add);
+
     }
 
 
     /**
      * 处理枚举类型
+     *
      * @param params
      * @param paramValues
      * @param left
@@ -174,6 +190,7 @@ public class ParamThresholdExtractor2 {
             }
         }
     }
+
     private static void addThresholdsByString(String paramName, BinaryExpr.Operator op, FieldAccessExpr fieldAccessExpr, Map<String, Set<Object>> thresholds) {
         String value = fieldAccessExpr.getNameAsString();
         Set<Object> values = thresholds.get(paramName);
@@ -181,11 +198,11 @@ public class ParamThresholdExtractor2 {
             NameExpr nameExpr = (NameExpr) fieldAccessExpr.getScope();
             List<String> enumCodeList = ENUM_CODE_MAP.get(nameExpr.getNameAsString());
             //随机取一个非value的值
-            for(String enumCode : enumCodeList){
-                if(!value.equals(enumCode)){
+            for (String enumCode : enumCodeList) {
+                if (!value.equals(enumCode)) {
                     values.add(enumCode);
                     values.add(value.toLowerCase());
-                    return ;
+                    return;
                 }
             }
         }
@@ -193,6 +210,7 @@ public class ParamThresholdExtractor2 {
 
     /**
      * 检查操作符
+     *
      * @param op
      * @return
      */
@@ -212,6 +230,7 @@ public class ParamThresholdExtractor2 {
 
     /**
      * 生成正向和反向结果值
+     *
      * @param paramName
      * @param op
      * @param value
@@ -220,7 +239,7 @@ public class ParamThresholdExtractor2 {
     private static void addThresholdsByInt(String paramName, BinaryExpr.Operator op, int value, Map<String, Set<Object>> thresholds) {
         Set<Object> values = thresholds.get(paramName);
         switch (op) {
-            case EQUALS ->{
+            case EQUALS, NOT_EQUALS -> {
                 values.add(value - 1);
                 values.add(value);
                 values.add(value + 1);
@@ -234,12 +253,8 @@ public class ParamThresholdExtractor2 {
                 values.add(value + 1);
             }
             case LESS_EQUALS, GREATER_EQUALS -> values.add(value);
-            case NOT_EQUALS -> {
-                values.add(value - 1);
-                values.add(value);
-                values.add(value + 1);
+            default -> {
             }
-            default -> {}
         }
     }
 }

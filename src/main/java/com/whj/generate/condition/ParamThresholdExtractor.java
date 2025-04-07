@@ -31,7 +31,7 @@ public class ParamThresholdExtractor {
             List<String> params = method.getParameters().stream()
                     .map(NodeWithSimpleName::getNameAsString)
                     .toList();
-            params.forEach(param -> paramValues.put(param, new TreeSet<>()));
+            params.forEach(param -> paramValues.put(param, new HashSet<>()));
             // 2. 遍历所有if条件
             method.findAll(IfStmt.class).forEach(ifStmt -> {
                 List<Expression> atomicConditions = new ArrayList<>();
@@ -71,12 +71,14 @@ public class ParamThresholdExtractor {
 
     // 提取临界值
     private static void extractThresholds(Expression expr, List<String> params, Map<String, Set<Integer>> paramValues) {
-        if (!(expr instanceof BinaryExpr || expr instanceof NameExpr)) return;
-        BinaryExpr binaryExpr = (BinaryExpr) expr;
-        BinaryExpr.Operator op = binaryExpr.getOperator();
+        if (!(expr instanceof BinaryExpr binaryExpr)) return;
 
-        // 仅处理 >, <, ==, >=, <=
-        if (!op.name().matches("GREATER|LESS|EQUALS|GREATER_OR_EQUAL|LESS_OR_EQUAL")) return;
+        BinaryExpr.Operator op = binaryExpr.getOperator();
+        switch (op) {
+            case GREATER, LESS, EQUALS, GREATER_EQUALS, LESS_EQUALS -> {}
+            default -> { return; }
+        }
+
 
         // 处理左参数、右数值的情况（如 a > 1）
         // a(paramName) > 1(conditionValue)
@@ -120,24 +122,14 @@ public class ParamThresholdExtractor {
     private static void addThresholds(String paramName, BinaryExpr.Operator op, int conditionValue, Map<String, Set<Integer>> thresholds) {
         Set<Integer> integers = thresholds.get(paramName);
         switch (op) {
-            case EQUALS:
-                //若存在条件值，则跳过
-                integers.add(conditionValue);
-                break;
             case LESS:
                 integers.add(conditionValue - 1);
                 break;
-            case GREATER:
+            case GREATER, NOT_EQUALS:
                 integers.add(conditionValue + 1);
                 break;
-            case LESS_EQUALS:
+            case LESS_EQUALS,GREATER_EQUALS,EQUALS:
                 integers.add(conditionValue);
-                break;
-            case GREATER_EQUALS:
-                integers.add(conditionValue);
-                break;
-            case NOT_EQUALS:
-                integers.add(conditionValue + 1);
                 break;
             default:
                 break;

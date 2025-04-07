@@ -1,6 +1,5 @@
-package com.whj.generate.dualPipeline;
+package com.whj.generate.whjtest;
 
-import com.whj.generate.condition.ParamThresholdExtractor;
 import com.whj.generate.condition.ParamThresholdExtractor2;
 import com.whj.generate.utill.JsonUtil;
 
@@ -14,14 +13,11 @@ import java.util.Set;
  */
 public class test {
     public static void main(String[] args) throws InterruptedException, IOException {
-        long l = System.currentTimeMillis();
-        Map<String, Set<Integer>> test2 = ParamThresholdExtractor.genGenetic(testForCover.class, "test");
-        System.out.println("耗时："+(System.currentTimeMillis() - l));
-        System.out.println(JsonUtil.toJson(test2));
-        long l2= System.currentTimeMillis();
+        long l2 = System.currentTimeMillis();
         Map<String, Set<Object>> test3 = ParamThresholdExtractor2.genGenetic(testForCover.class, "test");
-        System.out.println("耗时："+(System.currentTimeMillis() - l2));
         System.out.println(JsonUtil.toJson(test3));
+
+        System.out.println("耗时：" + (System.currentTimeMillis() - l2));
 
     }
 

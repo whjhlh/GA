@@ -6,6 +6,7 @@ import org.springframework.util.ClassUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.JarURLConnection;
@@ -19,8 +20,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
-import static com.whj.generate.utill.PathUtils.getFilePath;
 
 /**
  * @author whj
@@ -101,12 +100,15 @@ public class ReflectionUtil {
     /**
      * 获取代码
      * @param clazz
+     * @param filePath
      * @return
      * @throws IOException
      */
-    public static String getCode(Class<?> clazz) throws IOException {
-        String filePath = getFilePath(clazz, StandardCharsets.UTF_8);
-        return new String(Files.readAllBytes(Paths.get(filePath)));
+    public static String getJavaCode(Class<?> clazz, String filePath) throws IOException {
+
+        try (InputStream is = Files.newInputStream(Paths.get(filePath))) {
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
     public static Set<Class<?>> findClassesInPackage(String packageName) throws IOException {
         Set<Class<?>> classes = new HashSet<>();
