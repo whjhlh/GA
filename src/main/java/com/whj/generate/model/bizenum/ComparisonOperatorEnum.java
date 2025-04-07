@@ -1,4 +1,4 @@
-package com.whj.generate.model.condition;
+package com.whj.generate.model.bizenum;
 
 /**
  * @author whj
@@ -18,5 +18,13 @@ public enum ComparisonOperatorEnum {
     ComparisonOperatorEnum(String code, String desc) {
         this.code = code;
         this.desc = desc;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getDesc() {
+        return desc;
     }
 }
