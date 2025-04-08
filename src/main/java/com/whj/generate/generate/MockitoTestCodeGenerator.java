@@ -1,6 +1,6 @@
 package com.whj.generate.generate;
 
-import com.whj.generate.model.TestCase;
+import com.whj.generate.core.domain.TestCase;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 

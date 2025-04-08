@@ -1,4 +1,4 @@
-package com.whj.generate.model;
+package com.whj.generate.core.domain;
 
 /**
  * @author whj

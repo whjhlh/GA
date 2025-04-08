@@ -1,7 +1,7 @@
 package com.whj.generate.whjtest;
 
-import com.whj.generate.model.bizenum.ComparisonOperatorEnum;
-import com.whj.generate.model.bizenum.LogicalOperatorEnum;
+import com.whj.generate.core.bizenum.ComparisonOperatorEnum;
+import com.whj.generate.core.bizenum.LogicalOperatorEnum;
 
 /**
  * @author whj

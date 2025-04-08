@@ -1,34 +1,76 @@
 package com.whj.generate.utill;
 
-import com.whj.generate.model.Chromosome;
+import com.whj.generate.core.domain.Chromosome;
+import com.whj.generate.core.domain.GenePool;
+import com.whj.generate.core.domain.Population;
+import com.whj.generate.core.infrastructure.ConditionExtractor;
+import com.whj.generate.core.infrastructure.GeneLoader;
+import com.whj.generate.whjtest.testForCover;
+import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author whj
  * @date 2025-02-22 下午5:40
  */
+@Component
 public class GeneticUtil {
+
+    // 类级别添加线程安全的随机数生成器
+    private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
+
+
+    private static final GeneLoader genaLoader =new GeneLoader(new ConditionExtractor());
+
+    public static void main(String[] args) {
+        Class<testForCover> clazz = testForCover.class;
+        long l1=System.currentTimeMillis();
+        for(Method method:clazz.getMethods()){
+            if(method.getName().equals("test")){
+                Population population = buildPopulationModel(clazz, method);
+                for(int i=0;i<1000;i++){
+                    Chromosome chromosome = population.initChromosome();
+                    population.addChromosome(chromosome);
+                }
+                System.out.println("耗时："+(System.currentTimeMillis() - l1));
+                System.out.println(population.getChromosomes().size()+JsonUtil.toJson(population.getChromosomes()));
+            }
+        }
+
+    }
+
     /**
      * 初始化种群
      *
      * @param clazz 方法
      */
-    public static List<Chromosome> initPopulation(Class<?> clazz) {
+    public static List<Chromosome> initEnvironment(Class<?> clazz, String methodName) {
         Method[] methods = clazz.getMethods();
         List<Chromosome> chromosomeList = new ArrayList<>();
         //每个方法意味着一个个体
         for (Method method : methods) {
-            //final方法不可动态调用
-            if (!ReflectionUtil.isFinalMethod(method)) {
-                chromosomeList.add(randomChromosome(method));
+            if (method.getName().equals(methodName)) {
+                //final方法不可动态调用
+                if (!ReflectionUtil.isFinalMethod(method)) {
+                    Population population = buildPopulationModel(clazz, method);
+                    population.initChromosome();
+                }
+
             }
         }
         return chromosomeList;
+    }
+
+    private static Population buildPopulationModel(Class<?> clazz, Method method) {
+        GenePool genePool = genaLoader.loadGenePool(clazz, method);
+
+        return new Population(clazz, method, genePool);
     }
 
     /**
@@ -71,7 +113,7 @@ public class GeneticUtil {
             Parameter parameter = chromosome.getMethod().getParameters()[i];
             //变异
             if (random.nextDouble() > mutationRate) {
-                chromosome.getGenes()[i] = randomValue(parameter.getType());
+                //chromosome.getGenes()[i] = genChromosomeValue(name, parameter.getType());
             }
         }
     }
@@ -89,37 +131,4 @@ public class GeneticUtil {
         return chromosome1.getMethod().equals(chromosome2.getMethod());
     }
 
-    /**
-     * 随机生成某个种群的染色体
-     *
-     * @param method 方法(种群)
-     */
-    public static Chromosome randomChromosome(Method method) {
-        Chromosome chromosome = new Chromosome(method);
-        //生成染色体的基因
-        for (int i = 0; i < chromosome.getGenes().length; i++) {
-            chromosome.getGenes()[i] = randomValue(chromosome.getMethod().getParameters()[i].getType());
-        }
-        return chromosome;
-    }
-
-    /**
-     * 根据class类型随机生成值<br/>
-     * 目前只支持int,long,boolean,enum,Integer,Boolean,Long
-     */
-    public static Object randomValue(Class<?> type) {
-        //todo 范围需要可控
-        Random random = new Random();
-        if (type.equals(int.class) || type.equals(Integer.class)) {
-            return random.nextInt(100);
-        } else if (type.equals(long.class) || type.equals(Long.class)) {
-            return random.nextLong();
-        } else if (type.equals(boolean.class) || type.equals(Boolean.class)) {
-            return random.nextBoolean();
-        } else if (type.isEnum()) {
-            return random.nextInt(type.getEnumConstants().length);
-        } else {
-            return null;
-        }
-    }
 }

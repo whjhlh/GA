@@ -1,7 +1,8 @@
-package com.whj.generate.condition;
+package com.whj.generate.core.infrastructure;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
 import com.github.javaparser.ast.stmt.IfStmt;
@@ -20,10 +21,11 @@ import static com.whj.generate.utill.ReflectionUtil.getJavaCode;
 import static com.whj.generate.utill.UltraFastParamScannerUtil.scanParamsUltraFast;
 
 /**
+ * 条件提取器
  * @author whj
  * @date 2025-04-04 下午5:16
  */
-public class ParamThresholdExtractor2 {
+public class ConditionExtractor implements ParamThresholdExtractor{
 
     private static final Map<BinaryExpr.Operator, BinaryExpr.Operator> REVERSE_OP_CACHE = new EnumMap<>(BinaryExpr.Operator.class);
 
@@ -31,6 +33,7 @@ public class ParamThresholdExtractor2 {
     private static final Map<String, CompilationUnit> FILE_CACHE = new ConcurrentHashMap<>();
 
     private static Map<String, String> PARAM_NAME_SIMPLE_NAME_MAP;
+    private static List<String> paramsConst;
 
     static {
         REVERSE_OP_CACHE.put(BinaryExpr.Operator.GREATER, BinaryExpr.Operator.LESS_EQUALS);
@@ -45,33 +48,15 @@ public class ParamThresholdExtractor2 {
         }
     }
 
-    public static Map<String, Set<Object>> genGenetic(Class<?> clazz, String methodName) throws IOException {
-        String filePath = getFilePath(clazz, StandardCharsets.UTF_8);
-        String javaCode = getJavaCode(clazz, filePath);
-        PARAM_NAME_SIMPLE_NAME_MAP = scanParamsUltraFast(javaCode, "test");
-        CompilationUnit cu = FILE_CACHE.computeIfAbsent(filePath, p -> {
-            try {
-                return StaticJavaParser.parse(new File(p));
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        Map<String, Set<Object>> paramValues = new HashMap<>();
+    private static List<String> getParams(MethodDeclaration method) {
+        List<String> params = method.getParameters().stream()
+                .map(NodeWithSimpleName::getNameAsString)
+                .toList();
+        return params;
+    }
 
-        cu.getClassByName(clazz.getSimpleName()).ifPresent(classDecl -> {
-            classDecl.getMethodsByName(methodName).forEach(method -> {
-                List<String> params = method.getParameters().stream()
-                        .map(NodeWithSimpleName::getNameAsString)
-                        .toList();
-                params.forEach(param -> paramValues.put(param, new TreeSet<>()));
-                method.findAll(IfStmt.class).forEach(ifStmt -> {
-                    List<Expression> atomicConditions = new ArrayList<>();
-                    flattenConditions(ifStmt.getCondition(), atomicConditions);
-                    atomicConditions.forEach(expr -> extractThresholds(expr, params, paramValues));
-                });
-            });
-        });
-        return paramValues;
+    public static List<String> getParamsConst() {
+        return paramsConst;
     }
 
     /**
@@ -256,5 +241,43 @@ public class ParamThresholdExtractor2 {
             default -> {
             }
         }
+    }
+
+    public static void setParamsConst(List<String> paramsConst) {
+        ConditionExtractor.paramsConst = paramsConst;
+    }
+
+    @Override
+    public  Map<String, Set<Object>> extractThresholds(Class<?> targetClass, String methodName) {
+        String filePath = getFilePath(targetClass, StandardCharsets.UTF_8);
+        String javaCode = null;
+        try {
+            javaCode = getJavaCode(targetClass, filePath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        PARAM_NAME_SIMPLE_NAME_MAP = scanParamsUltraFast(javaCode, "test");
+        CompilationUnit cu = FILE_CACHE.computeIfAbsent(filePath, p -> {
+            try {
+                return StaticJavaParser.parse(new File(p));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        Map<String, Set<Object>> paramValues = new HashMap<>();
+
+        cu.getClassByName(targetClass.getSimpleName()).ifPresent(classDecl -> {
+            classDecl.getMethodsByName(methodName).forEach(method -> {
+                paramsConst=getParams(method);
+                List<String> params = paramsConst;
+                params.forEach(param -> paramValues.put(param, new HashSet<>()));
+                method.findAll(IfStmt.class).forEach(ifStmt -> {
+                    List<Expression> atomicConditions = new ArrayList<>();
+                    flattenConditions(ifStmt.getCondition(), atomicConditions);
+                    atomicConditions.forEach(expr -> extractThresholds(expr, params, paramValues));
+                });
+            });
+        });
+        return paramValues;
     }
 }

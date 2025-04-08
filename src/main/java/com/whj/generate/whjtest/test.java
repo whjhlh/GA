@@ -1,11 +1,6 @@
 package com.whj.generate.whjtest;
 
-import com.whj.generate.condition.ParamThresholdExtractor2;
-import com.whj.generate.utill.JsonUtil;
-
 import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author whj
@@ -14,8 +9,9 @@ import java.util.Set;
 public class test {
     public static void main(String[] args) throws InterruptedException, IOException {
         long l2 = System.currentTimeMillis();
-        Map<String, Set<Object>> test3 = ParamThresholdExtractor2.genGenetic(testForCover.class, "test");
-        System.out.println(JsonUtil.toJson(test3));
+        //基因库
+        //Map<String, Set<Object>> gennticMap = ConditionExtractor.(testForCover.class, "test");
+
 
         System.out.println("耗时：" + (System.currentTimeMillis() - l2));
 

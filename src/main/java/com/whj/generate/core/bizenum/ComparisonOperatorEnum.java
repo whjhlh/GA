@@ -1,4 +1,4 @@
-package com.whj.generate.model.bizenum;
+package com.whj.generate.core.bizenum;
 
 /**
  * @author whj

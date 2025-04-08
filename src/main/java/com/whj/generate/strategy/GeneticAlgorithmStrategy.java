@@ -1,8 +1,8 @@
 package com.whj.generate.strategy;
 
+import com.whj.generate.core.domain.Chromosome;
+import com.whj.generate.core.domain.TestCase;
 import com.whj.generate.generate.MockitoTestCodeGenerator;
-import com.whj.generate.model.Chromosome;
-import com.whj.generate.model.TestCase;
 import com.whj.generate.utill.GeneticUtil;
 import com.whj.generate.utill.ReflectionUtil;
 
@@ -24,7 +24,7 @@ public class GeneticAlgorithmStrategy implements Strategy {
      * @return 生成的测试用例
      */
     @Override
-    public String generateTestCase(Class<?> clazz) {
+    public String generateTestCase(Class<?> clazz) throws Exception {
         //todo 暂时不支持(final类和final方法则不生成测试用例)
         //todo 后续开发切片模式
         if (clazz == null || ReflectionUtil.isFinalClass(clazz)) {
@@ -33,7 +33,7 @@ public class GeneticAlgorithmStrategy implements Strategy {
 
         List<TestCase> testCases = new ArrayList<>();
         //【1】利用遗传算法生成方法入参
-        List<Chromosome> chromosomeList = GeneticUtil.initPopulation(clazz);
+        List<Chromosome> chromosomeList = GeneticUtil.initEnvironment(clazz,"test");
         //【2】覆盖率分析
 //        Object coverageProxy =ProxyUtil.createCoverageProxy(clazz);
 //        //【3】执行方法跑用例

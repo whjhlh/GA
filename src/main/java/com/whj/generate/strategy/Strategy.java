@@ -7,6 +7,6 @@ package com.whj.generate.strategy;
  * @date 2025-01-01 下午7:09
  */
 public interface Strategy {
-    String generateTestCase(Class<?> clazz);
+    String generateTestCase(Class<?> clazz) throws Exception;
 }
 
