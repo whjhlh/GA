@@ -33,9 +33,6 @@ public class GeneLoader {
         for(String param : paramsConst){
             genePool.loadGenes(paramIndex++, geneticMap.get(param).toArray());
         }
-        for (Map.Entry<String, Set<Object>> entry : geneticMap.entrySet()) {
-            genePool.loadGenes(paramIndex++, entry.getValue().toArray());
-        }
         return genePool;
     }
 }

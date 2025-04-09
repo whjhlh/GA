@@ -1,22 +1,24 @@
 package com.whj.generate.core.domain;
 
+import com.whj.generate.core.infrastructure.strategy.CombinationStrategy;
+
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.IntStream;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Population {
     private final Class<?> targetClass;
     private final Method targetMethod;
-    private final Set<Chromosome> chromosomes = new HashSet<>();
+    private final Set<Chromosome> chromosomes = ConcurrentHashMap.newKeySet();
     private final GenePool genePool;
+    private final CombinationStrategy strategy;
 
     public Population(Class<?> targetClass, Method targetMethod, GenePool genePool) {
         this.targetClass = targetClass;
         this.targetMethod = targetMethod;
         this.genePool = genePool;
+        this.strategy = new CombinationStrategy(genePool);
     }
 
     public Class<?> getTargetClass() {
@@ -42,7 +44,7 @@ public class Population {
 
     public void addChromosome(Chromosome chromosome) {
         if (!chromosome.getMethod().equals(targetMethod)) {
-            throw new IllegalArgumentException("Incompatible chromosome");
+            throw new IllegalArgumentException(String.format("种群%s试图加入种群%s", chromosome.getMethod().getName(), targetMethod.getName()));
         }
         chromosomes.add(chromosome);
     }
@@ -57,15 +59,7 @@ public class Population {
      */
     public Chromosome initChromosome() {
         Method method = this.getTargetMethod();
-        //  并行填充基因（根据参数数量自动选择并行度）
-        Parameter[] parameters = method.getParameters();
-        Object[] chromosomeGenes = new Object[parameters.length];
-        IntStream.range(0, parameters.length)
-                .parallel()
-                .forEach(i -> {
-                    chromosomeGenes[i] = this.getGenePool().getRandomGene(i);
-                });
-
+        Object[] chromosomeGenes = strategy.generateMinimalCombination();
         return new Chromosome(method, chromosomeGenes);
     }
 }

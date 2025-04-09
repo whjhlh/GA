@@ -160,6 +160,20 @@ public class ReflectionUtil {
         }
     }
 
+    /**
+     * 获取class类种方法名为methodName的方法
+     * @param methodName
+     * @param clazz
+     */
+    public static Method findMethod(Class<?> clazz, String methodName) {
+        Method[] methods = clazz.getDeclaredMethods();
+        for (Method method : methods) {
+            if (method.getName().equals(methodName)) {return method;
+            }
+        }
+        return null;
+    }
+
     private static void loadClass(String className, Set<Class<?>> classes) {
         try {
             Class<?> clazz = Class.forName(className);

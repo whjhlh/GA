@@ -8,12 +8,17 @@ import com.whj.generate.core.infrastructure.GeneLoader;
 import com.whj.generate.whjtest.testForCover;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.IntStream;
 
 /**
  * @author whj
@@ -22,27 +27,102 @@ import java.util.concurrent.ThreadLocalRandom;
 @Component
 public class GeneticUtil {
 
-    // 类级别添加线程安全的随机数生成器
-    private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
 
+    private static final GeneLoader genaLoader = new GeneLoader(new ConditionExtractor());
+    // 缓存方法元数据
+    private static final Map<Class<?>, Method> METHOD_CACHE = new ConcurrentHashMap<>();
 
-    private static final GeneLoader genaLoader =new GeneLoader(new ConditionExtractor());
+    ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 2);
 
     public static void main(String[] args) {
         Class<testForCover> clazz = testForCover.class;
-        long l1=System.currentTimeMillis();
-        for(Method method:clazz.getMethods()){
-            if(method.getName().equals("test")){
-                Population population = buildPopulationModel(clazz, method);
-                for(int i=0;i<1000;i++){
-                    Chromosome chromosome = population.initChromosome();
-                    population.addChromosome(chromosome);
-                }
-                System.out.println("耗时："+(System.currentTimeMillis() - l1));
-                System.out.println(population.getChromosomes().size()+JsonUtil.toJson(population.getChromosomes()));
-            }
+        Method testMethod = ReflectionUtil.findMethod(clazz, "test");
+        long start = System.nanoTime();
+        Population population = buildPopulationModel(clazz, testMethod);
+        initPopulation(population);
+        long initTime = System.nanoTime() - start;
+        reportedInFile(initTime, population);
+
+
+    }
+
+    /**
+     * 初始化种群
+     *
+     * @param population
+     */
+    private static void initPopulation(Population population) {
+        if (null == population) {
+            return;
+        }
+        int populationSize = getPopulationSize(population);
+        try {
+            ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 2);
+            pool.submit(() -> IntStream.range(0, populationSize)
+                    .parallel()
+                    .forEach(i -> {
+                        Chromosome chromosome = population.initChromosome();
+                        population.addChromosome(chromosome);
+                    })
+            ).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 生成报告
+     *
+     * @param initTime
+     * @param population
+     */
+    private static void reportedInFile(long initTime, Population population) {
+        if (null == population) {
+            return;
+        }
+        GenePool genePool = population.getGenePool();
+        List<Object[]> list = population.getChromosomes().stream().map(Chromosome::getGenes).toList();
+        StringBuilder report = new StringBuilder(1024);
+        //日期格式
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = new Date();
+
+        report.append("=== 种群初始化报告 ===\n")
+                .append(String.format("初始化时间：%s\n", dateFormat.format(date)))
+                .append(String.format("耗时：%.3f ms\n", initTime / 1e6))
+                .append("基因库概况：\n")
+                .append(JsonUtil.toJson(genePool.getParameterGenes()))
+                .append("生成染色体数: \n")
+                .append(list.size())
+                .append("\n")
+                .append("=== 种群初始化结果 ===\n");
+        for (Object[] genes : list) {
+            report.append(JsonUtil.toJson(genes)).append("\n");
         }
 
+// 写入文件代替控制台输出
+        try {
+            Files.writeString(Paths.get("population_report.txt"),
+                    report.toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 初始化种群大小 = (avg_genes)^(k/2)
+     *
+     * @param population
+     * @return
+     */
+    private static int getPopulationSize(Population population) {
+        if (null == population) {
+            return 0;
+        }
+        return (int) Math.pow(
+                population.getGenePool().getAverageGeneCount(),
+                0.5 * population.getGenePool().getParameterCount()
+        );
     }
 
     /**
@@ -59,7 +139,10 @@ public class GeneticUtil {
                 //final方法不可动态调用
                 if (!ReflectionUtil.isFinalMethod(method)) {
                     Population population = buildPopulationModel(clazz, method);
-                    population.initChromosome();
+                    double maxGeneCount = (int) population.getGenePool().getAverageGeneCount();
+                    for (int i = 0; i < maxGeneCount; i++) {
+                        population.initChromosome();
+                    }
                 }
 
             }
@@ -68,8 +151,10 @@ public class GeneticUtil {
     }
 
     private static Population buildPopulationModel(Class<?> clazz, Method method) {
+        if (null == clazz || null == method) {
+            return null;
+        }
         GenePool genePool = genaLoader.loadGenePool(clazz, method);
-
         return new Population(clazz, method, genePool);
     }
 
