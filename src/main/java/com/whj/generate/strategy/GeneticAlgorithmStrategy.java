@@ -1,9 +1,7 @@
 package com.whj.generate.strategy;
 
-import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.TestCase;
 import com.whj.generate.generate.MockitoTestCodeGenerator;
-import com.whj.generate.utill.GeneticUtil;
 import com.whj.generate.utill.ReflectionUtil;
 
 import java.util.ArrayList;
@@ -33,7 +31,6 @@ public class GeneticAlgorithmStrategy implements Strategy {
 
         List<TestCase> testCases = new ArrayList<>();
         //【1】利用遗传算法生成方法入参
-        List<Chromosome> chromosomeList = GeneticUtil.initEnvironment(clazz,"test");
         //【2】覆盖率分析
 //        Object coverageProxy =ProxyUtil.createCoverageProxy(clazz);
 //        //【3】执行方法跑用例

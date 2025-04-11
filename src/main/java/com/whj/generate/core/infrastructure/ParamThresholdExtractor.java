@@ -1,5 +1,7 @@
 package com.whj.generate.core.infrastructure;
 
+import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,5 +18,13 @@ public interface ParamThresholdExtractor {
      * @return
      * @throws Exception
      */
-    Map<String, Set<Object>> extractThresholds(Class<?> targetClass,String methodName) throws Exception;
+    Map<String, Set<Object>> extractThresholds(Class<?> targetClass,String methodName) ;
+
+    /**
+     * 解析参数名
+     * @param method
+     * @return
+     */
+    List<String> resolveParameterNames(Method method);
+
 }

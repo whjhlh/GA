@@ -1,7 +1,9 @@
-package com.whj.generate.core.infrastructure;
+package com.whj.generate.core.infrastructure.impl;
 
 
 import com.whj.generate.core.domain.GenePool;
+import com.whj.generate.core.infrastructure.ParamThresholdExtractor;
+import com.whj.generate.core.infrastructure.PoolLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,21 +18,21 @@ import java.util.Set;
  * @date 2025-04-09 上午12:08
  */
 @Component
-public class GeneLoader {
-    @Autowired
-    private final ConditionExtractor thresholdExtractor;
+public class GenePoolLoader implements PoolLoader<GenePool> {
 
-    public GeneLoader(ConditionExtractor thresholdExtractor) {
+    private final ParamThresholdExtractor thresholdExtractor;
+    @Autowired
+    public GenePoolLoader(ParamThresholdExtractor thresholdExtractor) {
         this.thresholdExtractor = thresholdExtractor;
     }
 
-    public GenePool loadGenePool(Class<?> targetClass, Method method){
+    @Override
+    public GenePool initializePool(Class<?> targetClass, Method method){
         GenePool genePool = new GenePool();
         Map<String, Set<Object>> geneticMap = thresholdExtractor.extractThresholds(targetClass, method.getName());
-
+        List<String> paramsList = thresholdExtractor.resolveParameterNames(method);
         int paramIndex = 0;
-        List<String> paramsConst = ConditionExtractor.getParamsConst();
-        for(String param : paramsConst){
+        for(String param : paramsList){
             genePool.loadGenes(paramIndex++, geneticMap.get(param).toArray());
         }
         return genePool;

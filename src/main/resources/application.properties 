@@ -1,0 +1,3 @@
+# application.properties
+genetic.parallelism=8
+genetic.thread.core=4

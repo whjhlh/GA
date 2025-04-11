@@ -1,7 +1,7 @@
 package com.whj.generate.utill;
 
-import com.whj.generate.exception.ExceptionWrapper;
-import com.whj.generate.exception.GenerateErrorEnum;
+import com.whj.generate.core.exception.ExceptionWrapper;
+import com.whj.generate.core.exception.GenerateErrorEnum;
 import org.springframework.util.ClassUtils;
 
 import java.io.File;

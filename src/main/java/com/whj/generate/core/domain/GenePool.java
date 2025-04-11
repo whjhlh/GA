@@ -9,7 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @description: 基因池模型
  * @date 2025-04-09 上午12:05
  */
-public class GenePool {
+public class GenePool extends BasePool{
     /**
      * 基因库, key为参数索引位，value为参数对应的基因库
      */

@@ -1,4 +1,4 @@
-package com.whj.generate.core.infrastructure;
+package com.whj.generate.core.infrastructure.impl;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
@@ -6,11 +6,14 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
 import com.github.javaparser.ast.stmt.IfStmt;
+import com.whj.generate.core.infrastructure.ParamThresholdExtractor;
 import com.whj.generate.whjtest.testForCover;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,14 +28,27 @@ import static com.whj.generate.utill.UltraFastParamScannerUtil.scanParamsUltraFa
  * @author whj
  * @date 2025-04-04 下午5:16
  */
-public class ConditionExtractor implements ParamThresholdExtractor{
-
+@Component
+public class GeneThresholdExtractor implements ParamThresholdExtractor {
+    /**
+     * 缓存反向操作符
+     */
     private static final Map<BinaryExpr.Operator, BinaryExpr.Operator> REVERSE_OP_CACHE = new EnumMap<>(BinaryExpr.Operator.class);
-
+    /**
+     * 枚举类与 code 值
+     */
     private static final Map<String, List<String>> ENUM_CODE_MAP;
+    /**
+     * 缓存编译单元
+     */
     private static final Map<String, CompilationUnit> FILE_CACHE = new ConcurrentHashMap<>();
-
+    /**
+     * 参数名与简单名称的映射
+     */
     private static Map<String, String> PARAM_NAME_SIMPLE_NAME_MAP;
+    /**
+     * 参数常量
+     */
     private static List<String> paramsConst;
 
     static {
@@ -49,10 +65,48 @@ public class ConditionExtractor implements ParamThresholdExtractor{
     }
 
     private static List<String> getParams(MethodDeclaration method) {
-        List<String> params = method.getParameters().stream()
+        return method.getParameters().stream()
                 .map(NodeWithSimpleName::getNameAsString)
                 .toList();
-        return params;
+    }
+
+    private static CompilationUnit getCompilationUnit(Class<?> targetClass) {
+        String filePath = getFilePath(targetClass, StandardCharsets.UTF_8);
+        String javaCode = null;
+        try {
+            javaCode = getJavaCode(targetClass, filePath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        PARAM_NAME_SIMPLE_NAME_MAP = scanParamsUltraFast(javaCode, "test");
+        CompilationUnit cu = FILE_CACHE.computeIfAbsent(filePath, p -> {
+            try {
+                return StaticJavaParser.parse(new File(p));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        return cu;
+    }
+
+    @Override
+    public  Map<String, Set<Object>> extractThresholds(Class<?> targetClass, String methodName) {
+        Map<String, Set<Object>> paramValues = new HashMap<>();
+
+        CompilationUnit cu = getCompilationUnit(targetClass);
+        cu.getClassByName(targetClass.getSimpleName()).ifPresent(classDecl -> {
+            classDecl.getMethodsByName(methodName).forEach(method -> {
+                paramsConst=getParams(method);
+                List<String> params = paramsConst;
+                params.forEach(param -> paramValues.put(param, new HashSet<>()));
+                method.findAll(IfStmt.class).forEach(ifStmt -> {
+                    List<Expression> atomicConditions = new ArrayList<>();
+                    flattenConditions(ifStmt.getCondition(), atomicConditions);
+                    atomicConditions.forEach(expr -> extractThresholds(expr, params, paramValues));
+                });
+            });
+        });
+        return paramValues;
     }
 
     public static List<String> getParamsConst() {
@@ -243,41 +297,13 @@ public class ConditionExtractor implements ParamThresholdExtractor{
         }
     }
 
-    public static void setParamsConst(List<String> paramsConst) {
-        ConditionExtractor.paramsConst = paramsConst;
-    }
-
+    /**
+     * 获取方法参数
+     * @param method
+     * @return
+     */
     @Override
-    public  Map<String, Set<Object>> extractThresholds(Class<?> targetClass, String methodName) {
-        String filePath = getFilePath(targetClass, StandardCharsets.UTF_8);
-        String javaCode = null;
-        try {
-            javaCode = getJavaCode(targetClass, filePath);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        PARAM_NAME_SIMPLE_NAME_MAP = scanParamsUltraFast(javaCode, "test");
-        CompilationUnit cu = FILE_CACHE.computeIfAbsent(filePath, p -> {
-            try {
-                return StaticJavaParser.parse(new File(p));
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        Map<String, Set<Object>> paramValues = new HashMap<>();
-
-        cu.getClassByName(targetClass.getSimpleName()).ifPresent(classDecl -> {
-            classDecl.getMethodsByName(methodName).forEach(method -> {
-                paramsConst=getParams(method);
-                List<String> params = paramsConst;
-                params.forEach(param -> paramValues.put(param, new HashSet<>()));
-                method.findAll(IfStmt.class).forEach(ifStmt -> {
-                    List<Expression> atomicConditions = new ArrayList<>();
-                    flattenConditions(ifStmt.getCondition(), atomicConditions);
-                    atomicConditions.forEach(expr -> extractThresholds(expr, params, paramValues));
-                });
-            });
-        });
-        return paramValues;
+    public List<String> resolveParameterNames(Method method) {
+        return Collections.unmodifiableList(paramsConst);
     }
 }

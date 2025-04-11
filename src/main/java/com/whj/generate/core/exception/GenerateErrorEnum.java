@@ -1,4 +1,4 @@
-package com.whj.generate.exception;
+package com.whj.generate.core.exception;
 
 /**
  * @author whj

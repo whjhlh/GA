@@ -10,7 +10,7 @@ public class test {
     public static void main(String[] args) throws InterruptedException, IOException {
         long l2 = System.currentTimeMillis();
         //基因库
-        //Map<String, Set<Object>> gennticMap = ConditionExtractor.(testForCover.class, "test");
+        //Map<String, Set<Object>> gennticMap = GeneThresholdExtractor.(testForCover.class, "test");
 
 
         System.out.println("耗时：" + (System.currentTimeMillis() - l2));
