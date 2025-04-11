@@ -32,13 +32,15 @@ public class FileUtil {
         //日期格式
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = new Date();
-
         report.append("=== 种群初始化报告 ===\n")
                 .append(String.format("初始化时间：%s\n", dateFormat.format(date)))
                 .append(String.format("耗时：%.3f ms\n", initTime / 1e6))
                 .append("基因库概况：\n")
                 .append(JsonUtil.toJson(genePool.getParameterGenes()))
-                .append("生成染色体数: \n")
+                .append("\n")
+                .append("理论生成染色体数：")
+                .append(((int) Math.pow(genePool.getAverageGeneCount(), 0.5 * genePool.getParameterCount())+"\n"))
+                .append("生成染色体数: ")
                 .append(list.size())
                 .append("\n")
                 .append("=== 种群初始化结果 ===\n");

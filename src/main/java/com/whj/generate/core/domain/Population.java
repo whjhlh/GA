@@ -41,10 +41,13 @@ public class Population {
                 .orElseThrow();
     }
 
-
-    public void addChromosome(Chromosome chromosome) {
+    /**
+     * 如果不实用synchronized，则会出现线程不安全的情况
+     * @param chromosome
+     */
+    public  void addChromosome(Chromosome chromosome) {
         if (!chromosome.getMethod().equals(targetMethod)) {
-            throw new IllegalArgumentException(String.format("种群%s试图加入种群%s", chromosome.getMethod().getName(), targetMethod.getName()));
+            throw new IllegalArgumentException(String.format("种群 %s 试图加入种群%s", chromosome.getMethod().getName(), targetMethod.getName()));
         }
         chromosomes.add(chromosome);
     }

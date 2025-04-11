@@ -40,6 +40,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         this.poolLoader = poolLoader;
         this.geneticThreadPool = geneticThreadPool;
     }
+
     /**
      * 初始化种群
      *
@@ -67,8 +68,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         }
         int populationSize = calculatePopulationSize(population);
         try {
-            ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 2);
-            pool.submit(() -> IntStream.range(0, populationSize)
+            geneticThreadPool.submit(() -> IntStream.range(0, populationSize)
                     .parallel()
                     .forEach(i -> {
                         Chromosome chromosome = population.initChromosome();
@@ -78,8 +78,12 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
+        //兜底补充，解决并行带来的问题
+        while (population.getChromosomes().size()<populationSize){
+            Chromosome chromosome = population.initChromosome();
+            population.addChromosome(chromosome);
+        }
     }
-
 
 
     /**
@@ -88,14 +92,12 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
      * @param population
      * @return
      */
-    private  int calculatePopulationSize(Population population) {
+    private int calculatePopulationSize(Population population) {
         if (null == population) {
             return 0;
         }
-        return (int) Math.pow(
-                population.getGenePool().getAverageGeneCount(),
-                0.5 * population.getGenePool().getParameterCount()
-        );
+        GenePool genePool = population.getGenePool();
+        return (int) Math.pow(genePool.getAverageGeneCount(), 0.5 * genePool.getParameterCount());
     }
 
     private Population createPopulationModel(Class<?> clazz, Method method) {
@@ -112,7 +114,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
      * @param chromosome1 父染色体1
      * @param chromosome2 父染色体2
      */
-    public  Chromosome performCrossover(Chromosome chromosome1, Chromosome chromosome2) {
+    public Chromosome performCrossover(Chromosome chromosome1, Chromosome chromosome2) {
 
         //属于同一种群才能进行交叉
         if (isSamePopulation(chromosome1, chromosome2)) {

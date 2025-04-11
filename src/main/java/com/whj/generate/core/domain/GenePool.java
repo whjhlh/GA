@@ -1,6 +1,7 @@
 package com.whj.generate.core.domain;
 
 
+import java.io.Serial;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -9,13 +10,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @description: 基因池模型
  * @date 2025-04-09 上午12:05
  */
-public class GenePool extends BasePool{
+public class GenePool extends BasePool {
+    /**
+     * serialVersionUID
+     */
+    @Serial
+    private static final long serialVersionUID = 14387891234232L;
     /**
      * 基因库, key为参数索引位，value为参数对应的基因库
      */
     private final Map<Integer, Object[]> parameterGenes = new HashMap<>();
-    private final Random random = new Random();
-    // 在原有基础上新增以下方法
+    /**
+     * 参数索引
+     */
     private final List<Integer> parameterIndexes = new CopyOnWriteArrayList<>();
 
     /**
@@ -23,10 +30,12 @@ public class GenePool extends BasePool{
      */
     private Integer geneCount = 0;
 
+    private final Random random = new Random();
+
 
     public void loadGenes(int paramIndex, Object[] genes) {
         parameterGenes.put(paramIndex, genes.clone());
-        geneCount+=genes.length;
+        geneCount += genes.length;
         if (!parameterIndexes.contains(paramIndex)) {
             parameterIndexes.add(paramIndex);
             Collections.sort(parameterIndexes); // 保持参数顺序
@@ -70,7 +79,7 @@ public class GenePool extends BasePool{
         return parameterGenes.getOrDefault(paramIndex, new Object[0]).clone();
     }
 
-    public double getAverageGeneCount(){
-        return geneCount/(double)parameterIndexes.size();
+    public double getAverageGeneCount() {
+        return geneCount / (double) parameterIndexes.size();
     }
 }

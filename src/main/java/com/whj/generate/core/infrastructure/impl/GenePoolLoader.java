@@ -28,10 +28,11 @@ public class GenePoolLoader implements PoolLoader<GenePool> {
 
     @Override
     public GenePool initializePool(Class<?> targetClass, Method method){
-        GenePool genePool = new GenePool();
         Map<String, Set<Object>> geneticMap = thresholdExtractor.extractThresholds(targetClass, method.getName());
         List<String> paramsList = thresholdExtractor.resolveParameterNames(method);
         int paramIndex = 0;
+
+        GenePool genePool = new GenePool();
         for(String param : paramsList){
             genePool.loadGenes(paramIndex++, geneticMap.get(param).toArray());
         }
