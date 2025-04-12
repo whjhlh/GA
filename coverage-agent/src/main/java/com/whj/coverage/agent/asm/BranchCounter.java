@@ -12,15 +12,13 @@ public class BranchCounter {
     // 存储方法签名与已覆盖分支ID的映射
     private static final Map<String, Set<Integer>> coveredBranches = new HashMap<>();
 
-    static {
-        System.out.println("[DEBUG]BranchCounter,ClassLoader: "+BranchCounter.class.getClassLoader());
-    }
-
     public static void hit(String methodSignature, int branchId) {
+        System.out.println("[DEBUG]BranchCounter.hit ");
         coveredBranches.computeIfAbsent(methodSignature, k -> new HashSet<>()).add(branchId);
     }
 
     public static void setTotalBranches(String methodSignature, int total) {
+        System.out.println("[DEBUG]BranchCounter.setTotalBranches ");
         totalBranches.put(methodSignature, total);
     }
 

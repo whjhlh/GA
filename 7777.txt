@@ -1,7 +1,86 @@
 [INFO] Coverage Agent is running!
-[DEBUG] Coverage load.ClassLode,ClassLoader:jdk.internal.loader.ClassLoaders$AppClassLoader@251a69d7
-[DEBUG]BranchCounter,ClassLoader: jdk.internal.loader.ClassLoaders$AppClassLoader@251a69d7
-[DEBUG] Coverage load.BranchCounter,ClassLoader:jdk.internal.loader.ClassLoaders$AppClassLoader@251a69d7
+[DEBUG] Coverage load.ClassLode,ClassLoader:null
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[DEBUG]BranchCounter,ClassLoader: null
+[DEBUG] Coverage load.BranchCounter,ClassLoader:null
 BranchCoverageMethodVisitor,Owner: com/whj/coverage/agent/asm/BranchCounter
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+*** java.lang.instrument ASSERTION FAILED ***: "!errorOutstanding" with message transform method call failed at open/src/java.instrument/share/native/libinstrument/JPLISAgent.c line: 873
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
+[DEBUG]BranchCounter.hit
 Error: A JNI error has occurred, please check your installation and try again
-Exception in thread "main" java.lang.NoClassDefFoundError: com/whj/coverage/agent/asm/BranchCounter
+Exception in thread "main" java.lang.NoClassDefFoundError: Could not initialize class java.lang.invoke.InnerClassLambdaMetafactory$ForwardingMethodGenerator
