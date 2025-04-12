@@ -1,0 +1,7 @@
+[INFO] Coverage Agent is running!
+[DEBUG] Coverage load.ClassLode,ClassLoader:jdk.internal.loader.ClassLoaders$AppClassLoader@251a69d7
+[DEBUG]BranchCounter,ClassLoader: jdk.internal.loader.ClassLoaders$AppClassLoader@251a69d7
+[DEBUG] Coverage load.BranchCounter,ClassLoader:jdk.internal.loader.ClassLoaders$AppClassLoader@251a69d7
+BranchCoverageMethodVisitor,Owner: com/whj/coverage/agent/asm/BranchCounter
+Error: A JNI error has occurred, please check your installation and try again
+Exception in thread "main" java.lang.NoClassDefFoundError: com/whj/coverage/agent/asm/BranchCounter

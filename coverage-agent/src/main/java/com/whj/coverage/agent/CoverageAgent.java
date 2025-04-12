@@ -13,7 +13,15 @@ import java.lang.instrument.Instrumentation;
 public class CoverageAgent {
     public static void premain(String args, Instrumentation inst) {
         System.out.println("[INFO] Coverage Agent is running!");
+        System.out.println("[DEBUG] Coverage load.ClassLode,ClassLoader:"+CoverageAgent.class.getClassLoader());
 
+        try{
+            //强制加载com.whj.coverage.agent.asm.BranchCounter
+            Class.forName("com.whj.coverage.agent.asm.BranchCounter");
+            System.out.println("[DEBUG] Coverage load.BranchCounter,ClassLoader:"+CoverageAgent.class.getClassLoader());
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         BranchCoverageTransformer transformer = new BranchCoverageTransformer();
         inst.addTransformer(transformer);
     }
