@@ -1,6 +1,8 @@
 package com.whj.generate.core.domain;
 
 import com.alibaba.fastjson.annotation.JSONField;
+import com.whj.coverage.agent.asm.BranchCounter;
+import org.objectweb.asm.Type;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
@@ -71,6 +73,27 @@ public class Chromosome implements Serializable {
         return this.method.equals(other.method);
     }
 
+    public void evaluateFitness() {
+        // 生成方法唯一标识
+        String className = method.getDeclaringClass().getName().replace('.', '/');
+        String methodName = method.getName();
+        String methodDesc = Type.getMethodDescriptor(method);
+        String methodSignature = className + "." + methodName + methodDesc;
+
+        // 重置覆盖数据
+        BranchCounter.reset(methodSignature);
+
+        try {
+            // 假设是静态方法，无需实例
+            method.invoke(null, genes);
+        } catch (Exception e) {
+            this.fitness = 0.0; // 执行失败则适应度为0
+            return;
+        }
+
+        // 计算适应度
+        this.fitness = BranchCounter.calculateFitness(methodSignature);
+    }
 
     @Override
     public boolean equals(Object object) {

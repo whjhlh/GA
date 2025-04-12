@@ -1,7 +1,6 @@
 package com.whj.generate.strategy;
 
 import com.whj.generate.core.domain.TestCase;
-import com.whj.generate.generate.MockitoTestCodeGenerator;
 import com.whj.generate.utill.ReflectionUtil;
 
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ public class GeneticAlgorithmStrategy implements Strategy {
         //【4】todo 利用覆盖率分析结果进行交叉变异
 
         //【4】利用testCase生成测试用例代码
-        return MockitoTestCodeGenerator.generateTestCode(clazz, testCases);
+        return "";
     }
 
 }

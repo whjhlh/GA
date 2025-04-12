@@ -1,0 +1,3 @@
+Premain-Class: com.whj.coverage.agent.CoverageAgent
+Can-Redefine-Classes: true
+Can-Retransform-Classes: true
