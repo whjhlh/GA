@@ -14,14 +14,15 @@ import java.util.jar.JarFile;
 public class CoverageAgent {
     public static void premain(String args, Instrumentation inst) {
         System.out.println("[INFO] Coverage Agent is running!");
-        System.out.println("[DEBUG] Coverage load.ClassLode,ClassLoader:"+CoverageAgent.class.getClassLoader());
+        System.out.println("[DEBUG] Coverage load.ClassLoader,ClassLoader:"+CoverageAgent.class.getClassLoader());
 
         try{
             inst.appendToBootstrapClassLoaderSearch(new JarFile(
                     "coverage-agent/target/coverage-agent-1.0.0-jar-with-dependencies.jar"
             ));
             //强制加载com.whj.coverage.agent.asm.BranchCounter
-            Class.forName("com.whj.coverage.agent.asm.BranchCounter");
+            Class<?> aClass = Class.forName("com.whj.coverage.agent.asm.BranchCounter");
+            aClass.getDeclaredMethod("ensureInitialized").invoke(null);
             System.out.println("[DEBUG] Coverage load.BranchCounter,ClassLoader:"+CoverageAgent.class.getClassLoader());
         }catch (Exception e){
             e.printStackTrace();

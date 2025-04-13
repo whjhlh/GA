@@ -22,6 +22,9 @@ public class BranchCoverageClassVisitor extends ClassVisitor {
 
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+        if(name.contains("lambda$")){
+            return super.visitMethod(access, name, desc, signature, exceptions);
+        }
         MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
         return new BranchCoverageMethodVisitor(className, name, desc, mv);
     }

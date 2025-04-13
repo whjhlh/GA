@@ -1,7 +1,6 @@
 package com.whj.coverage.agent.asm;
 
 
-
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -18,6 +17,12 @@ public class BranchCoverageTransformer implements ClassFileTransformer {
     @Override
     public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
                             ProtectionDomain protectionDomain, byte[] classfileBuffer) {
+        if (className == null
+                || !className.startsWith("java/")
+                || className.startsWith("jdk/")
+                || className.startsWith("sun/")) {
+            return null;
+        }
         ClassReader cr = new ClassReader(classfileBuffer);
         ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES);
         ClassVisitor cv = new BranchCoverageClassVisitor(cw);
