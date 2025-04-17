@@ -1,6 +1,7 @@
 package com.whj.generate.utill;
 
-import static io.micrometer.common.util.StringUtils.isBlank;
+
+import static org.apache.logging.log4j.util.Strings.isBlank;
 
 /**
  * @author whj

@@ -8,8 +8,7 @@ import com.whj.generate.core.bizenum.LogicalOperatorEnum;
  * @date 2025-03-29 下午7:55
  */
 public class testForCover {
-    public void test(int a, int b, int c, LogicalOperatorEnum op, ComparisonOperatorEnum enmu) {
-
+    public static void test(int a, int b, int c, LogicalOperatorEnum op, ComparisonOperatorEnum enmu) {
         if (enmu.getCode().equals("equals")) {
             System.out.println("a==1,b==2,c==3");
         }
@@ -46,21 +45,15 @@ public class testForCover {
                 } else if (op.getCode().equals("minus")){
                     System.out.println("c!=3");
                 }
-
             }
         }
-
         if (a == 9) {
             if (b == 13) {
                 if (c == 12) {
                 } else if (op.getCode().equals("minus")){
                     System.out.println("c!=3");
                 }
-
             }
         }
-
-
     }
-
 }

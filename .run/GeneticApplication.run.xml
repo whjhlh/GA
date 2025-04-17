@@ -3,10 +3,14 @@
     <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
     <module name="main-app" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="com.whj.generate.GeneticApplication" />
-    <option name="VM_PARAMETERS" value="-javaagent:coverage-agent/target/coverage-agent-1.0.0-jar-with-dependencies.jar -Xbootclasspath/a:coverage-agent/target/coverage-agent-1.0.0-jar-with-dependencies.jar -jar main-app/target/main-app-1.0.0.jar" />
+    <option name="VM_PARAMETERS" value="-javaagent:/Users/b20210304129/.m2/repository/org/jacoco/org.jacoco.agent/0.8.12/org.jacoco.agent-0.8.12-runtime.jar=destfile=jacoco.exec,output=file" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="com.whj.generate.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+      <pattern>
+        <option name="PATTERN" value="com.whj.generate.GeneticApplication" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>

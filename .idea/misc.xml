@@ -12,13 +12,13 @@
         <option value="$PROJECT_DIR$/pom.xml" />
         <option value="$PROJECT_DIR$/main-app/pom.xml" />
         <option value="$PROJECT_DIR$/coverage-agent/pom.xml" />
-        <option value="$PROJECT_DIR$/main-app/META-INF/maven/com.whj/coverage-agent/pom.xml" />
         <option value="$PROJECT_DIR$/core/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
       <set>
         <option value="$PROJECT_DIR$/core/pom.xml" />
+        <option value="$PROJECT_DIR$/coverage-agent/pom.xml" />
       </set>
     </option>
   </component>

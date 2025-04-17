@@ -7,12 +7,12 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="main-app" />
-        <module name="coverage-agent (1)" />
-        <module name="coverage-agent" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="core" target="17" />
+      <module name="coverage-agent" target="17" />
+      <module name="coverage-agent (1)" target="17" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">

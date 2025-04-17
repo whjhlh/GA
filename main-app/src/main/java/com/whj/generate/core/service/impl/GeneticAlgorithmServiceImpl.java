@@ -121,7 +121,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
             return null;
         }
         //子染色体初始化
-        Chromosome child = new Chromosome(chromosome1.getMethod());
+        Chromosome child = new Chromosome(chromosome1.getTargetClass(),chromosome1.getMethod());
         for (int i = 0; i < chromosome1.getGenes().length; i++) {
             int point = new Random().nextInt(chromosome1.getGenes().length);
             if (i < point) {

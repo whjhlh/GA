@@ -45,6 +45,40 @@ public class ReflectionUtil {
         }, GenerateErrorEnum.REFLECTION_EXCEPTION, ",%s反射调用%s方法异常%s", ClassUtils.getShortName(obj.getClass()), method.getName(), JsonUtil.toJson(args));
     }
 
+
+    /**
+     * 调用方法
+     * @param method
+     * @param params
+     * @param instance
+     */
+    public static void invokeSafe(Method method, Object[] params, Object instance) {
+        ExceptionWrapper.process(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                // 参数转换逻辑
+                Object[] convertedParams = new Object[params.length];
+                Class<?>[] paramTypes = method.getParameterTypes();
+
+                for (int i = 0; i < params.length; i++) {
+                    Object param = params[i];
+                    Class<?> targetType = paramTypes[i];
+
+                    // 转换逻辑
+                    if (targetType == int.class || targetType == Integer.class) {
+                        convertedParams[i] = Integer.parseInt(param.toString());
+                    } else if (targetType.isEnum()) {  // 处理枚举类型
+                        String enumValue = param.toString().toUpperCase(); // 假设枚举是大写命名（如 AND）
+                        convertedParams[i] = Enum.valueOf((Class<Enum>) targetType, enumValue);
+                    } else {
+                        convertedParams[i] = param; // 其他类型直接传递（需根据实际情况扩展）
+                    }
+                }
+                return method.invoke(instance, convertedParams);
+            }
+        }, GenerateErrorEnum.REFLECTION_EXCEPTION, "反射调用%s方法异常%s", ClassUtils.getShortName(instance.getClass()), method.getName(), JsonUtil.toJson(params));
+    }
+
     /**
      * 判断是否是final方法
      *

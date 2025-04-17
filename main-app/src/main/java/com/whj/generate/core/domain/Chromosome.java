@@ -1,10 +1,14 @@
 package com.whj.generate.core.domain;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.whj.coverage.agent.asm.BranchCounter;
-import org.objectweb.asm.Type;
+import org.jacoco.core.analysis.Analyzer;
+import org.jacoco.core.analysis.CoverageBuilder;
+import org.jacoco.core.analysis.IClassCoverage;
+import org.jacoco.core.analysis.IMethodCoverage;
+import org.jacoco.core.data.ExecutionDataReader;
+import org.jacoco.core.data.ExecutionDataStore;
 
-import java.io.Serializable;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
@@ -19,23 +23,35 @@ public class Chromosome implements Serializable {
      * 序列化
      */
     private static final long serialVersionUID = 124238713634L;
+    /**
+     * 目标测试类
+     */
+    @JSONField(serialize = false)
+    private final Class<?> targetClass;
 
+    /**
+     * 目标方法
+     */
     @JSONField(serialize = false)
     private final Method method;
-
+    /**
+     * 基因
+     */
     private final Object[] genes;
 
     // 适应度需要动态计算，不设默认值
     private double fitness;
 
-    public Chromosome(Method method, Object[] genes) {
+    public Chromosome(Class<?> targetClass, Method method, Object[] genes) {
+        this.targetClass = targetClass;
         Objects.requireNonNull(method, "Method cannot be null");
         this.method = method;
         this.genes = Arrays.copyOf(genes, genes.length); // 防御性拷贝
     }
 
 
-    public Chromosome(Method method) {
+    public Chromosome(Class<?> targetClass, Method method) {
+        this.targetClass = targetClass;
         this.method = method;
         genes = new Object[method.getParameterCount()];
     }
@@ -56,6 +72,10 @@ public class Chromosome implements Serializable {
         return method;
     }
 
+    public Class<?> getTargetClass() {
+        return targetClass;
+    }
+
     /**
      * 是否执行过，如果适应度为null,则认定为未执行过
      */
@@ -74,25 +94,62 @@ public class Chromosome implements Serializable {
     }
 
     public void evaluateFitness() {
-        // 生成方法唯一标识
         String className = method.getDeclaringClass().getName().replace('.', '/');
-        String methodName = method.getName();
-        String methodDesc = Type.getMethodDescriptor(method);
-        String methodSignature = className + "." + methodName + methodDesc;
-
-        // 重置覆盖数据
-        BranchCounter.reset(methodSignature);
+        String targetMethodName = "evaluateFitness";
+        String targetMethodDesc = "()V";
 
         try {
-            // 假设是静态方法，无需实例
             method.invoke(null, genes);
         } catch (Exception e) {
-            this.fitness = 0.0; // 执行失败则适应度为0
+            this.fitness = 0.0;
             return;
         }
 
-        // 计算适应度
-        this.fitness = BranchCounter.calculateFitness(methodSignature);
+        File execFile = new File("jacoco.exec");
+        if (!execFile.exists()) {
+            this.fitness = 0.0;
+            return;
+        }
+
+        try (InputStream is = new FileInputStream(execFile)) {
+            // 1. 创建 ExecutionDataReader
+            ExecutionDataReader reader = new ExecutionDataReader(is);
+
+            // 2. 创建 ExecutionDataStore 存储数据
+            ExecutionDataStore store = new ExecutionDataStore();
+
+            // 3. 设置数据接收器
+            reader.setExecutionDataVisitor(store);
+
+            // 4. 读取数据（需处理可能的异常）
+            reader.read();
+
+            // 5. 分析覆盖率
+            CoverageBuilder coverageBuilder = new CoverageBuilder();
+            Analyzer analyzer = new Analyzer(store, coverageBuilder);
+            analyzer.analyzeClass(
+                    getClass().getClassLoader().getResourceAsStream(className + ".class"),
+                    className
+            );
+
+            // 6. 提取目标方法覆盖率
+            for (IClassCoverage cc : coverageBuilder.getClasses()) {
+                if (cc.getName().equals(className)) {
+                    for (IMethodCoverage mc : cc.getMethods()) {
+                        if (mc.getName().equals(targetMethodName) && mc.getDesc().equals(targetMethodDesc)) {
+                            int covered = mc.getLineCounter().getCoveredCount();
+                            int total = mc.getLineCounter().getTotalCount();
+                            this.fitness = total == 0 ? 0.0 : (double) covered / total;
+                            return;
+                        }
+                    }
+                }
+            }
+            this.fitness = 0.0;
+        } catch (IOException e) {
+            e.printStackTrace();
+            this.fitness = 0.0;
+        }
     }
 
     @Override

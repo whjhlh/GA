@@ -63,6 +63,6 @@ public class Population {
     public Chromosome initChromosome() {
         Method method = this.getTargetMethod();
         Object[] chromosomeGenes = strategy.generateMinimalCombination();
-        return new Chromosome(method, chromosomeGenes);
+        return new Chromosome(targetClass,method, chromosomeGenes);
     }
 }

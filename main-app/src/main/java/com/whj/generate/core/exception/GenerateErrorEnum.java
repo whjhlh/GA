@@ -17,6 +17,10 @@ public enum GenerateErrorEnum {
      * 创建代理失败
      */
     CREATE_PROXY_FAIL("1002", "创建代理失败", "创建代理失败"),
+    /**
+     * 获取覆盖失败
+     */
+    GET_OVERRIDE_FAIL("1003", "获取覆盖失败", "获取覆盖失败"),
 
     ;
 
