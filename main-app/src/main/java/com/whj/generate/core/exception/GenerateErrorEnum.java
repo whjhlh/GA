@@ -21,6 +21,10 @@ public enum GenerateErrorEnum {
      * 获取覆盖失败
      */
     GET_OVERRIDE_FAIL("1003", "获取覆盖失败", "获取覆盖失败"),
+    /**
+     * 染色体收集行覆盖失败
+     */
+    COLLECT_COVERAGE_FAIL("1004", "染色体收集行覆盖失败", "染色体收集行覆盖失败"),
 
     ;
 

@@ -7,18 +7,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
+ * 基因初始化分发策略
  * @author whj
  * @date 2025-04-09 下午11:57
  */
 public class CombinationStrategy {
+    /**
+     * 基因池
+     */
     private final GenePool genePool;
-    private final Map<Integer, Set<Object>> usedGenes = new ConcurrentHashMap<>();
+    /**
+     * 已使用的基因记录
+     */
+    private final Map<Integer, Set<Object>> usedGeneMap = new ConcurrentHashMap<>();
 
     public CombinationStrategy(GenePool genePool) {
         this.genePool = genePool;
         // 初始化使用记录
         genePool.getParameterIndexes().forEach(i ->
-                usedGenes.put(i, Collections.newSetFromMap(new ConcurrentHashMap<>()))
+                usedGeneMap.put(i, Collections.newSetFromMap(new ConcurrentHashMap<>()))
         );
     }
 
@@ -35,14 +42,14 @@ public class CombinationStrategy {
             // 找出第一个未使用的基因值
             int finalI = i;
             Optional<Object> unused = Arrays.stream(available)
-                    .filter(g -> !usedGenes.get(finalI).contains(g))
+                    .filter(g -> !usedGeneMap.get(finalI).contains(g))
                     .findFirst();
 
             combination[i] = unused.orElseGet(() ->
                     available[ThreadLocalRandom.current().nextInt(available.length)]
             );
 
-            usedGenes.get(i).add(combination[i]);
+            usedGeneMap.get(i).add(combination[i]);
         }
 
         return combination;

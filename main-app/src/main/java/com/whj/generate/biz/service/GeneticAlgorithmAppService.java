@@ -16,12 +16,12 @@ public class GeneticAlgorithmAppService {
     }
 
     public void calculatePopulationFitness(Population population) {
-        population.getChromosomes().forEach(chromosome -> {
+        population.getChromosomeSet().forEach(chromosome -> {
             double fitness = fitnessCalculator.calculateFitness(
                     chromosome.getMethod(),
                     chromosome.getGenes()
             );
-            chromosome.setFitness(fitness);
+            chromosome.setFitness((long) fitness);
         });
     }
 }

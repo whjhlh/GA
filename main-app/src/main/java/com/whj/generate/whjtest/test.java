@@ -10,7 +10,7 @@ public class test {
     public static void main(String[] args) throws InterruptedException, IOException {
         long l2 = System.currentTimeMillis();
         //基因库
-        //Map<String, Set<Object>> gennticMap = GeneThresholdExtractor.(testForCover.class, "test");
+        //Map<String, Set<Object>> gennticMap = GeneThresholdExtractor.(TestForCover.class, "test");
 
 
         System.out.println("耗时：" + (System.currentTimeMillis() - l2));
@@ -24,7 +24,7 @@ public class test {
 //        System.out.println(JsonUtil.toJson(geneticsTaskProcess.getSuccessList()));
 
 //        Object coverageProxy = ProxyUtil.createCoverageProxy(realInstance);
-//        Class<? extends testForCover> aClass = realInstance.getClass();
+//        Class<? extends TestForCover> aClass = realInstance.getClass();
 //        for(Method method :aClass.getMethods()){
 //            if(StringUtil.equals(method.getName(),"test")){
 //                Chromosome chromosome=new Chromosome(method);
@@ -43,7 +43,7 @@ public class test {
 //        } finally {
 //            // 4. 确保异常时仍计算覆盖率
 //            ExecutionDataStore after = JaCocoUtil.stopRecording();
-//            Class<? extends testForCover> aClass1 = realInstance.getClass();
+//            Class<? extends TestForCover> aClass1 = realInstance.getClass();
 //            double coverage = JaCocoUtil.analyzeCoverage(aClass1, before, after);
 //            System.out.println(coverage);
 //        }

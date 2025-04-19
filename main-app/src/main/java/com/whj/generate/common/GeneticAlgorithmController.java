@@ -1,18 +1,14 @@
 package com.whj.generate.common;
 
 
-import com.whj.generate.biz.Infrastructure.JaCoCoCoverageAnalyzer;
-import com.whj.generate.core.domain.Chromosome;
+import com.whj.generate.common.config.GeneticAlgorithmConfig;
+import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 import com.whj.generate.core.service.GeneticAlgorithmService;
-import com.whj.generate.whjtest.testForCover;
-import org.jacoco.agent.rt.IAgent;
-import org.jacoco.agent.rt.RT;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.whj.generate.whjtest.TestForCover;
 import org.springframework.stereotype.Controller;
 
-import java.lang.reflect.Method;
-import java.util.Set;
+import static com.whj.generate.utill.FileUtil.reportedInFile;
 
 /**
  * @author whj
@@ -20,26 +16,56 @@ import java.util.Set;
  */
 @Controller
 public class GeneticAlgorithmController {
-    @Autowired
-    private GeneticAlgorithmService geneticAlgorithmService;
-    public void test() {
-        Class<testForCover> clazz = testForCover.class;
-        Population population = geneticAlgorithmService.initEnvironment(clazz, "test");
-        Set<Chromosome> chromosomes = population.getChromosomes();
-        fillFitness(chromosomes);
+    private final GeneticAlgorithmService geneticAlgorithmService;
+
+    // 构造函数注入
+    public GeneticAlgorithmController(GeneticAlgorithmService geneticAlgorithmService) {
+        this.geneticAlgorithmService = geneticAlgorithmService;
     }
 
-    private void fillFitness(Set<Chromosome> chromosomes) {
-        IAgent agent = RT.getAgent(); // 获取JaCoCo Agent实例
-        try {
-            for (Chromosome chromosome : chromosomes) {
-                Method method = chromosome.getMethod();
-                Object[] params = chromosome.getGenes();
-                chromosome.setFitness(JaCoCoCoverageAnalyzer.getFitness(agent, method, params));
-                System.out.println(chromosome.getFitness());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    public void runGeneticAlgorithm() {
+        final Nature nature = new Nature();
+        final Class<TestForCover> targetClass = TestForCover.class;
+        final String testPhaseName = "test";
+
+        // 初始化环境
+        Population population = initializeEnvironment(nature, targetClass, testPhaseName);
+        nature.addPopulation(population);
+
+        // 执行进化过程
+        performEvolution(nature);
+    }
+
+    private Population initializeEnvironment(Nature nature, Class<?> targetClass, String phaseName) {
+        long startTime = System.nanoTime();
+        Population population = geneticAlgorithmService.initEnvironment(nature, targetClass, phaseName);
+        logOperationDuration(startTime, population, GeneticAlgorithmConfig.INIT_PHASE);
+        return population;
+    }
+
+    /**
+     * 执行进化过程
+     * @param nature
+     */
+    private void performEvolution(Nature nature) {
+        int generationCount = 0;
+        Population currentPopulation = nature.getPopulationList().iterator().next();
+
+        while (shouldContinueEvolution(currentPopulation, generationCount)) {
+            long startTime = System.nanoTime();
+            currentPopulation = geneticAlgorithmService.evolvePopulation(nature, generationCount);
+            logOperationDuration(startTime, currentPopulation, String.valueOf(generationCount));
+            generationCount++;
         }
+    }
+
+    private boolean shouldContinueEvolution(Population population, int currentGeneration) {
+        return population.getCurrentCoverage() < GeneticAlgorithmConfig.TARGET_COVERAGE
+                && currentGeneration < GeneticAlgorithmConfig.MAX_GENERATION_COUNT;
+    }
+
+    private void logOperationDuration(long startTime, Population population, String phase) {
+        long duration = System.nanoTime() - startTime;
+        reportedInFile(duration, population, phase);
     }
 }

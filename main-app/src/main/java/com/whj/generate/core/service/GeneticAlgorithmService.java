@@ -1,5 +1,6 @@
 package com.whj.generate.core.service;
 
+import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 
 /**
@@ -8,10 +9,19 @@ import com.whj.generate.core.domain.Population;
  */
 public interface GeneticAlgorithmService {
     /**
-     * 初始化环境
-     * @param clazz
-     * @param methodName
+     *种群初始化
+     *1.根据方法入参和方法内条件获取基因库
+     *2.根据基因库初始化种群
+     *3.计算种群内每个个体的适应度值
      * @return
      */
-    Population initEnvironment(Class<?> clazz, String methodName);
+    Population initEnvironment(Nature nature, Class<?> clazz, String methodName);
+
+    /**
+     * 种群进化
+     * @param nature
+     * @param count
+     * @return
+     */
+    Population evolvePopulation(Nature nature,Integer count);
 }

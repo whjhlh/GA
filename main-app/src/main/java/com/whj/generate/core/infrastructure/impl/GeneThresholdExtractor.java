@@ -7,7 +7,7 @@ import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.whj.generate.core.infrastructure.ParamThresholdExtractor;
-import com.whj.generate.whjtest.testForCover;
+import com.whj.generate.whjtest.TestForCover;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -58,7 +58,7 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
         REVERSE_OP_CACHE.put(BinaryExpr.Operator.LESS_EQUALS, BinaryExpr.Operator.GREATER);
         REVERSE_OP_CACHE.put(BinaryExpr.Operator.EQUALS, BinaryExpr.Operator.NOT_EQUALS);
         try {
-            ENUM_CODE_MAP = findEnumsInMethod(testForCover.class, "test");
+            ENUM_CODE_MAP = findEnumsInMethod(TestForCover.class, "test");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

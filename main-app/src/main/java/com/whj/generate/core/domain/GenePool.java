@@ -82,4 +82,45 @@ public class GenePool extends BasePool {
     public double getAverageGeneCount() {
         return geneCount / (double) parameterIndexes.size();
     }
+
+    /**
+     * 生成参数组合
+     *
+     * @param paramIndexes
+     * @return
+     */
+    public Object[][] getParameterCombinations(int[] paramIndexes) {
+        List<Object[]> combinations = new ArrayList<>();
+        int total = 1;
+
+        // 计算总组合数
+        for (int idx : paramIndexes) {
+            total *= getGeneTypeCount(idx);
+        }
+
+        // 生成笛卡尔积
+        int[] counters = new int[paramIndexes.length];
+        while (combinations.size() < total) {
+            Object[] combo = new Object[paramIndexes.length];
+            for (int i = 0; i < paramIndexes.length; i++) {
+                combo[i] = parameterGenes.get(paramIndexes[i])[counters[i]];
+            }
+            combinations.add(combo);
+
+            // 更新计数器
+            for (int i = 0; i < counters.length; i++) {
+                if (++counters[i] < getGeneTypeCount(paramIndexes[i])) {
+                    break;
+                }
+                counters[i] = 0;
+            }
+        }
+        return combinations.toArray(new Object[0][]);
+    }
+
+    // 基因有效性验证
+    public boolean validateGene(int paramIndex, Object gene) {
+        return Arrays.stream(parameterGenes.get(paramIndex))
+                .anyMatch(g -> Objects.equals(g, gene));
+    }
 }

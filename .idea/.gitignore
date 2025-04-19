@@ -9,6 +9,8 @@
 # 编译后的类文件
 *.class
 *.%cls*
+*.exec
+*.txt
 
 # 打包文件
 *.jar
