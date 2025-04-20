@@ -1,6 +1,7 @@
 package com.whj.generate.core.service.impl;
 
 import com.whj.generate.biz.Infrastructure.JaCoCoCoverageAnalyzer;
+import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.common.config.GeneticAlgorithmConfig;
 import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.GenePool;
@@ -37,14 +38,19 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
 
     private final PoolLoader<GenePool> poolLoader;
     private final ForkJoinPool geneticThreadPool;
+    @Autowired
+    private final JaCoCoCoverageAnalyzer coverageAnalyzer;
+
 
     @Autowired
     public GeneticAlgorithmServiceImpl(
             PoolLoader<GenePool> poolLoader,
-            @Qualifier("geneticForkJoinPool") ForkJoinPool geneticThreadPool
+            @Qualifier("geneticForkJoinPool") ForkJoinPool geneticThreadPool,
+            JaCoCoCoverageAnalyzer coverageAnalyzer
     ) {
         this.poolLoader = poolLoader;
         this.geneticThreadPool = geneticThreadPool;
+        this.coverageAnalyzer = coverageAnalyzer;
     }
 
     /**
@@ -140,7 +146,8 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         Method testMethod = ReflectionUtil.findMethod(clazz, methodName);
         Population population = createPopulationModel(clazz, testMethod);
         processInitPopulation(population);
-        JaCoCoCoverageAnalyzer.calculatePopulationCoverage(nature, population);
+        coverageAnalyzer.calculatePopulationCoverage(nature, population);
+        nature.addPopulation(population);
         return population;
     }
 
@@ -191,9 +198,13 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         evolveNewGeneration(nature, population, newPopulation);
 
         //查看种群覆盖率
-        JaCoCoCoverageAnalyzer.calculatePopulationCoverage(nature, population);
+        coverageAnalyzer.calculatePopulationCoverage(nature, newPopulation);
         nature.getPopulationList().add(newPopulation);
         return newPopulation;
+    }
+    @Override
+    public ChromosomeCoverageTracker getCoverageTracker() {
+        return coverageAnalyzer.getCoverageTracker();
     }
 
     private Population createNewPopulation(Population old) {

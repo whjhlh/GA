@@ -1,6 +1,7 @@
 package com.whj.generate.common;
 
 
+import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.common.config.GeneticAlgorithmConfig;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
@@ -33,7 +34,6 @@ public class GeneticAlgorithmController {
 
         // 初始化环境
         Population population = initializeEnvironment(nature, targetClass, testPhaseName);
-        nature.addPopulation(population);
 
         // 执行进化过程
         performEvolution(nature);
@@ -56,6 +56,7 @@ public class GeneticAlgorithmController {
 
         while (shouldContinueEvolution(currentPopulation, generationCount)) {
             long startTime = System.nanoTime();
+
             currentPopulation = geneticAlgorithmService.evolvePopulation(nature, generationCount);
             logOperationDuration(startTime, currentPopulation, String.valueOf(generationCount));
             generationCount++;
@@ -69,6 +70,7 @@ public class GeneticAlgorithmController {
 
     private void logOperationDuration(long startTime, Population population, String phase) {
         long duration = System.nanoTime() - startTime;
-        reportedInFile(duration, population, phase);
+        ChromosomeCoverageTracker coverageTracker = geneticAlgorithmService.getCoverageTracker();
+        reportedInFile(duration, population, phase,coverageTracker);
     }
 }

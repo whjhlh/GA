@@ -1,5 +1,6 @@
 package com.whj.generate.biz.Infrastructure;
 
+import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
@@ -8,13 +9,11 @@ import com.whj.generate.core.exception.GenerateErrorEnum;
 import com.whj.generate.utill.ReflectionUtil;
 import org.jacoco.agent.rt.IAgent;
 import org.jacoco.agent.rt.internal_aeaf9ab.asm.Type;
-import org.jacoco.core.analysis.Analyzer;
-import org.jacoco.core.analysis.CoverageBuilder;
-import org.jacoco.core.analysis.ICounter;
-import org.jacoco.core.analysis.IMethodCoverage;
+import org.jacoco.core.analysis.*;
 import org.jacoco.core.data.ExecutionDataReader;
 import org.jacoco.core.data.ExecutionDataStore;
 import org.jacoco.core.data.SessionInfoStore;
+import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.io.ByteArrayInputStream;
@@ -32,28 +31,21 @@ import java.util.Set;
  * @author whj
  * @date 2025-04-18 上午1:17
  */
+@Component
 public final class JaCoCoCoverageAnalyzer {
+    // 覆盖率追踪器实例（线程安全）
+    private static final ChromosomeCoverageTracker coverageTracker = new ChromosomeCoverageTracker();
 
     private static final String COVERAGE_ERROR_CONTEXT = "覆盖率分析失败";
 
     /**
-     * 计算种群覆盖率并更新适应度
-     *
-     * @param nature     环境参数
-     * @param population 种群对象
+     * 获取或收集染色体覆盖率数据
      */
-    public static void calculatePopulationCoverage(Nature nature, Population population) {
-        final List<byte[]> coverageDataList = new ArrayList<>();
-        final Set<Chromosome> chromosomes = population.getChromosomeSet();
-
-        Long totalCoverage = ExceptionWrapper.process(() -> {
-            chromosomes.forEach(chromosome ->
-                    processChromosome(nature, chromosome, coverageDataList)
-            );
-            return calculateTotalCoverage(nature, coverageDataList, chromosomes.iterator().next().getMethod());
-        }, GenerateErrorEnum.GET_OVERRIDE_FAIL, "种群覆盖率计算失败");
-
-        population.setCurrentCoverage(totalCoverage);
+    private static byte[] getOrCollectCoverageData(Nature nature, Chromosome chromosome, Method method) {
+        // 从缓存中获取或计算覆盖率数据
+        return Optional.ofNullable(nature.getChromosomeCoverageDataMap())
+                .map(map -> map.computeIfAbsent(chromosome, k -> collectNewCoverageData(method, nature, chromosome)))
+                .orElseGet(() -> collectNewCoverageData(method, nature, chromosome));
     }
 
     /**
@@ -68,18 +60,10 @@ public final class JaCoCoCoverageAnalyzer {
     }
 
     /**
-     * 获取或收集染色体覆盖率数据
-     */
-    private static byte[] getOrCollectCoverageData(Nature nature, Chromosome chromosome, Method method) {
-        return Optional.ofNullable(nature.getChromosomeCoverageDataMap())
-                .map(map -> map.computeIfAbsent(chromosome, k -> collectNewCoverageData(method, nature, chromosome)))
-                .orElseGet(() -> collectNewCoverageData(method, nature, chromosome));
-    }
-
-    /**
      * 收集新的覆盖率数据（修正参数传递）
      */
     private static byte[] collectNewCoverageData(Method method, Nature nature, Chromosome chromosome) {
+        // 执行代码并收集覆盖率数据
         return ExceptionWrapper.process(() -> {
             final IAgent agent = nature.getAgent();
             agent.reset();
@@ -87,6 +71,7 @@ public final class JaCoCoCoverageAnalyzer {
             final Object instance = method.getDeclaringClass().getDeclaredConstructor().newInstance();
             // 修正参数传递逻辑（使用染色体携带的基因数据）
             Object[] params = chromosome.getGenes();
+            //真实调用逻辑
             ReflectionUtil.invokeSafe(method, params, instance);
 
             return agent.getExecutionData(false);
@@ -94,14 +79,76 @@ public final class JaCoCoCoverageAnalyzer {
     }
 
     /**
-     * 计算染色体适应度
+     * 计算染色体适应度（新增追踪逻辑）
      */
     public static long calculateChromosomeFitness(Nature nature, Chromosome chromosome) {
         final Method method = chromosome.getMethod();
         final byte[] data = getOrCollectCoverageData(nature, chromosome, method);
-        return (long) calculateCoveragePercentage(nature, data, method);
+        final double coverage = calculateCoveragePercentage(nature, data, method, chromosome);
+        return (long) coverage;
     }
 
+    /**
+     * 带染色体追踪的覆盖率计算
+     */
+    private static double calculateCoveragePercentage(Nature nature, byte[] data,
+                                                      Method method, Chromosome chromosome) {
+        return ExceptionWrapper.process(() -> {
+            final ExecutionDataStore store = new ExecutionDataStore();
+            readExecutionData(data, store, new SessionInfoStore());
+            return analyzeMethodCoverage(store, method, chromosome);
+        }, GenerateErrorEnum.GET_OVERRIDE_FAIL, "覆盖率计算失败");
+    }
+
+    /**
+     * 带染色体追踪的分析方法
+     */
+    private static double analyzeMethodCoverage(ExecutionDataStore store, Method method,
+                                                Chromosome chromosome) throws Exception {
+        try (InputStream classStream = getClassByteStream(method)) {
+            final CoverageBuilder builder = new CoverageBuilder();
+            Analyzer analyzer = new Analyzer(store, builder);
+            analyzer.analyzeClass(classStream, method.getDeclaringClass().getName());
+
+            // 处理类覆盖率数据
+            builder.getClasses().forEach(cc -> {
+                coverageTracker.recordCoverageMapping(chromosome, cc);
+                processClassCoverage(cc, method, chromosome);
+            });
+
+            return calculateMaxCoverage(builder, method);
+        }
+    }
+
+    private static void processClassCoverage(IClassCoverage classCoverage, Method method, Chromosome chromosome) {
+        // 记录每个覆盖行与染色体的映射关系
+        List<Integer> coveredLines = new ArrayList<>();
+
+        classCoverage.getMethods().stream()
+                .filter(mc -> isTargetMethod(mc, method))
+                .forEach(mc -> {
+                    for (int i = mc.getFirstLine(); i <= mc.getLastLine(); i++) {
+                        if (mc.getLine(i).getStatus() == ICounter.FULLY_COVERED) {
+                            coveredLines.add(i);
+                        }
+                    }
+                });
+
+        // 调用追踪器的记录方法
+        coverageTracker.recordCoverage(coveredLines, chromosome);
+    }
+
+    /**
+     * 计算最大覆盖率值
+     */
+    private static double calculateMaxCoverage(CoverageBuilder builder, Method method) {
+        return builder.getClasses().stream()
+                .flatMap(cc -> cc.getMethods().stream())
+                .filter(mc -> isTargetMethod(mc, method))
+                .mapToDouble(mc -> calculateCoverageRatio(mc.getLineCounter()))
+                .max()
+                .orElse(0.0);
+    }
 
     /**
      * 计算总覆盖率
@@ -112,7 +159,41 @@ public final class JaCoCoCoverageAnalyzer {
         }
 
         final ExecutionDataStore mergedStore = mergeCoverageData(coverageDataList);
-        return (long) calculateCoveragePercentage(nature, mergedStore, method); // 现在使用正确的重载方法
+        long coveragePercentage = (long) calculateCoveragePercentage(nature, mergedStore, method);
+        return coveragePercentage; // 现在使用正确的重载方法
+    }
+
+    /**
+     * 计算种群覆盖率并更新适应度
+     *
+     * @param nature     环境参数
+     * @param population 种群对象
+     */
+    public  void calculatePopulationCoverage(Nature nature, Population population) {
+        if(population==null){
+            return;
+        }
+        // 初始化覆盖率追踪器（线程安全）
+        final List<byte[]> coverageDataList = new ArrayList<>();
+        // 获取每个染色体的覆盖率数据
+        final Set<Chromosome> chromosomes = population.getChromosomeSet();
+        // 遍历每个染色体，计算覆盖率并更新适应度
+        Long totalCoverage = ExceptionWrapper.process(() -> {
+            chromosomes.forEach(chromosome ->
+                    // 处理单个染色体覆盖率数据
+                    processChromosome(nature, chromosome, coverageDataList)
+            );
+            return calculateTotalCoverage(nature, coverageDataList, chromosomes.iterator().next().getMethod());
+        }, GenerateErrorEnum.GET_OVERRIDE_FAIL, "种群覆盖率计算失败");
+
+        population.setCurrentCoverage(totalCoverage);
+    }
+
+    /**
+     * 获取染色体覆盖追踪器
+     */
+    public  ChromosomeCoverageTracker getCoverageTracker() {
+        return coverageTracker;
     }
 
     /**

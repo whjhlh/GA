@@ -11,6 +11,7 @@ import org.jacoco.core.analysis.IMethodCoverage;
 
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 染色体适应度统计器，用于追踪每个染色体在方法和对应行上的覆盖情况。
@@ -19,8 +20,15 @@ public class ChromosomeCoverageTracker {
 
     // 数据结构: Method -> 行号 -> Set<Chromosome>
     private final Map<Method, Map<Integer, Set<Chromosome>>> coverageMap = new HashMap<>();
-    private final Map<Method, Map<Integer, List<Chromosome>>> methodLineChromosomeMap = new HashMap<>();
+    private final Map<Method, Map<Integer, Set<Chromosome>>> methodLineChromosomeMap = new HashMap<>();
+    /** 染色体序列号Map **/
+    private final Map<Chromosome, Integer> chromosomeSequenceMap = new HashMap<>();
 
+    /**
+     * 记录一个染色体覆盖了某个方法的某些行
+     * @param chromosome
+     * @param classCoverage
+     */
     public void recordCoverageMapping(Chromosome chromosome, IClassCoverage classCoverage) {
         Method method = chromosome.getMethod();
         for (IMethodCoverage methodCoverage : classCoverage.getMethods()) {
@@ -29,14 +37,18 @@ public class ChromosomeCoverageTracker {
                 if (methodCoverage.getLine(i).getInstructionCounter().getCoveredCount() > 0) {
                     methodLineChromosomeMap
                             .computeIfAbsent(method, m -> new HashMap<>())
-                            .computeIfAbsent(i, l -> new ArrayList<>())
+                            .computeIfAbsent(i, l -> new HashSet<>())
                             .add(chromosome);
                 }
             }
         }
     }
 
-    public Map<Method, Map<Integer, List<Chromosome>>> getMethodLineChromosomeMap() {
+    /**
+     * 获取方法-行号-染色体映射
+     * @return
+     */
+    public Map<Method, Map<Integer, Set<Chromosome>>> getMethodLineChromosomeMap() {
         return methodLineChromosomeMap;
     }
     /**
@@ -74,5 +86,73 @@ public class ChromosomeCoverageTracker {
      */
     public void clear() {
         coverageMap.clear();
+    }
+    /**
+     * 生成可视化覆盖率报告（支持多级缩进格式）
+     * @return 格式化后的覆盖率报告字符串
+     */
+    public String generateCoverageReport() {
+        final StringBuilder report = new StringBuilder();
+        final String lineSeparator = System.lineSeparator();
+
+        // 输出方法-行号-染色体映射
+        report.append("=== 行覆盖详情 ===").append(lineSeparator);
+        methodLineChromosomeMap.forEach((method, lineMap) -> {
+            report.append("方法: ").append(formatMethodSignature(method)).append(lineSeparator);
+            lineMap.forEach((line, chromosomes) -> {
+                report.append("  行数 ").append(line).append("  染色体数量")
+                        .append(chromosomes.size()).append(lineSeparator);
+                report.append("染色体(序列号)");
+                chromosomes.forEach(ch -> report.append(formatChromosomeInfo(ch))
+                );
+                report.append(lineSeparator);
+            });
+            report.append(lineSeparator);
+        });
+
+        // 输出聚合统计
+        report.append(lineSeparator).append("=== 详情 ===").append(lineSeparator);
+        coverageMap.forEach((method, lineMap) -> {
+            int totalLines = lineMap.size();
+            long totalCoverage = lineMap.values().stream().mapToInt(Set::size).sum();
+            report.append(formatMethodSignature(method))
+                    .append(" | Covered Lines: ").append(totalLines)
+                    .append(" | Total Coverage Count: ").append(totalCoverage)
+                    .append(lineSeparator);
+        });
+
+        return report.toString();
+    }
+
+    public void buildChromosomeSequenceMap(Set<Chromosome> chromosomes) {
+        for(Chromosome ch : chromosomes){
+            if(!chromosomeSequenceMap.containsKey(ch)){
+                chromosomeSequenceMap.put(ch, chromosomeSequenceMap.size()+1);
+            }
+        }
+    }
+
+    /**
+     * 格式化方法签名（包含返回类型和参数）
+     */
+    private String formatMethodSignature(Method method) {
+        return String.format("%s %s(%s)",
+                method.getReturnType().getSimpleName(),
+                method.getName(),
+                Arrays.stream(method.getParameterTypes())
+                        .map(Class::getSimpleName)
+                        .collect(Collectors.joining(", "))
+        );
+    }
+
+    /**
+     * 格式化染色体信息（示例实现，可根据实际需求调整）
+     */
+    private String formatChromosomeInfo(Chromosome chromosome) {
+        return String.format("%s,",chromosomeSequenceMap.get(chromosome));
+    }
+
+    public Map<Chromosome, Integer> getChromosomeSequenceMap() {
+        return chromosomeSequenceMap;
     }
 }

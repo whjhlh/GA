@@ -1,5 +1,6 @@
 package com.whj.generate.utill;
 
+import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.GenePool;
 import com.whj.generate.core.domain.Population;
@@ -23,11 +24,12 @@ public class FileUtil {
     /**
      * 生成报告到指定目录
      *
-     * @param initTime   初始化耗时(ns)
-     * @param population 种群数据
-     * @param desc       报告描述（用于文件名）
+     * @param initTime        初始化耗时(ns)
+     * @param population      种群数据
+     * @param desc            报告描述（用于文件名）
+     * @param coverageTracker
      */
-    public static void reportedInFile(long initTime, Population population, String desc) {
+    public static void reportedInFile(long initTime, Population population, String desc, ChromosomeCoverageTracker coverageTracker) {
         if (null == population) {
             return;
         }
@@ -41,9 +43,11 @@ public class FileUtil {
 
         GenePool genePool = population.getGenePool();
         Set<Chromosome> chromosomes = population.getChromosomeSet();
+        // 构建染色体序列
+        coverageTracker.buildChromosomeSequenceMap(chromosomes);
 
         // 构建报告内容
-        String reportContent = buildReportContent(initTime, population, genePool, chromosomes);
+        String reportContent = buildReportContent(initTime, population, genePool, chromosomes, coverageTracker);
 
         // 生成文件名
         String fileName = String.format("population_report_%s.txt",
@@ -56,7 +60,8 @@ public class FileUtil {
     private static String buildReportContent(long initTime,
                                              Population population,
                                              GenePool genePool,
-                                             Set<Chromosome> chromosomes) {
+                                             Set<Chromosome> chromosomes, ChromosomeCoverageTracker coverageTracker) {
+        String str = coverageTracker.generateCoverageReport();
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         StringBuilder report = new StringBuilder(1024)
                 .append("=== 种群报告").append(population.getTargetMethod().getName()).append(" ===\n")
@@ -71,12 +76,12 @@ public class FileUtil {
 
         chromosomes.stream()
                 .sorted((c1, c2) -> Double.compare(c2.getFitness(), c1.getFitness()))
-                .forEach(c -> report.append(JsonUtil.toJson(c.getGenes()))
+                .forEach(c -> report.append(coverageTracker.getChromosomeSequenceMap().get(c)).append(JsonUtil.toJson(c.getGenes()))
                         .append(" - 覆盖率").append(c.getFitness()).append("%\n"));
 
         report.append("=== 汇总 ===\n")
                 .append("总覆盖率：").append(population.getCurrentCoverage()).append("%\n");
-
+        report.append(str);
         return report.toString();
     }
 

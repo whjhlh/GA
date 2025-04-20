@@ -92,7 +92,7 @@ public class Chromosome implements Serializable {
         if (this == object) return true;
         if (object == null || getClass() != object.getClass()) return false;
         Chromosome that = (Chromosome) object;
-        return Objects.deepEquals(genes, that.genes);
+        return that.hashCode() == this.hashCode();
     }
 
     /**

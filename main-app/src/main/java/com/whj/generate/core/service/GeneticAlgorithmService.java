@@ -1,5 +1,6 @@
 package com.whj.generate.core.service;
 
+import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 
@@ -24,4 +25,10 @@ public interface GeneticAlgorithmService {
      * @return
      */
     Population evolvePopulation(Nature nature,Integer count);
+
+    /**
+     * 获取行覆盖信息
+     * @return
+     */
+    ChromosomeCoverageTracker getCoverageTracker();
 }
