@@ -46,9 +46,8 @@ public class FileUtil {
         String reportContent = buildReportContent(initTime, population, genePool, chromosomes);
 
         // 生成文件名
-        String fileName = String.format("population_report_%s_%d.txt",
-                desc,
-                System.currentTimeMillis());
+        String fileName = String.format("population_report_%s.txt",
+                desc);
 
         // 写入文件
         writeToFile(reportContent, fileName);

@@ -25,7 +25,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
-import static com.whj.generate.biz.Infrastructure.JaCoCoCoverageAnalyzer.getCoverageWithPopulation;
 
 
 /**
@@ -141,7 +140,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         Method testMethod = ReflectionUtil.findMethod(clazz, methodName);
         Population population = createPopulationModel(clazz, testMethod);
         processInitPopulation(population);
-        getCoverageWithPopulation(nature, population);
+        JaCoCoCoverageAnalyzer.calculatePopulationCoverage(nature, population);
         return population;
     }
 
@@ -192,7 +191,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         evolveNewGeneration(nature, population, newPopulation);
 
         //查看种群覆盖率
-        JaCoCoCoverageAnalyzer.getCoverageWithPopulation(nature, newPopulation);
+        JaCoCoCoverageAnalyzer.calculatePopulationCoverage(nature, population);
         nature.getPopulationList().add(newPopulation);
         return newPopulation;
     }
@@ -221,7 +220,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         GenePool genePool = srcPopulation.getGenePool();
         while (destPopulation.getChromosomeSet().size() < srcPopulation.getChromosomeSet().size()) {
             Chromosome child = generateChild(srcPopulation, genePool);
-            long fitness = JaCoCoCoverageAnalyzer.calculateFitness(nature, child);
+            long fitness = JaCoCoCoverageAnalyzer.calculateChromosomeFitness(nature, child);
             child.setFitness(fitness);
             destPopulation.addChromosome(child);
 

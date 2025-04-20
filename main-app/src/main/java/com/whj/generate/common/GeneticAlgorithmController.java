@@ -23,6 +23,9 @@ public class GeneticAlgorithmController {
         this.geneticAlgorithmService = geneticAlgorithmService;
     }
 
+    /**
+     * 程序入口
+     */
     public void runGeneticAlgorithm() {
         final Nature nature = new Nature();
         final Class<TestForCover> targetClass = TestForCover.class;

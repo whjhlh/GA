@@ -12,8 +12,9 @@ import java.util.*;
 public class Nature {
     private IAgent agent;
     private List<Population> populationList;
-    private Map<Chromosome, byte[]> chromosomeCoverageDataMap;
     private Set<byte[]> methodCoverageDataSet;
+    private Map<Chromosome, byte[]> chromosomeCoverageDataMap = new HashMap<>();
+
     public Nature() {
         this.agent = RT.getAgent();
         this.populationList = new ArrayList<>();
