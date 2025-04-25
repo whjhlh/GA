@@ -33,7 +33,7 @@ public class GeneticAlgorithmController {
         final String testPhaseName = "test";
 
         // 初始化环境
-        Population population = initializeEnvironment(nature, targetClass, testPhaseName);
+        initializeEnvironment(nature, targetClass, testPhaseName);
 
         // 执行进化过程
         performEvolution(nature);

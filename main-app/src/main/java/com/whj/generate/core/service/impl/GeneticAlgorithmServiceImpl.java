@@ -266,19 +266,33 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         return new Chromosome(p1.getTargetClass(), p1.getMethod(), genes);
     }
 
+    /**
+     * 基因变异
+     * @param genes
+     * @param pool
+     */
     private void mutateGene(Object[] genes, GenePool pool) {
         int mutatePos = ThreadLocalRandom.current().nextInt(genes.length);
         Object[] availableGenes = pool.getParameterGenes().get(mutatePos);
         genes[mutatePos] = availableGenes[ThreadLocalRandom.current().nextInt(availableGenes.length)];
     }
 
+    /**
+     * 动态计算变异率
+     * @param pool
+     * @return
+     */
     private double getDynamicMutationRate(GenePool pool) {
         // 基因类型越多变异率越高
         double diversityFactor = pool.getAverageGeneCount() / 10.0;
         return Math.min(GeneticAlgorithmConfig.MUTATION_RATE * (1 + diversityFactor), 0.35);
     }
 
-    // 增强型轮盘赌选择
+    /**
+     * 轮盘赌选择父代
+     * @param population
+     * @return
+     */
     private Chromosome selectParentByRoulette(Population population) {
         double totalFitness = population.getChromosomeSet().stream()
                 .mapToDouble(c -> c.getFitness() + 1) // 避免0概率
