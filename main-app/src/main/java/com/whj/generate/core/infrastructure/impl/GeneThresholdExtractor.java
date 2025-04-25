@@ -17,6 +17,8 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.whj.generate.utill.EnumScannerUtil.findEnumsInMethod;
 import static com.whj.generate.utill.PathUtils.getFilePath;
@@ -50,6 +52,11 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
      * 参数常量
      */
     private static List<String> paramsConst;
+
+    /**
+     * 参数边界值
+     */
+    private static final Map<String, Set<Object>> thresholdsMap = new HashMap<>();
 
     static {
         REVERSE_OP_CACHE.put(BinaryExpr.Operator.GREATER, BinaryExpr.Operator.LESS_EQUALS);
@@ -89,8 +96,23 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
         return cu;
     }
 
+    private static void handledThresholdsByInt(List<String> params, Map<String, Set<Object>> paramValues, Expression left, Expression right, BinaryExpr.Operator op) {
+        if (left instanceof NameExpr leftName && right.isIntegerLiteralExpr()) {
+            String paramName = leftName.getNameAsString();
+            if (params.contains(paramName)) {
+                int value = right.asIntegerLiteralExpr().asNumber().intValue();
+                if(thresholdsMap.containsKey(paramName)){
+                    thresholdsMap.get(paramName).add(value);
+                }else {
+                    thresholdsMap.put(paramName,new HashSet<>());
+                }
+                addThresholdsByInt(paramName, op, value, paramValues);
+            }
+        }
+    }
+
     @Override
-    public  Map<String, Set<Object>> extractThresholds(Class<?> targetClass, String methodName) {
+    public Map<String, Set<Object>> extractThresholds(Class<?> targetClass, String methodName) {
         Map<String, Set<Object>> paramValues = new HashMap<>();
 
         CompilationUnit cu = getCompilationUnit(targetClass);
@@ -106,7 +128,35 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
                 });
             });
         });
+
+        // 步骤2: 对每个参数进行阈值优化处理
+        paramValues.forEach((paramKey, valueSet) -> {
+            if (!thresholdsMap.containsKey(paramKey)) return;
+
+            // 类型安全转换（仅处理整型参数）
+            List<Integer> thresholds = convertToIntegerList(thresholdsMap.get(paramKey));
+            List<Integer> conditions = convertToIntegerList(valueSet);
+
+            if (thresholds.isEmpty()) {
+                valueSet.clear();
+                return;
+            }
+
+            // 阈值处理核心逻辑
+            Set<Object> optimizedValues = processThresholds(thresholds, conditions);
+            paramValues.put(paramKey, optimizedValues);
+        });
+
         return paramValues;
+    }
+
+    // 类型安全转换方法（防御性编程）
+    private List<Integer> convertToIntegerList(Collection<Object> collection) {
+        return collection.stream()
+                .filter(Integer.class::isInstance)
+                .map(Integer.class::cast)
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     public static List<String> getParamsConst() {
@@ -220,14 +270,45 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
         }
     }
 
-    private static void handledThresholdsByInt(List<String> params, Map<String, Set<Object>> paramValues, Expression left, Expression right, BinaryExpr.Operator op) {
-        if (left instanceof NameExpr leftName && right.isIntegerLiteralExpr()) {
-            String paramName = leftName.getNameAsString();
-            if (params.contains(paramName)) {
-                int value = right.asIntegerLiteralExpr().asNumber().intValue();
-                addThresholdsByInt(paramName, op, value, paramValues);
+    // 阈值处理核心逻辑封装
+    private Set<Object> processThresholds(List<Integer> thresholds, List<Integer> conditions) {
+        // 步骤1: 基础处理
+        Collections.sort(thresholds);
+
+        // 步骤2: 生成插入值
+        List<Integer> insertions = IntStream.range(0, thresholds.size()-1)
+                .mapToObj(i -> {
+                    int left = thresholds.get(i);
+                    int right = thresholds.get(i+1);
+                    return right - left > 1 ? left + 1 : null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // 步骤3: 合并数据集
+        Set<Integer> combined = new TreeSet<>(conditions);
+        combined.addAll(insertions);
+
+        // 步骤4: 边界确定
+        int minThreshold = thresholds.get(0);
+        int maxThreshold = thresholds.get(thresholds.size()-1);
+
+        // 步骤5: 结果筛选
+        Set<Object> result = new LinkedHashSet<>();
+        Optional<Integer> maxExceeding = combined.stream()
+                .filter(n -> n > maxThreshold)
+                .max(Integer::compare);
+
+        combined.forEach(num -> {
+            if (num < minThreshold ||
+                    thresholds.contains(num) ||
+                    insertions.contains(num)) {
+                result.add(num);
             }
-        }
+        });
+
+        maxExceeding.ifPresent(result::add);
+        return result;
     }
 
     private static void addThresholdsByString(String paramName, BinaryExpr.Operator op, FieldAccessExpr fieldAccessExpr, Map<String, Set<Object>> thresholds) {
