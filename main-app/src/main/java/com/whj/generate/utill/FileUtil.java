@@ -75,9 +75,9 @@ public class FileUtil {
                 .append("=== 染色体详情 ===\n");
 
         chromosomes.stream()
-                .sorted((c1, c2) -> Double.compare(c2.getFitness(), c1.getFitness()))
+                .sorted((c1, c2) -> Double.compare(c2.getCoveragePercent(), c1.getCoveragePercent()))
                 .forEach(c -> report.append(coverageTracker.getChromosomeSequenceMap().get(c)).append(JsonUtil.toJson(c.getGenes()))
-                        .append(" - 覆盖率").append(c.getFitness()).append("%\n"));
+                        .append(" - 覆盖率").append(c.getCoveragePercent()).append("%\n"));
 
         report.append("=== 汇总 ===\n")
                 .append("总覆盖率：").append(population.getCurrentCoverage()).append("%\n");

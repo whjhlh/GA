@@ -33,8 +33,10 @@ public class Chromosome implements Serializable {
      */
     private final Object[] genes;
 
-    // 适应度需要动态计算，不设默认值
-    private long fitness;
+    /**
+     * 覆盖率
+     */
+    private long coveragePercent;
 
     public Chromosome(Class<?> targetClass, Method method, Object[] genes) {
         this.targetClass = targetClass;
@@ -50,12 +52,12 @@ public class Chromosome implements Serializable {
         genes = new Object[method.getParameterCount()];
     }
 
-    public double getFitness() {
-        return fitness;
+    public double getCoveragePercent() {
+        return coveragePercent;
     }
 
-    public void setFitness(long fitness) {
-        this.fitness = fitness;
+    public void setCoveragePercent(long coveragePercent) {
+        this.coveragePercent = coveragePercent;
     }
 
     public Object[] getGenes() {
@@ -74,7 +76,7 @@ public class Chromosome implements Serializable {
      * 是否执行过，如果适应度为null,则认定为未执行过
      */
     public boolean isExecuted() {
-        return fitness != 0;
+        return coveragePercent != 0;
     }
 
     /**

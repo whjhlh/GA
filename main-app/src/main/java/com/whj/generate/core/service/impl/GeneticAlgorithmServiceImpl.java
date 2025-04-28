@@ -8,6 +8,7 @@ import com.whj.generate.core.domain.GenePool;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 import com.whj.generate.core.infrastructure.PoolLoader;
+import com.whj.generate.core.infrastructure.strategy.SelectionStrategy;
 import com.whj.generate.core.service.GeneticAlgorithmService;
 import com.whj.generate.utill.ReflectionUtil;
 import org.slf4j.Logger;
@@ -19,7 +20,7 @@ import org.springframework.stereotype.Service;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
-import java.util.Comparator;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -40,6 +41,9 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     private final ForkJoinPool geneticThreadPool;
     @Autowired
     private final JaCoCoCoverageAnalyzer coverageAnalyzer;
+    @Autowired
+    @Qualifier("eliteDiverseStrategy")
+    private SelectionStrategy selectionStrategy;
 
 
     @Autowired
@@ -197,7 +201,6 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         // 进化生成新个体
         evolveNewGeneration(nature, population, newPopulation);
 
-        //查看种群覆盖率
         coverageAnalyzer.calculatePopulationCoverage(nature, newPopulation);
         nature.getPopulationList().add(newPopulation);
         return newPopulation;
@@ -221,10 +224,8 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
      * @param dest
      */
     private void preserveElites(Population src, Population dest) {
-        src.getChromosomeSet().stream()
-                .sorted(Comparator.comparingDouble(Chromosome::getFitness).reversed())
-                .limit(GeneticAlgorithmConfig.ELITE_COUNT)
-                .forEach(dest::addChromosome);
+        List<Chromosome> select = selectionStrategy.select(src, coverageAnalyzer.getCoverageTracker());
+        dest.addChromosomeSet(select);
     }
 
     private void evolveNewGeneration(Nature nature, Population srcPopulation, Population destPopulation) {
@@ -232,7 +233,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         while (destPopulation.getChromosomeSet().size() < srcPopulation.getChromosomeSet().size()) {
             Chromosome child = generateChild(srcPopulation, genePool);
             long fitness = JaCoCoCoverageAnalyzer.calculateChromosomeFitness(nature, child);
-            child.setFitness(fitness);
+            child.setCoveragePercent(fitness);
             destPopulation.addChromosome(child);
 
         }
@@ -295,14 +296,14 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
      */
     private Chromosome selectParentByRoulette(Population population) {
         double totalFitness = population.getChromosomeSet().stream()
-                .mapToDouble(c -> c.getFitness() + 1) // 避免0概率
+                .mapToDouble(c -> c.getCoveragePercent() + 1) // 避免0概率
                 .sum();
 
         double threshold = ThreadLocalRandom.current().nextDouble() * totalFitness;
         double accumulator = 0;
 
         for (Chromosome c : population.getChromosomeSet()) {
-            accumulator += (c.getFitness() + 1);
+            accumulator += (c.getCoveragePercent() + 1);
             if (accumulator >= threshold) {
                 return c;
             }

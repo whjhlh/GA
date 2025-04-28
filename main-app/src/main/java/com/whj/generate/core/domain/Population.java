@@ -4,6 +4,7 @@ import com.whj.generate.core.infrastructure.strategy.CombinationStrategy;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -79,9 +80,19 @@ public class Population {
         chromosomeSet.add(chromosome);
     }
 
+    /**
+     * 批量加入染色体
+     * @return
+     */
+    public void addChromosomeSet(List<Chromosome> chromosomes) {
+        chromosomeSet.addAll(chromosomes);
+    }
+
     public Set<Chromosome> getChromosomeSet() {
         return Collections.unmodifiableSet(chromosomeSet);
     }
+
+
 
     public long getCurrentCoverage() {
         return currentCoverage;
@@ -107,7 +118,7 @@ public class Population {
             return 0;
         }
         return chromosomeSet.stream()
-                .mapToDouble(Chromosome::getFitness)
+                .mapToDouble(Chromosome::getCoveragePercent)
                 .average()
                 .orElse(0);
     }
@@ -123,7 +134,7 @@ public class Population {
             return 0;
         }
         return chromosomeSet.stream()
-                .mapToDouble(Chromosome::getFitness)
+                .mapToDouble(Chromosome::getCoveragePercent)
                 .max()
                 .orElse(0);
     }

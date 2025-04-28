@@ -18,46 +18,134 @@ import java.util.stream.Collectors;
  */
 public class ChromosomeCoverageTracker {
 
-    // 数据结构: Method -> 行号 -> Set<Chromosome>
+    // Method -> 行号 -> Set<Chromosome>
     private final Map<Method, Map<Integer, Set<Chromosome>>> coverageMap = new HashMap<>();
-    private final Map<Method, Map<Integer, Set<Chromosome>>> methodLineChromosomeMap = new HashMap<>();
-    /** 染色体序列号Map **/
-    private final Map<Chromosome, Integer> chromosomeSequenceMap = new HashMap<>();
-
     /**
-     * 记录一个染色体覆盖了某个方法的某些行
-     * @param chromosome
-     * @param classCoverage
+     * 染色体序列号Map
+     **/
+    private final Map<Chromosome, Integer> chromosomeSequenceMap = new HashMap<>();
+    /**
+     * 起始行
      */
-    public void recordCoverageMapping(Chromosome chromosome, IClassCoverage classCoverage) {
-        Method method = chromosome.getMethod();
-        for (IMethodCoverage methodCoverage : classCoverage.getMethods()) {
-            if (!methodCoverage.getName().equals(method.getName())) continue;
-            for (int i = methodCoverage.getFirstLine(); i <= methodCoverage.getLastLine(); i++) {
-                if (methodCoverage.getLine(i).getInstructionCounter().getCoveredCount() > 0) {
-                    methodLineChromosomeMap
-                            .computeIfAbsent(method, m -> new HashMap<>())
-                            .computeIfAbsent(i, l -> new HashSet<>())
-                            .add(chromosome);
-                }
-            }
+    private Integer startLine;
+    /**
+     * 结束行
+     */
+    private Integer endLine;
+
+    // 私有工具方法
+    private static <T> Set<T> intersection(Set<T> a, Set<T> b) {
+        return a.stream().filter(b::contains).collect(Collectors.toSet());
+    }
+
+    public void init(Integer start, Integer end) {
+        if (startLine == null) {
+            this.startLine = start;
+        }
+        if (endLine == null) {
+            this.endLine = end;
         }
     }
 
     /**
-     * 获取方法-行号-染色体映射
+     * 获取新覆盖的行号（对比当前未覆盖行）
+     *
+     * @param chromosome       目标染色体
+     * @param currentUncovered 当前未覆盖行集合
+     * @return 该染色体覆盖的新行号集合
+     */
+    public Set<Integer> getNewLinesCovered(Chromosome chromosome, Set<Integer> currentUncovered) {
+        Set<Integer> covered = getLinesCoveredBy(chromosome);
+        return intersection(covered, currentUncovered);
+    }
+
+    /**
+     * 获取方法的当前未覆盖行
+     */
+    public Set<Integer> getUncoveredLines(Method method) {
+        Map<Integer, Set<Chromosome>> methodCoverage = getMethodCoverage(method);
+        Set<Integer> currentUncovered = new HashSet<>();
+        Set<Integer> currentCovered = methodCoverage.keySet();
+        for (int i = startLine; i <= endLine; i++) {
+            if (!currentCovered.contains(i)) {
+                currentUncovered.add(i);
+            }
+        }
+        return currentUncovered;
+    }
+
+    /**
+     * 计算两个染色体的Jaccard相似度
+     */
+    public double calculateJaccardSimilarity(Chromosome c1, Chromosome c2) {
+        if (c1.getMethod() != c2.getMethod()) return 0.0;
+
+        Set<Integer> lines1 = getLinesCoveredBy(c1);
+        Set<Integer> lines2 = getLinesCoveredBy(c2);
+        if (lines1.isEmpty() && lines2.isEmpty()) return 0.0;
+
+        int intersection = intersection(lines1, lines2).size();
+        int union = lines1.size() + lines2.size() - intersection;
+        return (double) intersection / union;
+    }
+
+    /**
+     * 根据方法名获取方法覆盖率数据
+     *
+     * @param coverage
+     * @param methodName
      * @return
      */
-    public Map<Method, Map<Integer, Set<Chromosome>>> getMethodLineChromosomeMap() {
-        return methodLineChromosomeMap;
+    private IMethodCoverage findMethodCoverage(IClassCoverage coverage, String methodName) {
+        return coverage.getMethods().stream()
+                .filter(m -> m.getName().equals(methodName))
+                .findFirst()
+                .orElse(null);
     }
+
+    /**
+     * 获取某个染色体覆盖的行
+     *
+     * @param chromosome
+     * @return
+     */
+    public Set<Integer> getLinesCoveredBy(Chromosome chromosome) {
+        Map<Integer, Set<Chromosome>> methodCoverage = getMethodCoverage(chromosome);
+        //如果集合中存在该行，则返回该行被哪些染色体覆盖
+        if (methodCoverage == null) {
+            return Collections.emptySet();
+        }
+        return Collections.singleton(methodCoverage.entrySet().stream()
+                .filter(entry -> entry.getValue().contains(chromosome))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null));
+    }
+
+    /**
+     * 获取某个方法某行被哪些染色体覆盖
+     *
+     * @param method
+     * @param line
+     * @return
+     */
+    public Set<Chromosome> getCoveringChromosomes(Method method, int line) {
+        Map<Integer, Set<Chromosome>> methodCoverage = getMethodCoverage(method);
+        if (methodCoverage == null) {
+            return Collections.emptySet();
+        }
+        return methodCoverage.getOrDefault(line, Collections.emptySet());
+    }
+
+
     /**
      * 记录一个染色体覆盖了某个方法的某些行
+     *
      * @param lineNumbers 覆盖的行号
-     * @param chromosome 当前染色体
+     * @param chromosome  当前染色体
      */
     public void recordCoverage(List<Integer> lineNumbers, Chromosome chromosome) {
-        Method method= chromosome.getMethod();
+        Method method = chromosome.getMethod();
         Map<Integer, Set<Chromosome>> lineMap = coverageMap.computeIfAbsent(method, k -> new HashMap<>());
         for (Integer line : lineNumbers) {
             Set<Chromosome> chromosomes = lineMap.computeIfAbsent(line, k -> new HashSet<>());
@@ -82,13 +170,30 @@ public class ChromosomeCoverageTracker {
     }
 
     /**
+     * 获取某个方法覆盖情况
+     */
+    public Map<Integer, Set<Chromosome>> getMethodCoverage(Method method) {
+        return coverageMap.get(method);
+    }
+
+    /**
+     * 获取某个染色体覆盖情况
+     */
+    public Map<Integer, Set<Chromosome>> getMethodCoverage(Chromosome chromosome) {
+        Method method = chromosome.getMethod();
+        return coverageMap.get(method);
+    }
+
+    /**
      * 清空统计信息
      */
     public void clear() {
         coverageMap.clear();
     }
+
     /**
      * 生成可视化覆盖率报告（支持多级缩进格式）
+     *
      * @return 格式化后的覆盖率报告字符串
      */
     public String generateCoverageReport() {
@@ -97,7 +202,7 @@ public class ChromosomeCoverageTracker {
 
         // 输出方法-行号-染色体映射
         report.append("=== 行覆盖详情 ===").append(lineSeparator);
-        methodLineChromosomeMap.forEach((method, lineMap) -> {
+        coverageMap.forEach((method, lineMap) -> {
             report.append("方法: ").append(formatMethodSignature(method)).append(lineSeparator);
             lineMap.forEach((line, chromosomes) -> {
                 report.append("  行数 ").append(line).append("  染色体数量")
@@ -124,10 +229,29 @@ public class ChromosomeCoverageTracker {
         return report.toString();
     }
 
+
+    public Set<Chromosome> getCoveringChromosomeSet(Chromosome target) {
+
+        Method method = target.getMethod();
+        Map<Integer, Set<Chromosome>> methodCoverage = getMethodCoverage(method);
+        Set<Chromosome> coveringChromosomes = new HashSet<>();
+        //遍历 map
+        for (Map.Entry<Integer, Set<Chromosome>> entry : methodCoverage.entrySet()) {
+            int line = entry.getKey();
+            coveringChromosomes.addAll(getChromosomesForLine(method, line));
+        }
+        return coveringChromosomes;
+    }
+
+    /**
+     * 构建染色体序列号映射
+     *
+     * @param chromosomes
+     */
     public void buildChromosomeSequenceMap(Set<Chromosome> chromosomes) {
-        for(Chromosome ch : chromosomes){
-            if(!chromosomeSequenceMap.containsKey(ch)){
-                chromosomeSequenceMap.put(ch, chromosomeSequenceMap.size()+1);
+        for (Chromosome ch : chromosomes) {
+            if (!chromosomeSequenceMap.containsKey(ch)) {
+                chromosomeSequenceMap.put(ch, chromosomeSequenceMap.size() + 1);
             }
         }
     }
@@ -149,7 +273,7 @@ public class ChromosomeCoverageTracker {
      * 格式化染色体信息（示例实现，可根据实际需求调整）
      */
     private String formatChromosomeInfo(Chromosome chromosome) {
-        return String.format("%s,",chromosomeSequenceMap.get(chromosome));
+        return String.format("%s,", chromosomeSequenceMap.get(chromosome));
     }
 
     public Map<Chromosome, Integer> getChromosomeSequenceMap() {
