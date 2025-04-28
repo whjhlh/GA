@@ -39,11 +39,10 @@ public class GeneticAlgorithmController {
         performEvolution(nature);
     }
 
-    private Population initializeEnvironment(Nature nature, Class<?> targetClass, String phaseName) {
+    private void initializeEnvironment(Nature nature, Class<?> targetClass, String phaseName) {
         long startTime = System.nanoTime();
         Population population = geneticAlgorithmService.initEnvironment(nature, targetClass, phaseName);
         logOperationDuration(startTime, population, GeneticAlgorithmConfig.INIT_PHASE);
-        return population;
     }
 
     /**
