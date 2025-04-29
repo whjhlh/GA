@@ -38,6 +38,11 @@ public class ChromosomeCoverageTracker {
         return a.stream().filter(b::contains).collect(Collectors.toSet());
     }
 
+    /**
+     * 初始化起始行和结束行
+     * @param start
+     * @param end
+     */
     public void init(Integer start, Integer end) {
         if (startLine == null) {
             this.startLine = start;

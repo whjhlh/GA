@@ -228,12 +228,18 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         dest.addChromosomeSet(select);
     }
 
+    /**
+     * 进化下一代
+     * @param nature
+     * @param srcPopulation
+     * @param destPopulation
+     */
     private void evolveNewGeneration(Nature nature, Population srcPopulation, Population destPopulation) {
         GenePool genePool = srcPopulation.getGenePool();
         while (destPopulation.getChromosomeSet().size() < srcPopulation.getChromosomeSet().size()) {
             Chromosome child = generateChild(srcPopulation, genePool);
-            long fitness = JaCoCoCoverageAnalyzer.calculateChromosomeFitness(nature, child);
-            child.setCoveragePercent(fitness);
+            long percent = JaCoCoCoverageAnalyzer.calculateChromosomePercentage(nature, child);
+            child.setCoveragePercent(percent);
             destPopulation.addChromosome(child);
 
         }
@@ -286,7 +292,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     private double getDynamicMutationRate(GenePool pool) {
         // 基因类型越多变异率越高
         double diversityFactor = pool.getAverageGeneCount() / 10.0;
-        return Math.min(GeneticAlgorithmConfig.MUTATION_RATE * (1 + diversityFactor), 0.35);
+        return Math.min(GeneticAlgorithmConfig.MUTATION_RATE * (0.3+0.1* diversityFactor), 0.35);
     }
 
     /**

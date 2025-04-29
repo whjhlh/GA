@@ -54,7 +54,7 @@ public class FileUtil {
                 desc);
 
         // 写入文件
-        writeToFile(reportContent, fileName);
+        writeToFile(reportContent, fileName,population);
     }
 
     private static String buildReportContent(long initTime,
@@ -77,7 +77,7 @@ public class FileUtil {
         chromosomes.stream()
                 .sorted((c1, c2) -> Double.compare(c2.getCoveragePercent(), c1.getCoveragePercent()))
                 .forEach(c -> report.append(coverageTracker.getChromosomeSequenceMap().get(c)).append(JsonUtil.toJson(c.getGenes()))
-                        .append(" - 覆盖率").append(c.getCoveragePercent()).append("%\n"));
+                        .append(" - 覆盖率").append(c.getCoveragePercent()).append(" - 适应度").append(c.getFitness()).append("分\n"));
 
         report.append("=== 汇总 ===\n")
                 .append("总覆盖率：").append(population.getCurrentCoverage()).append("%\n");
@@ -90,12 +90,13 @@ public class FileUtil {
      *
      * @param content
      * @param fileName
+     * @param population
      */
-    private static void writeToFile(String content, String fileName) {
+    private static void writeToFile(String content, String fileName, Population population) {
         Path filePath = Paths.get(REPORT_DIR, fileName);
         try {
             Files.writeString(filePath, content);
-            System.out.println("报告已生成至: " + filePath.toAbsolutePath());
+            System.out.println("报告已生成至: " + filePath.toAbsolutePath()+" " +population.getCurrentCoverage()+"%");
         } catch (IOException e) {
             throw new RuntimeException("写入报告文件失败: " + filePath, e);
         }

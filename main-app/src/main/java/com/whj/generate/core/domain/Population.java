@@ -60,13 +60,6 @@ public class Population {
         return genePool;
     }
 
-    private Chromosome selectParent() {
-        // 实现轮盘赌选择算法
-        return chromosomeSet.stream() // 简化的随机选择
-                .skip((int) (Math.random() * chromosomeSet.size()))
-                .findFirst()
-                .orElseThrow();
-    }
 
     /**
      * 如果不实用synchronized，则会出现线程不安全的情况

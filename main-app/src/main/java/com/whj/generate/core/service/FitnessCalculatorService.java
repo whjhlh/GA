@@ -7,15 +7,14 @@ import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
+import static com.whj.generate.common.config.GeneticAlgorithmConfig.*;
+
 /**
  * @author whj
  * @date 2025-04-26 下午12:57
  */
 @Service
 public class FitnessCalculatorService {
-    private static final double NOVELTY_WEIGHT = 0.6;
-    private static final double DIVERSITY_PENALTY = 0.4;
-    private static final double BASE_WEIGHT = 0.8;
 
     /**
      * 计算适应度
@@ -37,7 +36,9 @@ public class FitnessCalculatorService {
         double similarityPenalty = calculateSimilarityPenalty(chromosome, tracker) * DIVERSITY_PENALTY;
 
         // 最终适应度（确保非负）
-        return Math.max(baseFitness + noveltyReward - similarityPenalty, 0);
+        double fitness = Math.max(baseFitness + noveltyReward - similarityPenalty, 0);
+        chromosome.setFitness((long) fitness);
+        return chromosome.getFitness();
     }
 
     /**

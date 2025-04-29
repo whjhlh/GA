@@ -9,7 +9,7 @@ import java.util.Objects;
 
 /**
  * @author whj
- * @description: 染色体模型
+ * @description: 染色体领域模型
  * @date 2025-02-22 下午5:41
  */
 public class Chromosome implements Serializable {
@@ -37,6 +37,17 @@ public class Chromosome implements Serializable {
      * 覆盖率
      */
     private long coveragePercent;
+    /**
+     * 适应度
+     */
+    private long fitness;
+
+    /**
+     *
+     * @param targetClass
+     * @param method
+     * @param genes
+     */
 
     public Chromosome(Class<?> targetClass, Method method, Object[] genes) {
         this.targetClass = targetClass;
@@ -77,6 +88,14 @@ public class Chromosome implements Serializable {
      */
     public boolean isExecuted() {
         return coveragePercent != 0;
+    }
+
+    public double getFitness() {
+        return fitness;
+    }
+
+    public void setFitness(long fitness) {
+        this.fitness = fitness;
     }
 
     /**
