@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>遗传算法配置管理</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        :root {
+            --primary-blue: #409EFF;
+            --light-blue: #ecf5ff;
+            --dark-blue: #337ecc;
+            --border-blue: #b3d8ff;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+        }
+
+        /* 弹窗样式 */
+        .modal-mask {
+            position: fixed;
+            z-index: 9999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 800px;
+            max-width: 90%;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary-blue);
+        }
+
+        .close-btn {
+            cursor: pointer;
+            font-size: 24px;
+            color: #666;
+            padding: 0 10px;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: var(--dark-blue);
+        }
+
+        .config-table {
+            width: 100%;
+            margin-bottom: 25px;
+            border-collapse: collapse;
+            border: 1px solid var(--border-blue);
+        }
+
+        .config-table th {
+            background-color: var(--light-blue);
+            color: var(--dark-blue);
+            padding: 15px;
+            text-align: left;
+        }
+
+        .config-table td {
+            padding: 12px;
+            border-top: 1px solid var(--border-blue);
+        }
+
+        .config-table tr:hover td {
+            background-color: #f5f7fa;
+        }
+
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--dark-blue);
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+            box-shadow: 0 0 4px rgba(64, 158, 255, .3);
+        }
+
+        button {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-left: 10px;
+        }
+
+        button:hover {
+            background-color: var(--dark-blue);
+        }
+
+        .operation-area {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-blue);
+            text-align: right;
+        }.message-toast {
+             position: fixed;
+             top: 20px;
+             right: 20px;
+             padding: 12px 16px;
+             border-radius: 6px;
+             color: white;
+             font-size: 12px;
+             font-weight: 500;
+             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+             opacity: 0;
+             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+             z-index: 10000;
+             min-width: 200px;
+             max-width: 280px;
+             display: flex;
+             align-items: center;
+             gap: 8px;
+             pointer-events: none;
+             transform: translateX(120%);
+         }
+
+        .message-toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .message-toast.success {
+            background: linear-gradient(135deg, #67c23a 0%, #85d361 100%);
+            border-left: 3px solid #5daf34;
+        }
+
+        .message-toast.error {
+            background: linear-gradient(135deg, #f56c6c 0%, #ff8888 100%);
+            border-left: 3px solid #e65c5c;
+        }
+
+        .toast-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        @keyframes icon-check {
+            0% { stroke-dashoffset: 48; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        @keyframes icon-cross {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(180deg); }
+        }
+
+        .icon-check {
+            stroke-dasharray: 48;
+            animation: icon-check 0.6s ease-out forwards;
+        }
+
+        .icon-cross {
+            animation: icon-cross 0.4s ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+<div id="app">
+    <!-- 配置弹窗 -->
+    <div @click.self="closeModal" class="modal-mask" v-if="showModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2>参数配置</h2>
+                <span @click="closeModal" class="close-btn">&times;</span>
+            </div>
+
+            <form @submit.prevent="submitConfig">
+                <table class="config-table">
+                    <thead>
+                    <tr>
+                        <th style="width: 120px;">配置类型</th>
+                        <th style="width: 200px;">配置项</th>
+                        <th>当前值</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <!-- 用例生成配置 -->
+                    <tr>
+                        <td class="config-category" rowspan="2">生成配置</td>
+                        <td>目标覆盖率(%)</td>
+                        <td class="config-value">
+                            <input max="100" min="0" type="number" v-model="formData.targetCoverage">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>最大迭代次数</td>
+                        <td class="config-value">
+                            <input min="1" type="number" v-model="formData.maxGenerationCount">
+                        </td>
+                    </tr>
+
+                    <!-- 进化算法配置 -->
+                    <tr>
+                        <td class="config-category" rowspan="6">进化配置</td>
+                        <td>交叉概率</td>
+                        <td class="config-value">
+                            <input max="1" min="0" step="0.01" type="number" v-model="formData.crossoverRate">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>变异概率</td>
+                        <td class="config-value">
+                            <input max="1" min="0" step="0.01" type="number" v-model="formData.mutationRate">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>新行覆盖权重</td>
+                        <td class="config-value">
+                            <input max="100" min="0" step="0.1" type="number" v-model="formData.noveltyWeight">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>多样性惩罚</td>
+                        <td class="config-value">
+                            <input max="100" min="0" step="0.1" type="number" v-model="formData.diversityPenalty"></td>
+                    </tr>
+                    <tr>
+                        <td>基础权重</td>
+                        <td class="config-value">
+                            <input max="100" min="0" step="0.1" type="number" v-model="formData.baseWeight">
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <!-- 操作按钮和状态提示 -->
+                <div class="operation-area">
+                    <button type="submit">保存配置</button>
+                    <button @click="loadConfig" type="button">重置</button>
+                    <button @click="closeModal" type="button">取消</button>
+                    <div :class="messageClass" v-if="message">{{ message }}</div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div :class="[toastType, { show: showToast }]" class="message-toast">
+        <svg class="toast-icon" v-if="toastType === 'success'" viewBox="0 0 24 24">
+            <path class="icon-check" d="M6 12l4 4 8-8" fill="none" stroke="white"
+                  stroke-width="2"/>
+        </svg>
+        <svg class="toast-icon" v-if="toastType === 'error'" viewBox="0 0 24 24">
+            <path class="icon-cross" d="M6 6l12 12M6 18L18 6" fill="none" stroke="white"
+                  stroke-width="2"/>
+        </svg>
+        <div class="toast-content">{{ toastMessage }}</div>
+    </div>
+</div>
+
+<script>
+    const {createApp} = Vue;
+
+    createApp({
+        data() {
+            return {
+                showModal: false,
+                config: {},
+                formData: {},
+                message: '',
+                messageClass: '',
+                showToast: false,
+                toastMessage: '',
+                toastType: 'success',
+                messageQueue: []
+            }
+        },
+        mounted() {
+            this.loadConfig();
+            this.showModal = true;
+            // 添加ESC关闭监听
+            document.addEventListener('keyup', (e) => {
+                if (e.key === 'Escape' && this.showModal) {
+                    this.closeModal();
+                }
+            });
+        },
+        methods: {
+            async loadConfig() {
+                try {
+                    const response = await fetch('/api/config');
+                    const data = await response.json();
+                    this.config = data;
+                    this.formData = {...data};
+                    this.showMessage('配置加载成功', 'success');
+                } catch (error) {
+                    console.error('配置加载失败:', error);
+                    this.showMessage('配置加载失败: ' + error.message, 'error');
+                }
+            },
+            async submitConfig() {
+                try {
+                    const response = await fetch('/api/config', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(this.formData)
+                    });
+
+                    if (!response.ok) throw new Error(await response.text());
+
+                    await this.loadConfig();
+                    this.showMessage('配置更新成功', 'success');
+                } catch (error) {
+                    this.showMessage('配置更新失败: ' + error.message, 'error');
+                }
+            },showMessage(msg, type) {
+                this.messageQueue.push({ msg, type });
+                if (!this.showToast) this.processMessageQueue();
+            },
+            processMessageQueue() {
+                if (this.messageQueue.length === 0) return;
+
+                const { msg, type } = this.messageQueue.shift();
+                this.toastMessage = msg;
+                this.toastType = type;
+                this.showToast = true;
+
+                setTimeout(() => {
+                    this.showToast = false;
+                    setTimeout(() => this.processMessageQueue(), 500);
+                }, 3000);
+            },
+            closeModal() {
+                this.showModal = false;
+            }
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

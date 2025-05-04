@@ -6,8 +6,6 @@ package com.whj.generate.biz.Infrastructure.cache;
  */
 
 import com.whj.generate.core.domain.Chromosome;
-import org.jacoco.core.analysis.IClassCoverage;
-import org.jacoco.core.analysis.IMethodCoverage;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -94,19 +92,6 @@ public class ChromosomeCoverageTracker {
         return (double) intersection / union;
     }
 
-    /**
-     * 根据方法名获取方法覆盖率数据
-     *
-     * @param coverage
-     * @param methodName
-     * @return
-     */
-    private IMethodCoverage findMethodCoverage(IClassCoverage coverage, String methodName) {
-        return coverage.getMethods().stream()
-                .filter(m -> m.getName().equals(methodName))
-                .findFirst()
-                .orElse(null);
-    }
 
     /**
      * 获取某个染色体覆盖的行
@@ -126,23 +111,6 @@ public class ChromosomeCoverageTracker {
                 .findFirst()
                 .orElse(null));
     }
-
-    /**
-     * 获取某个方法某行被哪些染色体覆盖
-     *
-     * @param method
-     * @param line
-     * @return
-     */
-    public Set<Chromosome> getCoveringChromosomes(Method method, int line) {
-        Map<Integer, Set<Chromosome>> methodCoverage = getMethodCoverage(method);
-        if (methodCoverage == null) {
-            return Collections.emptySet();
-        }
-        return methodCoverage.getOrDefault(line, Collections.emptySet());
-    }
-
-
     /**
      * 记录一个染色体覆盖了某个方法的某些行
      *
@@ -166,14 +134,6 @@ public class ChromosomeCoverageTracker {
                 .map(m -> m.getOrDefault(line, Collections.emptySet()))
                 .orElse(Collections.emptySet());
     }
-
-    /**
-     * 获取整个结构
-     */
-    public Map<Method, Map<Integer, Set<Chromosome>>> getCoverageMap() {
-        return coverageMap;
-    }
-
     /**
      * 获取某个方法覆盖情况
      */
