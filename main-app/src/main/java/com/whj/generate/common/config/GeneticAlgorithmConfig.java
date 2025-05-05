@@ -2,7 +2,7 @@ package com.whj.generate.common.config;
 
 /**
  * @author whj
- * @description: 遗传算法配置信息
+ * @description: 进化算法配置信息
  * @date 2025-04-20 上午3:11
  */
 public class GeneticAlgorithmConfig {

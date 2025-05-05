@@ -2,13 +2,13 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>遗传算法配置管理</title>
+    <title>进化算法配置管理</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
         :root {
-            --primary-blue: #409EFF;
+            --primary-blue: #007dff;
             --light-blue: #ecf5ff;
-            --dark-blue: #337ecc;
+            --dark-blue: #0086ff;
             --border-blue: #b3d8ff;
         }
 
@@ -95,7 +95,7 @@
         }
 
         input {
-            width: 100%;
+            width: 70%;
             padding: 8px 12px;
             border: 1px solid #dcdfe6;
             border-radius: 4px;
@@ -128,27 +128,29 @@
             padding-top: 20px;
             border-top: 1px solid var(--border-blue);
             text-align: right;
-        }.message-toast {
-             position: fixed;
-             top: 20px;
-             right: 20px;
-             padding: 12px 16px;
-             border-radius: 6px;
-             color: white;
-             font-size: 12px;
-             font-weight: 500;
-             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-             opacity: 0;
-             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-             z-index: 10000;
-             min-width: 200px;
-             max-width: 280px;
-             display: flex;
-             align-items: center;
-             gap: 8px;
-             pointer-events: none;
-             transform: translateX(120%);
-         }
+        }
+
+        .message-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 10000;
+            min-width: 200px;
+            max-width: 280px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+            transform: translateX(120%);
+        }
 
         .message-toast.show {
             opacity: 1;
@@ -222,13 +224,17 @@
                         <td class="config-category" rowspan="2">生成配置</td>
                         <td>目标覆盖率(%)</td>
                         <td class="config-value">
-                            <input max="100" min="0" type="number" v-model="formData.targetCoverage">
+                            <label>
+                                <input max="100" min="0" type="number" v-model="formData.targetCoverage">
+                            </label>
                         </td>
                     </tr>
                     <tr>
                         <td>最大迭代次数</td>
                         <td class="config-value">
-                            <input min="1" type="number" v-model="formData.maxGenerationCount">
+                            <label>
+                                <input min="1" type="number" v-model="formData.maxGenerationCount">
+                            </label>
                         </td>
                     </tr>
 
@@ -237,30 +243,40 @@
                         <td class="config-category" rowspan="6">进化配置</td>
                         <td>交叉概率</td>
                         <td class="config-value">
-                            <input max="1" min="0" step="0.01" type="number" v-model="formData.crossoverRate">
+                            <label>
+                                <input max="1" min="0" step="0.01" type="number" v-model="formData.crossoverRate">
+                            </label>
                         </td>
                     </tr>
                     <tr>
                         <td>变异概率</td>
                         <td class="config-value">
-                            <input max="1" min="0" step="0.01" type="number" v-model="formData.mutationRate">
+                            <label>
+                                <input max="1" min="0" step="0.01" type="number" v-model="formData.mutationRate">
+                            </label>
                         </td>
                     </tr>
                     <tr>
                         <td>新行覆盖权重</td>
                         <td class="config-value">
-                            <input max="100" min="0" step="0.1" type="number" v-model="formData.noveltyWeight">
+                            <label>
+                                <input max="100" min="0" step="0.1" type="number" v-model="formData.noveltyWeight">
+                            </label>
                         </td>
                     </tr>
                     <tr>
                         <td>多样性惩罚</td>
                         <td class="config-value">
-                            <input max="100" min="0" step="0.1" type="number" v-model="formData.diversityPenalty"></td>
+                            <label>
+                                <input max="100" min="0" step="0.1" type="number" v-model="formData.diversityPenalty">
+                            </label></td>
                     </tr>
                     <tr>
                         <td>基础权重</td>
                         <td class="config-value">
-                            <input max="100" min="0" step="0.1" type="number" v-model="formData.baseWeight">
+                            <label>
+                                <input max="100" min="0" step="0.1" type="number" v-model="formData.baseWeight">
+                            </label>
                         </td>
                     </tr>
                     </tbody>
@@ -344,14 +360,14 @@
                 } catch (error) {
                     this.showMessage('配置更新失败: ' + error.message, 'error');
                 }
-            },showMessage(msg, type) {
-                this.messageQueue.push({ msg, type });
+            }, showMessage(msg, type) {
+                this.messageQueue.push({msg, type});
                 if (!this.showToast) this.processMessageQueue();
             },
             processMessageQueue() {
                 if (this.messageQueue.length === 0) return;
 
-                const { msg, type } = this.messageQueue.shift();
+                const {msg, type} = this.messageQueue.shift();
                 this.toastMessage = msg;
                 this.toastType = type;
                 this.showToast = true;
@@ -366,6 +382,13 @@
             }
         }
     }).mount('#app');
+    window.onerror = function(message, source, lineno, colno, error) {
+        if (message.includes('Vue is not defined')) {
+            alert('网络错误：无法加载Vue.js，请检查网络连接');
+            document.write('<h1 style="color:red">网络连接异常，请检查网络后刷新页面</h1>');
+        }
+        return true;
+    };
 </script>
 </body>
 </html>

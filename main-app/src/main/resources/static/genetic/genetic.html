@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>遗传算法测试生成系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        :root {
+            --primary-blue: #1a73e8;
+            --light-blue: #e8f0fe;
+            --dark-blue: #0d47a1;
+            --border-blue: #c5d7f2;
+            --success-green: #34a853;
+            --error-red: #ea4335;
+        }
+
+        body {
+            font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+
+        h1 {
+            color: var(--primary-blue);
+            margin-top: 0;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-blue);
+        }
+
+        .panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--primary-blue);
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .panel-title svg {
+            margin-right: 8px;
+            width: 20px;
+            height: 20px;
+            fill: var(--primary-blue);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--primary-blue);
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #dfe1e5;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+
+        .btn {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            background-color: var(--dark-blue);
+        }
+
+        .btn svg {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--primary-blue);
+            border: 1px solid var(--border-blue);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--light-blue);
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        th {
+            background-color: var(--light-blue);
+            color: var(--primary-blue);
+            padding: 12px;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-blue);
+        }
+
+        tr:hover td {
+            background-color: #f5f7fa;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-ready {
+            background-color: var(--success-green);
+        }
+
+        .status-running {
+            background-color: #fbbc05;
+        }
+
+        .status-error {
+            background-color: var(--error-red);
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+            min-width: 200px;
+            max-width: 300px;
+            display: flex;
+            align-items: center;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background-color: var(--success-green);
+        }
+
+        .toast.error {
+            background-color: var(--error-red);
+        }
+
+        .toast-icon {
+            margin-right: 8px;
+            width: 20px;
+            height: 20px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .flex-grow {
+            flex-grow: 1;
+        }
+
+        .result-container {
+            margin-top: 24px;
+            padding: 16px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid var(--primary-blue);
+        }
+
+        .result-title {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--primary-blue);
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="container">
+        <h1>遗传算法测试生成系统</h1>
+
+        <div class="panel">
+            <h2 class="panel-title">
+                <svg viewBox="0 0 24 24">
+                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-2 16c-2.05 0-3.81-1.24-4.58-3h1.71c.63.9 1.68 1.5 2.87 1.5 1.93 0 3.5-1.57 3.5-3.5S13.93 9.5 12 9.5c-1.35 0-2.5.78-3.1 1.9l1.6 1.6h-4V9l1.3 1.3C8.69 8.92 10.23 8 12 8c2.76 0 5 2.24 5 5s-2.24 5-5 5z"/>
+                </svg>
+                测试生成配置
+            </h2>
+
+            <div class="flex-row">
+                <div class="form-group flex-grow">
+                    <label for="class-select">选择目标类</label>
+                    <select @change="onClassChange" id="class-select" v-model="selectedClass">
+                        <option value="">-- 请选择类 --</option>
+                        <option :value="cls.className" v-for="cls in classList">{{ cls.className }}</option>
+                    </select>
+                </div>
+
+                <div class="form-group flex-grow">
+                    <label for="method-select">选择目标方法</label>
+                    <select :disabled="!selectedClass" id="method-select" v-model="selectedMethod">
+                        <option value="">-- 请选择方法 --</option>
+                        <option :value="method.methodName" v-for="method in methodList">
+                            {{ method.methodName }} ({{ method.returnType }})
+                        </option>
+                    </select>
+                </div>
+
+                <button :disabled="loading.classes" @click="loadClassStructure" class="btn">
+                    <span class="loading" v-if="loading.classes"></span>
+                    <svg v-else viewBox="0 0 24 24">
+                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                    </svg>
+                    刷新
+                </button>
+            </div>
+
+            <div class="flex-row" style="justify-content: flex-end; margin-top: 16px;">
+                <button :disabled="!canStart || loading.algorithm" @click="startAlgorithm" class="btn">
+                    <span class="loading" v-if="loading.algorithm"></span>
+                    <svg v-else viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    开始生成测试
+                </button>
+            </div>
+        </div>
+
+        <div class="panel" v-if="algorithmResult">
+            <h2 class="panel-title">
+                <svg viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                </svg>
+                生成结果
+            </h2>
+
+            <div class="result-container">
+                <div class="result-title">执行状态</div>
+                <div>
+                    <span :class="'status-' + algorithmResult.status" class="status-indicator"></span>
+                    {{ algorithmResult.message }}
+                </div>
+
+                <div style="margin-top: 12px;" v-if="algorithmResult.details">
+                    <div class="result-title">详细信息</div>
+                    <pre style="white-space: pre-wrap; margin: 0;">{{ algorithmResult.details }}</pre>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div :class="['toast', toast.type, { show: toast.show }]">
+        <svg class="toast-icon" v-if="toast.type === 'success'" viewBox="0 0 24 24">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
+        </svg>
+        <svg class="toast-icon" v-if="toast.type === 'error'" viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" fill="white"/>
+        </svg>
+        {{ toast.message }}
+    </div>
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                classList: [],
+                selectedClass: '',
+                selectedMethod: '',
+                loading: {
+                    classes: false,
+                    algorithm: false
+                },
+                algorithmResult: null,
+                toast: {
+                    show: false,
+                    message: '',
+                    type: 'success'
+                }
+            }
+        },
+        computed: {
+            methodList() {
+                if (!this.selectedClass) return [];
+                const cls = this.classList.find(c => c.className === this.selectedClass);
+                return cls ? cls.methods : [];
+            },
+            canStart() {
+                return this.selectedClass && this.selectedMethod;
+            }
+        },
+        mounted() {
+            this.loadClassStructure();
+        },
+        methods: {
+            async loadClassStructure() {
+                this.loading.classes = true;
+                try {
+                    const response = await axios.get('/api/java-structure');
+                    this.classList = response.data;
+                    this.showToast('类结构加载成功', 'success');
+                } catch (error) {
+                    console.error('加载类结构失败:', error);
+                    this.showToast('加载类结构失败: ' + error.message, 'error');
+                } finally {
+                    this.loading.classes = false;
+                }
+            },
+            onClassChange() {
+                this.selectedMethod = '';
+            },
+            async startAlgorithm() {
+                if (!this.canStart) return;
+
+                this.loading.algorithm = true;
+                try {
+                    const response = await axios.post('/genetic-algorithm/start', {
+                        className: this.selectedClass,
+                        methodName: this.selectedMethod
+                    });
+
+                    this.algorithmResult = {
+                        status: 'ready',
+                        message: response.data,
+                        details: `已开始为 ${this.selectedClass}#${this.selectedMethod} 生成测试用例`
+                    };
+
+                    this.showToast('算法启动成功', 'success');
+                } catch (error) {
+                    console.error('启动算法失败:', error);
+                    this.algorithmResult = {
+                        status: 'error',
+                        message: '算法启动失败',
+                        details: error.response?.data || error.message
+                    };
+                    this.showToast('算法启动失败: ' + error.message, 'error');
+                } finally {
+                    this.loading.algorithm = false;
+                }
+            },
+            showToast(message, type = 'success') {
+                this.toast.message = message;
+                this.toast.type = type;
+                this.toast.show = true;
+
+                setTimeout(() => {
+                    this.toast.show = false;
+                }, 3000);
+            }
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
