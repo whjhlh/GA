@@ -3,432 +3,320 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>遗传算法测试生成系统</title>
+    <title>进化算法测试生成系统</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <style>
         :root {
-            --primary-blue: #1a73e8;
-            --light-blue: #e8f0fe;
-            --dark-blue: #0d47a1;
-            --border-blue: #c5d7f2;
-            --success-green: #34a853;
-            --error-red: #ea4335;
+            --primary-blue: #1677FF;
+            --light-blue: #E6F4FF;
+            --accent-blue: #1E86FF;
+            --bg-light: #F2F6FA;
+            --border-gray: #DDE5ED;
+            --text-dark: #333333;
+            --text-light: #5F8FA3;
+            --success-green: #52C41A;
+            --error-red: #F5222D;
+            --radius: 8px;
         }
-
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f8f9fa;
             margin: 0;
-            padding: 20px;
-            color: #333;
+            background: var(--bg-light);
+            font-family: 'Roboto', sans-serif;
+            color: var(--text-dark);
+            line-height: 1.5;
         }
-
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 1000px;
+            margin: 40px auto;
             padding: 24px;
+            background: #fff;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-gray);
         }
-
         h1 {
+            margin: 0 0 24px;
+            font-size: 24px;
             color: var(--primary-blue);
-            margin-top: 0;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border-blue);
         }
-
         .panel {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 20px;
+            background: #fff;
+            padding: 16px;
+            border: 1px solid var(--border-gray);
+            border-radius: var(--radius);
             margin-bottom: 24px;
         }
-
-        .panel-title {
-            font-size: 18px;
-            font-weight: 500;
-            color: var(--primary-blue);
-            margin: 0 0 16px 0;
+        .flex-row {
             display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
             align-items: center;
         }
-
-        .panel-title svg {
-            margin-right: 8px;
-            width: 20px;
-            height: 20px;
-            fill: var(--primary-blue);
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
+        .flex-grow { flex: 1; }
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             font-weight: 500;
-            color: var(--primary-blue);
+            color: var(--text-dark);
         }
-
-        select, input {
+        select, input[type='text'], input[type='number'] {
             width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #dfe1e5;
-            border-radius: 4px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-gray);
+            border-radius: var(--radius);
             font-size: 14px;
-            transition: border-color 0.3s;
+            background: #fff;
         }
-
-        select:focus, input:focus {
-            border-color: var(--primary-blue);
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
-        }
-
-        .btn {
-            background-color: var(--primary-blue);
-            color: white;
+        .btn, button {
+            padding: 8px 16px;
             border: none;
-            padding: 10px 16px;
-            border-radius: 4px;
+            border-radius: var(--radius);
+            cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            transition: background 0.2s;
         }
-
-        .btn:hover {
-            background-color: var(--dark-blue);
+        .btn-primary {
+            background: var(--primary-blue);
+            color: #fff;
         }
-
-        .btn svg {
-            margin-right: 8px;
-            width: 16px;
-            height: 16px;
-            fill: currentColor;
-        }
-
+        .btn-primary:hover { background: var(--accent-blue); }
         .btn-secondary {
-            background-color: white;
+            background: #fff;
             color: var(--primary-blue);
-            border: 1px solid var(--border-blue);
+            border: 1px solid var(--primary-blue);
         }
-
         .btn-secondary:hover {
-            background-color: var(--light-blue);
+            background: var(--light-blue);
         }
-
-        .table-container {
-            overflow-x: auto;
-        }
-
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 16px 0;
+            background: #fff;
         }
-
-        th {
-            background-color: var(--light-blue);
-            color: var(--primary-blue);
+        th, td {
             padding: 12px;
+            border: 1px solid var(--border-gray);
             text-align: left;
-            font-weight: 500;
         }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border-blue);
+        th {
+            background: var(--light-blue);
+            font-weight: 600;
+            color: var(--text-dark);
         }
-
-        tr:hover td {
-            background-color: #f5f7fa;
+        tr:nth-child(even) { background: var(--bg-light); }
+        .result-container {
+            padding: 16px;
+            background: var(--light-blue);
+            border-left: 4px solid var(--primary-blue);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
         }
-
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-
-        .status-ready {
-            background-color: var(--success-green);
-        }
-
-        .status-running {
-            background-color: #fbbc05;
-        }
-
-        .status-error {
-            background-color: var(--error-red);
-        }
-
-        .toast {
+        /* Modal */
+        .modal-mask {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 16px;
-            border-radius: 6px;
-            color: white;
-            font-size: 14px;
-            font-weight: 500;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 1000;
-            min-width: 200px;
-            max-width: 300px;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
             display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+        .modal-container {
+            background: #fff;
+            width: 600px;
+            max-width: 100%;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .modal-header {
+            background: var(--primary-blue);
+            color: #fff;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
         }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
+        .modal-body { padding: 16px; }
+        .close-btn {
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            color: #fff;
+            cursor: pointer;
         }
-
-        .toast.success {
-            background-color: var(--success-green);
+        .config-table th, .config-table td {
+            border-color: var(--border-gray);
         }
-
-        .toast.error {
-            background-color: var(--error-red);
-        }
-
-        .toast-icon {
-            margin-right: 8px;
-            width: 20px;
-            height: 20px;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 8px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .flex-row {
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
-        }
-
-        .flex-grow {
-            flex-grow: 1;
-        }
-
-        .result-container {
-            margin-top: 24px;
+        .operation-area {
             padding: 16px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-            border-left: 4px solid var(--primary-blue);
+            text-align: right;
+            background: var(--light-blue);
         }
-
-        .result-title {
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: var(--primary-blue);
+        .message-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.3s;
         }
+        .message-toast.show { opacity: 1; }
+        .message-toast.success { background: var(--success-green); }
+        .message-toast.error { background: var(--error-red); }
     </style>
 </head>
 <body>
 <div id="app">
+    <!-- 主界面 -->
     <div class="container">
-        <h1>遗传算法测试生成系统</h1>
+        <h1>进化算法测试生成系统</h1>
+        <button @click="showModal=true" class="btn-secondary" style="margin-bottom:16px;">配置参数</button>
 
+        <!-- 配置面板 -->
         <div class="panel">
-            <h2 class="panel-title">
-                <svg viewBox="0 0 24 24">
-                    <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-2 16c-2.05 0-3.81-1.24-4.58-3h1.71c.63.9 1.68 1.5 2.87 1.5 1.93 0 3.5-1.57 3.5-3.5S13.93 9.5 12 9.5c-1.35 0-2.5.78-3.1 1.9l1.6 1.6h-4V9l1.3 1.3C8.69 8.92 10.23 8 12 8c2.76 0 5 2.24 5 5s-2.24 5-5 5z"/>
-                </svg>
-                测试生成配置
-            </h2>
-
             <div class="flex-row">
-                <div class="form-group flex-grow">
-                    <label for="class-select">选择目标类</label>
-                    <select @change="onClassChange" id="class-select" v-model="selectedClass">
+                <div class="flex-grow">
+                    <label>选择目标类</label>
+                    <select @change="onClassChange" v-model="selectedClass">
                         <option value="">-- 请选择类 --</option>
-                        <option :value="cls.className" v-for="cls in classList">{{ cls.className }}</option>
+                        <option :key="cls.className" :value="cls.className" v-for="cls in classList">{{ cls.className }}</option>
                     </select>
                 </div>
-
-                <div class="form-group flex-grow">
-                    <label for="method-select">选择目标方法</label>
-                    <select :disabled="!selectedClass" id="method-select" v-model="selectedMethod">
+                <div class="flex-grow">
+                    <label>选择目标方法</label>
+                    <select :disabled="!selectedClass" v-model="selectedMethod">
                         <option value="">-- 请选择方法 --</option>
-                        <option :value="method.methodName" v-for="method in methodList">
-                            {{ method.methodName }} ({{ method.returnType }})
-                        </option>
+                        <option :key="m.methodName" :value="m.methodName" v-for="m in methodList">{{ m.methodName }}</option>
                     </select>
                 </div>
-
-                <button :disabled="loading.classes" @click="loadClassStructure" class="btn">
-                    <span class="loading" v-if="loading.classes"></span>
-                    <svg v-else viewBox="0 0 24 24">
-                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-                    </svg>
-                    刷新
-                </button>
+                <button :disabled="loading.classes" @click="loadClassStructure" class="btn btn-secondary">刷新类结构</button>
             </div>
-
-            <div class="flex-row" style="justify-content: flex-end; margin-top: 16px;">
-                <button :disabled="!canStart || loading.algorithm" @click="startAlgorithm" class="btn">
-                    <span class="loading" v-if="loading.algorithm"></span>
-                    <svg v-else viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                    </svg>
-                    开始生成测试
-                </button>
+            <div class="flex-row" style="justify-content:flex-end; margin-top:16px;">
+                <button :disabled="!canStart||loading.init" @click="initAlgorithm" class="btn btn-secondary">初始化</button>
+                <button :disabled="!sessionId||finished||loading.evolve" @click="evolveAlgorithm" class="btn">下一代</button>
             </div>
         </div>
 
-        <div class="panel" v-if="algorithmResult">
-            <h2 class="panel-title">
-                <svg viewBox="0 0 24 24">
-                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                </svg>
-                生成结果
-            </h2>
-
+        <!-- 概览结果 -->
+        <div class="panel" v-if="sessionId">
+            <h2>进化概览</h2>
             <div class="result-container">
-                <div class="result-title">执行状态</div>
-                <div>
-                    <span :class="'status-' + algorithmResult.status" class="status-indicator"></span>
-                    {{ algorithmResult.message }}
-                </div>
-
-                <div style="margin-top: 12px;" v-if="algorithmResult.details">
-                    <div class="result-title">详细信息</div>
-                    <pre style="white-space: pre-wrap; margin: 0;">{{ algorithmResult.details }}</pre>
-                </div>
+                <div>当前代数：{{ generationIndex }}</div>
+                <div>覆盖率：{{ coverage }}%</div>
+                <div>种群规模：{{ populationSize }}</div>
+                <div>完成：{{ finished?'是':'否' }}</div>
+            </div>
+            <table>
+                <thead><tr><th>代数</th><th>覆盖率</th><th>规模</th><th>操作</th></tr></thead>
+                <tbody>
+                <tr :key="gen.generationIndex" v-for="gen in generationSummaries">
+                    <td>{{ gen.generationIndex }}</td>
+                    <td>{{ gen.coverage }}%</td>
+                    <td>{{ gen.populationSize }}</td>
+                    <td><button @click="showDetails(gen.generationIndex)" class="btn-secondary">详情</button></td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="detail-table" v-if="generationDetails.length">
+                <h3>第 {{ detailGenIndex }} 代染色体详情</h3>
+                <table>
+                    <thead><tr><th>ID</th><th>基因</th><th>覆盖率</th><th>适应度</th></tr></thead>
+                    <tbody>
+                    <tr :key="c.id" v-for="c in generationDetails">
+                        <td>{{ c.id }}</td>
+                        <td>{{ c.genes }}</td>
+                        <td>{{ c.coveragePercent }}%</td>
+                        <td>{{ c.fitness }}</td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-
     </div>
 
-    <div :class="['toast', toast.type, { show: toast.show }]">
-        <svg class="toast-icon" v-if="toast.type === 'success'" viewBox="0 0 24 24">
-            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-        </svg>
-        <svg class="toast-icon" v-if="toast.type === 'error'" viewBox="0 0 24 24">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" fill="white"/>
-        </svg>
-        {{ toast.message }}
+    <!-- 参数配置弹窗 -->
+    <div @click.self="closeModal" class="modal-mask" v-if="showModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2>参数配置</h2>
+                <span @click="closeModal" class="close-btn">&times;</span>
+            </div>
+            <form @submit.prevent="submitConfig">
+                <table class="config-table">
+                    <thead><tr><th>类型</th><th>项目</th><th>值</th></tr></thead>
+                    <tbody>
+                    <tr><td rowspan="2">生成</td><td>目标覆盖率(%)</td><td><input max="100" min="0" type="number" v-model.number="formData.targetCoverage" /></td></tr>
+                    <tr><td>最大迭代次数</td><td><input min="1" type="number" v-model.number="formData.maxGenerationCount" /></td></tr>
+                    <tr><td rowspan="6">进化</td><td>交叉概率</td><td><input max="1" min="0" step="0.01" type="number" v-model.number="formData.crossoverRate" /></td></tr>
+                    <tr><td>变异概率</td><td><input max="1" min="0" step="0.01" type="number" v-model.number="formData.mutationRate" /></td></tr>
+                    <tr><td>新行覆盖权重</td><td><input step="0.1" type="number" v-model.number="formData.noveltyWeight" /></td></tr>
+                    <tr><td>多样性惩罚</td><td><input step="0.1" type="number" v-model.number="formData.diversityPenalty" /></td></tr>
+                    <tr><td>基础权重</td><td><input step="0.1" type="number" v-model.number="formData.baseWeight" /></td></tr>
+                    </tbody>
+                </table>
+                <div class="operation-area">
+                    <button class="btn" type="submit">保存</button>
+                    <button @click="loadConfig" class="btn-secondary" type="button">重置</button>
+                    <button @click="closeModal" class="btn-secondary" type="button">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 通知 -->
+    <div :class="['message-toast', toastType, { show: showToast }]">
+        <svg class="toast-icon" v-if="toastType==='success'" viewBox="0 0 24 24"><path d="M6 12l4 4 8-8" fill="none" stroke="white" stroke-width="2"/></svg>
+        <svg class="toast-icon" v-if="toastType==='error'" viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6" fill="none" stroke="white" stroke-width="2"/></svg>
+        <span class="toast-content">{{ toastMessage }}</span>
     </div>
 </div>
 
 <script>
     const { createApp } = Vue;
-
     createApp({
         data() {
             return {
-                classList: [],
-                selectedClass: '',
-                selectedMethod: '',
-                loading: {
-                    classes: false,
-                    algorithm: false
-                },
-                algorithmResult: null,
-                toast: {
-                    show: false,
-                    message: '',
-                    type: 'success'
-                }
-            }
+                /* 主数据 */
+                classList: [], selectedClass:'', selectedMethod:'',
+                sessionId:null, generationIndex:0, coverage:0, populationSize:0, finished:false,
+                loading:{classes:false, init:false, evolve:false},
+                generationSummaries:[], generationDetails:[], detailGenIndex:null,
+                /* 模态框 */
+                showModal:false, config:{}, formData:{},
+                /* Toast */
+                showToast:false, toastMessage:'', toastType:'success', messageQueue:[]
+            };
         },
         computed: {
-            methodList() {
-                if (!this.selectedClass) return [];
-                const cls = this.classList.find(c => c.className === this.selectedClass);
-                return cls ? cls.methods : [];
-            },
-            canStart() {
-                return this.selectedClass && this.selectedMethod;
-            }
+            methodList(){ const cls=this.classList.find(c=>c.className===this.selectedClass); return cls?cls.methods:[]; },
+            canStart(){ return this.selectedClass&&this.selectedMethod; }
         },
-        mounted() {
-            this.loadClassStructure();
-        },
-        methods: {
-            async loadClassStructure() {
-                this.loading.classes = true;
-                try {
-                    const response = await axios.get('/api/java-structure');
-                    this.classList = response.data;
-                    this.showToast('类结构加载成功', 'success');
-                } catch (error) {
-                    console.error('加载类结构失败:', error);
-                    this.showToast('加载类结构失败: ' + error.message, 'error');
-                } finally {
-                    this.loading.classes = false;
-                }
-            },
-            onClassChange() {
-                this.selectedMethod = '';
-            },
-            async startAlgorithm() {
-                if (!this.canStart) return;
-
-                this.loading.algorithm = true;
-                try {
-                    const response = await axios.post('/genetic-algorithm/start', {
-                        className: this.selectedClass,
-                        methodName: this.selectedMethod
-                    });
-
-                    this.algorithmResult = {
-                        status: 'ready',
-                        message: response.data,
-                        details: `已开始为 ${this.selectedClass}#${this.selectedMethod} 生成测试用例`
-                    };
-
-                    this.showToast('算法启动成功', 'success');
-                } catch (error) {
-                    console.error('启动算法失败:', error);
-                    this.algorithmResult = {
-                        status: 'error',
-                        message: '算法启动失败',
-                        details: error.response?.data || error.message
-                    };
-                    this.showToast('算法启动失败: ' + error.message, 'error');
-                } finally {
-                    this.loading.algorithm = false;
-                }
-            },
-            showToast(message, type = 'success') {
-                this.toast.message = message;
-                this.toast.type = type;
-                this.toast.show = true;
-
-                setTimeout(() => {
-                    this.toast.show = false;
-                }, 3000);
-            }
+        mounted(){ this.loadClassStructure(); this.loadConfig(); },
+        methods:{
+            /* 主方法 */
+            async loadClassStructure(){ this.loading.classes=true; try{ const resp=await axios.get('/api/java-structure'); this.classList=resp.data;}catch{}finally{this.loading.classes=false;}},
+            onClassChange(){ this.selectedMethod='';},
+            async initAlgorithm(){ this.loading.init=true; this.sessionId=null; this.generationSummaries=[]; try{const{data}=await axios.post('/api/genetic-algorithm/init',{className:this.selectedClass,methodName:this.selectedMethod}); this.sessionId=data.sessionId; this.generationIndex=data.generationIndex; this.coverage=data.coverage; this.populationSize=data.populationSize; this.finished=false; this.generationSummaries.push({generationIndex:this.generationIndex,coverage:this.coverage,populationSize:this.populationSize});}catch(e){console.error(e);}finally{this.loading.init=false;}},
+            async evolveAlgorithm(){ this.loading.evolve=true; try{const{data}=await axios.post('/api/genetic-algorithm/evolve',{sessionId:this.sessionId,generationIndex:this.generationIndex}); this.generationIndex=data.nextGeneration; this.coverage=data.coverage; this.populationSize=data.populationSize; this.finished=data.finished; this.generationSummaries.push({generationIndex:this.generationIndex,coverage:this.coverage,populationSize:this.populationSize});}catch(e){console.error(e);}finally{this.loading.evolve=false;}},
+            async showDetails(genIdx){ this.detailGenIndex=genIdx; this.generationDetails=[]; try{const{data}=await axios.get('/api/genetic-algorithm/population',{params:{sessionId:this.sessionId,generationIndex:genIdx}}); if(data.chromosomes) this.generationDetails=data.chromosomes;}catch(e){console.error(e);}},
+            /* 配置 */
+            async loadConfig(){ try{ const resp=await axios.get('/api/config'); this.config=resp.data; this.formData={...resp.data}; this.toast('配置加载成功','success');}catch(e){this.toast('配置加载失败','error');}},
+            async submitConfig(){ try{ const resp=await axios.post('/api/config',this.formData,{headers:{'Content-Type':'application/json'}}); if(resp.status!==200)throw new Error(await resp.text()); this.loadConfig(); this.toast('配置更新成功','success');}catch(e){this.toast('配置更新失败','error');}},
+            closeModal(){ this.showModal=false; },
+            /* Toast */
+            toast(msg,type){ this.messageQueue.push({msg,type}); if(!this.showToast) this.processQueue(); },
+            processQueue(){ if(!this.messageQueue.length)return; const{msg,type}=this.messageQueue.shift(); this.toastMessage=msg; this.toastType=type; this.showToast=true; setTimeout(()=>{this.showToast=false; setTimeout(()=>this.processQueue(),500);},3000); }
         }
     }).mount('#app');
 </script>
 </body>
+
 </html>

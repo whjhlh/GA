@@ -3,16 +3,23 @@ package com.whj.generate.common;
 
 import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.common.config.GeneticAlgorithmConfig;
+import com.whj.generate.common.convert.ChromosomeConvertor;
 import com.whj.generate.common.req.AlgorithmRequest;
+import com.whj.generate.common.req.EvolveRequest;
+import com.whj.generate.common.req.InitResponse;
+import com.whj.generate.common.response.EvolveResponse;
+import com.whj.generate.common.response.PopulationResponse;
+import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 import com.whj.generate.core.service.GeneticAlgorithmService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.whj.generate.utill.FileUtil.reportedInFile;
 
@@ -22,39 +29,62 @@ import static com.whj.generate.utill.FileUtil.reportedInFile;
  */
 @Controller
 
-@RequestMapping("/genetic-algorithm")
+@RequestMapping("/api/genetic-algorithm")
 public class GeneticAlgorithmController {
+    /**
+     * 封装 GeneticAlgorithmService
+     */
     private final GeneticAlgorithmService geneticAlgorithmService;
+    /**
+     * 会话存储：sessionId -> Nature
+     */
+    private final Map<String, Nature> sessions = new ConcurrentHashMap<>();
+
 
     // 构造函数注入
     public GeneticAlgorithmController(GeneticAlgorithmService geneticAlgorithmService) {
         this.geneticAlgorithmService = geneticAlgorithmService;
     }
 
-    // 新增的请求参数封装类
+    /**
+     * 初始化环境，返回 sessionId 和初始种群信息。
+     */
+    @PostMapping("/init")
+    @ResponseBody
+    public InitResponse init(@RequestBody AlgorithmRequest request) {
+        try {
+            Class<?> targetClass = Class.forName("com.whj.generate.whjtest." + request.getClassName());
+            Nature nature = new Nature();
+            // 初始化环境
+            Population initialPop = geneticAlgorithmService.initEnvironment(nature, targetClass, request.getMethodName());
+            String sessionId = getSessionId(nature);
 
+            // 构造响应
+            return ChromosomeConvertor.getInitResponse(sessionId, initialPop);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException("未找到类: " + request.getClassName(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("初始化失败: " + e.getMessage());
+        }
+    }
 
     /**
-     * 新增的接口：接收类名和方法名
-     *
-     * @param request 包含className和methodName的请求体
+     * 执行一次进化（按指定 sessionId），返回新的种群信息。
      */
-    @PostMapping("/start")
+    @PostMapping("/evolve")
     @ResponseBody
-    public String startAlgorithm(@RequestBody AlgorithmRequest request) {
-        try {
-            // 通过反射获取目标类
-            Class<?> targetClass = Class.forName("com.whj.generate.whjtest." + request.getClassName());
-
-            // 执行进化算法
-            runGeneticAlgorithm(targetClass, request.getMethodName());
-            return "进化算法执行成功 "
-                    + request.getClassName() + "#" + request.getMethodName();
-        } catch (ClassNotFoundException e) {
-            return "未找到该类: " + request.getClassName();
-        } catch (Exception e) {
-            return "进化算法执行失败: " + e.getMessage();
+    public EvolveResponse evolve(@RequestBody EvolveRequest request) {
+        Nature nature = sessions.get(request.getSessionId());
+        if (nature == null) {
+            throw new IllegalArgumentException("无效的 sessionId: " + request.getSessionId());
         }
+        int genIndex = request.getGenerationIndex();
+        // 执行一次进化
+        Population nextPop = geneticAlgorithmService.evolvePopulation(nature, genIndex);
+        boolean finished = nextPop.getCurrentCoverage() >= GeneticAlgorithmConfig.TARGET_COVERAGE
+                || genIndex + 1 >= GeneticAlgorithmConfig.MAX_GENERATION_COUNT;
+
+        return ChromosomeConvertor.getEvolveResponse(request, genIndex, nextPop, finished);
     }
 
     /**
@@ -106,5 +136,31 @@ public class GeneticAlgorithmController {
         long duration = System.nanoTime() - startTime;
         ChromosomeCoverageTracker coverageTracker = geneticAlgorithmService.getCoverageTracker();
         reportedInFile(duration, population, phase, coverageTracker);
+    }
+
+    @GetMapping("/population")
+    @ResponseBody
+    public PopulationResponse getPopulation(@RequestParam String sessionId,
+                                            @RequestParam int generationIndex) {
+        Nature nature = sessions.get(sessionId);
+        if (nature == null || generationIndex < 0 || generationIndex >= nature.getPopulationList().size()) {
+            throw new IllegalArgumentException("无效的参数");
+        }
+        Population pop = nature.getPopulationList().get(generationIndex);
+        Map<Chromosome, Integer> chromosomeSequenceMap = getChromosomeSequenceMap();
+
+        return ChromosomeConvertor.getPopulationResponse(sessionId, generationIndex, pop, chromosomeSequenceMap);
+    }
+
+    private Map<Chromosome, Integer> getChromosomeSequenceMap() {
+        ChromosomeCoverageTracker coverageTracker = geneticAlgorithmService.getCoverageTracker();
+        return coverageTracker.getChromosomeSequenceMap();
+    }
+
+    private String getSessionId(Nature nature) {
+        // 生成 sessionId 并保存状态
+        String sessionId = UUID.randomUUID().toString();
+        sessions.put(sessionId, nature);
+        return sessionId;
     }
 }

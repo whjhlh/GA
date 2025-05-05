@@ -18,15 +18,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
-
 
 
 /**
@@ -57,51 +55,60 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         this.coverageAnalyzer = coverageAnalyzer;
     }
 
-    /**
-     * 染色体交叉
-     *
-     * @param chromosome1 父染色体1
-     * @param chromosome2 父染色体2
-     */
-    public static Chromosome performCrossover(Chromosome chromosome1, Chromosome chromosome2) {
 
-        //属于同一种群才能进行交叉
-        if (isSamePopulation(chromosome1, chromosome2)) {
-            return null;
-        }
-        //子染色体初始化
-        Chromosome child = new Chromosome(chromosome1.getTargetClass(), chromosome1.getMethod());
-        for (int i = 0; i < chromosome1.getGenes().length; i++) {
-            int point = new Random().nextInt(chromosome1.getGenes().length);
-            if (i < point) {
-                child.getGenes()[i] = chromosome1.getGenes()[i];
-            } else {
-                child.getGenes()[i] = chromosome2.getGenes()[i];
-            }
-        }
-        return child;
+    /**
+     * 初始化种群
+     *
+     * @param clazz 方法
+     */
+    @Override
+    public Population initEnvironment(Nature nature, Class<?> clazz, String methodName) {
+        Method testMethod = ReflectionUtil.findMethod(clazz, methodName);
+        Population population = createPopulationModel(clazz, testMethod);
+        // 处理初始化种群
+        processInitPopulation(population);
+        // 处理初始化种群数据
+        populationDataHandle(nature, population);
+        return population;
     }
 
     /**
-     * 染色体变异
+     * 进化种群
      *
-     * @param chromosome   染色体
-     * @param mutationRate 变异概率
+     * @param nature 种群
+     * @param count
+     * @return
      */
-    public static Chromosome mutation(Chromosome chromosome, double mutationRate) {
-        Chromosome mutationChromosome = new Chromosome(chromosome.getTargetClass(), chromosome.getMethod());
-        if (null == chromosome) {
-            return null;
-        }
-        Random random = new Random();
-        for (int i = 0; i < chromosome.getGenes().length; i++) {
-            Parameter parameter = chromosome.getMethod().getParameters()[i];
-            //变异
-            if (random.nextDouble() > mutationRate) {
-                //chromosome.getGenes()[i] = genChromosomeValue(name, parameter.getType());
-            }
-        }
-        return chromosome;
+    @Override
+    public Population evolvePopulation(Nature nature, Integer count) {
+        Population population = nature.getPopulationList().get(count);
+        Population newPopulation = createNewPopulation(population);
+
+        // 精英保留（保留历史最优解）
+        preserveElites(population, newPopulation);
+
+        // 进化生成新个体
+        evolveNewGeneration(nature, population, newPopulation);
+
+        populationDataHandle(nature, newPopulation);
+        return newPopulation;
+    }
+    @Override
+    public ChromosomeCoverageTracker getCoverageTracker() {
+        return coverageAnalyzer.getCoverageTracker();
+    }
+    /**
+     * 处理种群数据
+     * @param nature
+     * @param newPopulation
+     */
+    private void populationDataHandle(Nature nature, Population newPopulation) {
+        coverageAnalyzer.calculatePopulationCoverage(nature, newPopulation);
+        nature.addPopulation(newPopulation);
+
+        Set<Chromosome> chromosomes = newPopulation.getChromosomeSet();
+        // 构建染色体序列
+        coverageAnalyzer.getCoverageTracker().buildChromosomeSequenceMap(chromosomes);
     }
 
 
@@ -120,39 +127,16 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     }
 
     private Population createPopulationModel(Class<?> clazz, Method method) {
-        if (null == clazz || null == method) {
-            return null;
-        }
         GenePool genePool = poolLoader.initializePool(clazz, method);
         return new Population(clazz, method, genePool);
     }
 
-    /**
-     * 两个染色体是否是属于同一个体
-     *
-     * @param chromosome1 染色体1
-     * @param chromosome2 染色体2
-     */
-    public static boolean isSamePopulation(Chromosome chromosome1, Chromosome chromosome2) {
-        if (null == chromosome1 || null == chromosome2) {
-            return false;
-        }
-        return chromosome1.getMethod().equals(chromosome2.getMethod());
-    }
-
-    /**
-     * 初始化种群
-     *
-     * @param clazz 方法
-     */
-    @Override
-    public Population initEnvironment(Nature nature, Class<?> clazz, String methodName) {
-        Method testMethod = ReflectionUtil.findMethod(clazz, methodName);
-        Population population = createPopulationModel(clazz, testMethod);
-        processInitPopulation(population);
-        coverageAnalyzer.calculatePopulationCoverage(nature, population);
-        nature.addPopulation(population);
-        return population;
+    private Population createNewPopulation(Population old) {
+        return new Population(
+                old.getTargetClass(),
+                old.getTargetMethod(),
+                old.getGenePool() // 关键点：继承基因库
+        );
     }
 
     /**
@@ -184,42 +168,8 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     }
 
     /**
-     * 进化种群
-     *
-     * @param nature 种群
-     * @param count
-     * @return
-     */
-    @Override
-    public Population evolvePopulation(Nature nature, Integer count) {
-        Population population = nature.getPopulationList().get(count);
-        Population newPopulation = createNewPopulation(population);
-
-        // 精英保留（保留历史最优解）
-        preserveElites(population, newPopulation);
-
-        // 进化生成新个体
-        evolveNewGeneration(nature, population, newPopulation);
-
-        coverageAnalyzer.calculatePopulationCoverage(nature, newPopulation);
-        nature.getPopulationList().add(newPopulation);
-        return newPopulation;
-    }
-    @Override
-    public ChromosomeCoverageTracker getCoverageTracker() {
-        return coverageAnalyzer.getCoverageTracker();
-    }
-
-    private Population createNewPopulation(Population old) {
-        return new Population(
-                old.getTargetClass(),
-                old.getTargetMethod(),
-                old.getGenePool() // 关键点：继承基因库
-        );
-    }
-
-    /**
      * 精英保留（保留历史最优解）
+     *
      * @param src
      * @param dest
      */
@@ -230,6 +180,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
 
     /**
      * 进化下一代
+     *
      * @param nature
      * @param srcPopulation
      * @param destPopulation
@@ -275,6 +226,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
 
     /**
      * 基因变异
+     *
      * @param genes
      * @param pool
      */
@@ -286,17 +238,19 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
 
     /**
      * 动态计算变异率
+     *
      * @param pool
      * @return
      */
     private double getDynamicMutationRate(GenePool pool) {
         // 基因类型越多变异率越高
         double diversityFactor = pool.getAverageGeneCount() / 10.0;
-        return Math.min(GeneticAlgorithmConfig.MUTATION_RATE * (0.3+0.1* diversityFactor), 0.35);
+        return Math.min(GeneticAlgorithmConfig.MUTATION_RATE * (0.3 + 0.1 * diversityFactor), 0.35);
     }
 
     /**
      * 轮盘赌选择父代
+     *
      * @param population
      * @return
      */
