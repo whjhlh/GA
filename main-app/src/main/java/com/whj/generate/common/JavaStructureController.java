@@ -8,7 +8,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Updated to support methods with additional modifiers (e.g. static, final).
@@ -17,15 +19,24 @@ import java.util.List;
 @RequestMapping("/api/java-structure")
 public class JavaStructureController {
 
-    private final JavaStructureService service;
+    private final JavaStructureService javaStructureService;
 
     @Autowired
-    public JavaStructureController(JavaStructureService service) {
-        this.service = service;
+    public JavaStructureController(JavaStructureService javaStructureService) {
+        this.javaStructureService = javaStructureService;
     }
 
     @GetMapping
     public List<ClassInfoDTO> getJavaStructure() throws IOException {
-        return service.scanJavaFiles();
+        return javaStructureService.scanJavaFiles();
     }
+    @GetMapping("/method-code")
+    public Map<String, Object> getMethodCode(String className, String methodName) throws IOException {
+        List<Map<String, Object>> codeLines = javaStructureService.extractMethodCodeWithLineNumbers(className, methodName);
+        Map<String, Object> result = new HashMap<>();
+        result.put("codeLines", codeLines);
+        return result;
+    }
+
+
 }

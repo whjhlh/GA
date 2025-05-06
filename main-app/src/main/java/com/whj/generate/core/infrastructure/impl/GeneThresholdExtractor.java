@@ -77,7 +77,7 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
                 .toList();
     }
 
-    private static CompilationUnit getCompilationUnit(Class<?> targetClass) {
+    private static CompilationUnit getCompilationUnit(Class<?> targetClass, String methodName) {
         String filePath = getFilePath(targetClass, StandardCharsets.UTF_8);
         String javaCode = null;
         try {
@@ -85,7 +85,7 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        PARAM_NAME_SIMPLE_NAME_MAP = scanParamsUltraFast(javaCode, "test");
+        PARAM_NAME_SIMPLE_NAME_MAP = scanParamsUltraFast(javaCode, methodName);
         CompilationUnit cu = FILE_CACHE.computeIfAbsent(filePath, p -> {
             try {
                 return StaticJavaParser.parse(new File(p));
@@ -115,7 +115,7 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
     public Map<String, Set<Object>> extractThresholds(Class<?> targetClass, String methodName) {
         Map<String, Set<Object>> paramValues = new HashMap<>();
 
-        CompilationUnit cu = getCompilationUnit(targetClass);
+        CompilationUnit cu = getCompilationUnit(targetClass,methodName);
         cu.getClassByName(targetClass.getSimpleName()).ifPresent(classDecl -> {
             classDecl.getMethodsByName(methodName).forEach(method -> {
                 paramsConst=getParams(method);

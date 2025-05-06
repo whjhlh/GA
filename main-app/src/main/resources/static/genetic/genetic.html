@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>进化算法测试生成系统</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -19,7 +19,11 @@
             --error-red: #F5222D;
             --radius: 8px;
         }
-        * { box-sizing: border-box; }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             background: var(--bg-light);
@@ -27,6 +31,7 @@
             color: var(--text-dark);
             line-height: 1.5;
         }
+
         .container {
             max-width: 1000px;
             margin: 40px auto;
@@ -35,11 +40,13 @@
             border-radius: var(--radius);
             border: 1px solid var(--border-gray);
         }
+
         h1 {
             margin: 0 0 24px;
             font-size: 24px;
             color: var(--primary-blue);
         }
+
         .panel {
             background: #fff;
             padding: 16px;
@@ -47,19 +54,25 @@
             border-radius: var(--radius);
             margin-bottom: 24px;
         }
+
         .flex-row {
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
             align-items: center;
         }
-        .flex-grow { flex: 1; }
+
+        .flex-grow {
+            flex: 1;
+        }
+
         label {
             display: block;
             margin-bottom: 4px;
             font-weight: 500;
             color: var(--text-dark);
         }
+
         select, input[type='text'], input[type='number'] {
             width: 100%;
             padding: 8px 12px;
@@ -68,6 +81,7 @@
             font-size: 14px;
             background: #fff;
         }
+
         .btn, button {
             padding: 8px 16px;
             border: none;
@@ -77,36 +91,49 @@
             font-weight: 500;
             transition: background 0.2s;
         }
+
         .btn-primary {
             background: var(--primary-blue);
             color: #fff;
         }
-        .btn-primary:hover { background: var(--accent-blue); }
+
+        .btn-primary:hover {
+            background: var(--accent-blue);
+        }
+
         .btn-secondary {
             background: #fff;
             color: var(--primary-blue);
             border: 1px solid var(--primary-blue);
         }
+
         .btn-secondary:hover {
             background: var(--light-blue);
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 16px 0;
             background: #fff;
         }
+
         th, td {
             padding: 12px;
             border: 1px solid var(--border-gray);
             text-align: left;
         }
+
         th {
             background: var(--light-blue);
             font-weight: 600;
             color: var(--text-dark);
         }
-        tr:nth-child(even) { background: var(--bg-light); }
+
+        tr:nth-child(even) {
+            background: var(--bg-light);
+        }
+
         .result-container {
             padding: 16px;
             background: var(--light-blue);
@@ -114,25 +141,59 @@
             border-radius: var(--radius);
             margin-bottom: 16px;
         }
+
+        .code-viewer {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            background: #f9fafb;
+            border: 1px solid var(--border-gray);
+            border-radius: var(--radius);
+            padding: 16px;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .code-line {
+            display: block;
+            padding-left: 8px;
+            border-left: 4px solid transparent;
+        }
+
+        .covered-line {
+            background-color: #e6ffed;
+            border-left-color: var(--success-green);
+        }
+
+        .uncovered-line {
+            background-color: #fff1f0;
+            border-left-color: var(--error-red);
+        }
+
         /* Modal */
         .modal-mask {
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.4);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 16px;
         }
+
         .modal-container {
             background: #fff;
             width: 600px;
             max-width: 100%;
             border-radius: var(--radius);
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
+
         .modal-header {
             background: var(--primary-blue);
             color: #fff;
@@ -141,7 +202,11 @@
             justify-content: space-between;
             align-items: center;
         }
-        .modal-body { padding: 16px; }
+
+        .modal-body {
+            padding: 16px;
+        }
+
         .close-btn {
             background: transparent;
             border: none;
@@ -149,14 +214,17 @@
             color: #fff;
             cursor: pointer;
         }
+
         .config-table th, .config-table td {
             border-color: var(--border-gray);
         }
+
         .operation-area {
             padding: 16px;
             text-align: right;
             background: var(--light-blue);
         }
+
         .message-toast {
             position: fixed;
             bottom: 24px;
@@ -164,71 +232,135 @@
             padding: 12px 16px;
             border-radius: var(--radius);
             color: #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             opacity: 0;
             transition: opacity 0.3s;
         }
-        .message-toast.show { opacity: 1; }
-        .message-toast.success { background: var(--success-green); }
-        .message-toast.error { background: var(--error-red); }
+
+        .message-toast.show {
+            opacity: 1;
+        }
+
+        .message-toast.success {
+            background: var(--success-green);
+        }
+
+        .message-toast.error {
+            background: var(--error-red);
+        }
+
+        /* 添加选项卡样式 */
+        .tab-nav {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn:hover {
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .tab-btn.active {
+            color: #2196F3;
+            border-bottom-color: #2196F3;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
-<div id="app">
-    <!-- 主界面 -->
-    <div class="container">
-        <h1>进化算法测试生成系统</h1>
-        <button @click="showModal=true" class="btn-secondary" style="margin-bottom:16px;">配置参数</button>
+<div class="container" id="app">
+    <h1>进化算法测试生成系统</h1>
+    <button @click="showModal=true" class="btn-secondary" style="margin-bottom:16px;">配置参数</button>
 
-        <!-- 配置面板 -->
-        <div class="panel">
-            <div class="flex-row">
-                <div class="flex-grow">
-                    <label>选择目标类</label>
-                    <select @change="onClassChange" v-model="selectedClass">
-                        <option value="">-- 请选择类 --</option>
-                        <option :key="cls.className" :value="cls.className" v-for="cls in classList">{{ cls.className }}</option>
-                    </select>
-                </div>
-                <div class="flex-grow">
-                    <label>选择目标方法</label>
-                    <select :disabled="!selectedClass" v-model="selectedMethod">
-                        <option value="">-- 请选择方法 --</option>
-                        <option :key="m.methodName" :value="m.methodName" v-for="m in methodList">{{ m.methodName }}</option>
-                    </select>
-                </div>
-                <button :disabled="loading.classes" @click="loadClassStructure" class="btn btn-secondary">刷新类结构</button>
+    <!-- 配置面板 -->
+    <div class="panel">
+        <div class="flex-row">
+            <div class="flex-grow">
+                <label>选择目标类</label>
+                <select @change="onClassChange" v-model="selectedClass">
+                    <option value="">-- 请选择类 --</option>
+                    <option :key="cls.className" :value="cls.className" v-for="cls in classList">{{ cls.className }}
+                    </option>
+                </select>
             </div>
-            <div class="flex-row" style="justify-content:flex-end; margin-top:16px;">
-                <button :disabled="!canStart||loading.init" @click="initAlgorithm" class="btn btn-secondary">初始化</button>
-                <button :disabled="!sessionId||finished||loading.evolve" @click="evolveAlgorithm" class="btn">下一代</button>
+            <div class="flex-grow">
+                <label>选择目标方法</label>
+                <select :disabled="!selectedClass" v-model="selectedMethod">
+                    <option value="">-- 请选择方法 --</option>
+                    <option :key="m.methodName" :value="m.methodName" v-for="m in methodList">{{ m.methodName }}
+                    </option>
+                </select>
             </div>
+            <button :disabled="loading.classes" @click="loadClassStructure" class="btn-secondary">刷新类结构</button>
+        </div>
+        <div class="flex-row" style="justify-content:flex-end; margin-top:16px;">
+            <button :disabled="!canStart||loading.init" @click="initAlgorithm" class="btn-secondary">初始化</button>
+            <button :disabled="!sessionId||finished||loading.evolve" @click="evolveAlgorithm" class="btn-primary">
+                下一代
+            </button>
+        </div>
+    </div>
+
+    <!-- 概览结果 -->
+    <div class="panel" v-if="sessionId">
+        <!-- 导航选项卡 -->
+        <div class="tab-nav">
+            <button :class="{ active: activeTab === 'evolution' }"
+                    @click="activeTab = 'evolution'"
+                    class="tab-btn">
+                进化概览
+            </button>
+            <button :class="{ active: activeTab === 'source' }"
+                    @click="activeTab = 'source'"
+                    class="tab-btn">
+                源码概览
+            </button>
         </div>
 
-        <!-- 概览结果 -->
-        <div class="panel" v-if="sessionId">
-            <h2>进化概览</h2>
+        <!-- 进化概览内容 -->
+        <div v-show="activeTab === 'evolution'">
             <div class="result-container">
                 <div>当前代数：{{ generationIndex }}</div>
                 <div>覆盖率：{{ coverage }}%</div>
                 <div>种群规模：{{ populationSize }}</div>
-                <div>完成：{{ finished?'是':'否' }}</div>
+                <div>完成：{{ finished ? '是' : '否' }}</div>
             </div>
+
+            <!-- 进化记录表格 -->
             <table>
-                <thead><tr><th>代数</th><th>覆盖率</th><th>规模</th><th>操作</th></tr></thead>
+                <thead><!-- 表头保持不变 --></thead>
                 <tbody>
                 <tr :key="gen.generationIndex" v-for="gen in generationSummaries">
                     <td>{{ gen.generationIndex }}</td>
                     <td>{{ gen.coverage }}%</td>
                     <td>{{ gen.populationSize }}</td>
-                    <td><button @click="showDetails(gen.generationIndex)" class="btn-secondary">详情</button></td>
+                    <td>
+                        <button @click="showDetails(gen.generationIndex)"
+                                class="btn-secondary">
+                            详情
+                        </button>
+                    </td>
                 </tr>
                 </tbody>
             </table>
-            <div class="detail-table" v-if="generationDetails.length">
+
+            <!-- 染色体详情 -->
+            <div class="detail-section" v-if="generationDetails.length">
                 <h3>第 {{ detailGenIndex }} 代染色体详情</h3>
                 <table>
-                    <thead><tr><th>ID</th><th>基因</th><th>覆盖率</th><th>适应度</th></tr></thead>
+                    <thead><!-- 表头保持不变 --></thead>
                     <tbody>
                     <tr :key="c.id" v-for="c in generationDetails">
                         <td>{{ c.id }}</td>
@@ -240,83 +372,266 @@
                 </table>
             </div>
         </div>
-    </div>
 
+        <!-- 源码概览内容 -->
+        <div class="source-section" v-show="activeTab === 'source' && codeLines.length">
+            <h3>源码预览</h3>
+            <pre class="code-viewer"><code>
+            <span :class="getLineClass(line.lineNumber)"
+                  :key="idx"
+                  class="code-line"
+                  v-for="(line, idx) in codeLines">
+                {{ line.lineNumber.toString().padStart(3, ' ') }} | {{ line.content }}
+            </span>
+        </code></pre>
+        </div>
+    </div>
     <!-- 参数配置弹窗 -->
     <div @click.self="closeModal" class="modal-mask" v-if="showModal">
         <div class="modal-container">
             <div class="modal-header">
                 <h2>参数配置</h2>
-                <span @click="closeModal" class="close-btn">&times;</span>
+                <button @click="closeModal" class="close-btn">×</button>
             </div>
-            <form @submit.prevent="submitConfig">
-                <table class="config-table">
-                    <thead><tr><th>类型</th><th>项目</th><th>值</th></tr></thead>
-                    <tbody>
-                    <tr><td rowspan="2">生成</td><td>目标覆盖率(%)</td><td><input max="100" min="0" type="number" v-model.number="formData.targetCoverage" /></td></tr>
-                    <tr><td>最大迭代次数</td><td><input min="1" type="number" v-model.number="formData.maxGenerationCount" /></td></tr>
-                    <tr><td rowspan="6">进化</td><td>交叉概率</td><td><input max="1" min="0" step="0.01" type="number" v-model.number="formData.crossoverRate" /></td></tr>
-                    <tr><td>变异概率</td><td><input max="1" min="0" step="0.01" type="number" v-model.number="formData.mutationRate" /></td></tr>
-                    <tr><td>新行覆盖权重</td><td><input step="0.1" type="number" v-model.number="formData.noveltyWeight" /></td></tr>
-                    <tr><td>多样性惩罚</td><td><input step="0.1" type="number" v-model.number="formData.diversityPenalty" /></td></tr>
-                    <tr><td>基础权重</td><td><input step="0.1" type="number" v-model.number="formData.baseWeight" /></td></tr>
-                    </tbody>
-                </table>
-                <div class="operation-area">
-                    <button class="btn" type="submit">保存</button>
-                    <button @click="loadConfig" class="btn-secondary" type="button">重置</button>
-                    <button @click="closeModal" class="btn-secondary" type="button">取消</button>
-                </div>
-            </form>
+            <div class="modal-body">
+                <form @submit.prevent="submitConfig">
+                    <table class="config-table">
+                        <thead>
+                        <tr>
+                            <th>类型</th>
+                            <th>项目</th>
+                            <th>值</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td rowspan="2">生成</td>
+                            <td>目标覆盖率(%)</td>
+                            <td><input max="100" min="0" type="number" v-model.number="formData.targetCoverage"/></td>
+                        </tr>
+                        <tr>
+                            <td>最大迭代次数</td>
+                            <td><input min="1" type="number" v-model.number="formData.maxGenerationCount"/></td>
+                        </tr>
+                        <tr>
+                            <td rowspan="6">进化</td>
+                            <td>交叉概率</td>
+                            <td><input max="1" min="0" step="0.01" type="number"
+                                       v-model.number="formData.crossoverRate"/></td>
+                        </tr>
+                        <tr>
+                            <td>变异概率</td>
+                            <td><input max="1" min="0" step="0.01" type="number"
+                                       v-model.number="formData.mutationRate"/></td>
+                        </tr>
+                        <tr>
+                            <td>新行覆盖权重</td>
+                            <td><input step="0.1" type="number" v-model.number="formData.noveltyWeight"/></td>
+                        </tr>
+                        <tr>
+                            <td>多样性惩罚</td>
+                            <td><input step="0.1" type="number" v-model.number="formData.diversityPenalty"/></td>
+                        </tr>
+                        <tr>
+                            <td>基础权重</td>
+                            <td><input step="0.1" type="number" v-model.number="formData.baseWeight"/></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="operation-area">
+                        <button class="btn-primary" type="submit">保存</button>
+                        <button @click="loadConfig" class="btn-secondary" type="button">重置</button>
+                        <button @click="closeModal" class="btn-secondary" type="button">取消</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
     <!-- 通知 -->
-    <div :class="['message-toast', toastType, { show: showToast }]">
-        <svg class="toast-icon" v-if="toastType==='success'" viewBox="0 0 24 24"><path d="M6 12l4 4 8-8" fill="none" stroke="white" stroke-width="2"/></svg>
-        <svg class="toast-icon" v-if="toastType==='error'" viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6" fill="none" stroke="white" stroke-width="2"/></svg>
+    <div :class="['message-toast', toastType, { show: showToast }]
+      ">
+        <svg class="toast-icon" v-if="toastType==='success'" viewBox="0 0 24 24">
+            <path d="M6 12l4 4 8-8" fill="none" stroke="white" stroke-width="2"/>
+        </svg>
+        <svg class="toast-icon" v-if="toastType==='error'" viewBox="0 0 24 24">
+            <path d="M6 6l12 12M6 18L18 6" fill="none" stroke="white" stroke-width="2"/>
+        </svg>
         <span class="toast-content">{{ toastMessage }}</span>
     </div>
 </div>
 
 <script>
-    const { createApp } = Vue;
+    const {createApp} = Vue;
     createApp({
         data() {
             return {
                 /* 主数据 */
-                classList: [], selectedClass:'', selectedMethod:'',
-                sessionId:null, generationIndex:0, coverage:0, populationSize:0, finished:false,
-                loading:{classes:false, init:false, evolve:false},
-                generationSummaries:[], generationDetails:[], detailGenIndex:null,
+                classList: [], selectedClass: '', selectedMethod: '',
+                sessionId: null, generationIndex: 0, coverage: 0, populationSize: 0, finished: false,
+                loading: {classes: false, init: false, evolve: false},
+                generationSummaries: [], generationDetails: [], detailGenIndex: null,
+                activeTab: 'evolution',
+                /* 代码预览 */
+                codeLines: [], coveredLines: [], uncoveredLines: [],
                 /* 模态框 */
-                showModal:false, config:{}, formData:{},
+                showModal: false, config: {}, formData: {},
                 /* Toast */
-                showToast:false, toastMessage:'', toastType:'success', messageQueue:[]
+                showToast: false, toastMessage: '', toastType: 'success', messageQueue: []
             };
         },
         computed: {
-            methodList(){ const cls=this.classList.find(c=>c.className===this.selectedClass); return cls?cls.methods:[]; },
-            canStart(){ return this.selectedClass&&this.selectedMethod; }
+            methodList() {
+                const cls = this.classList.find(c => c.className === this.selectedClass);
+                return cls ? cls.methods : [];
+            },
+            canStart() {
+                return this.selectedClass && this.selectedMethod;
+            }
         },
-        mounted(){ this.loadClassStructure(); this.loadConfig(); },
-        methods:{
-            /* 主方法 */
-            async loadClassStructure(){ this.loading.classes=true; try{ const resp=await axios.get('/api/java-structure'); this.classList=resp.data;}catch{}finally{this.loading.classes=false;}},
-            onClassChange(){ this.selectedMethod='';},
-            async initAlgorithm(){ this.loading.init=true; this.sessionId=null; this.generationSummaries=[]; try{const{data}=await axios.post('/api/genetic-algorithm/init',{className:this.selectedClass,methodName:this.selectedMethod}); this.sessionId=data.sessionId; this.generationIndex=data.generationIndex; this.coverage=data.coverage; this.populationSize=data.populationSize; this.finished=false; this.generationSummaries.push({generationIndex:this.generationIndex,coverage:this.coverage,populationSize:this.populationSize});}catch(e){console.error(e);}finally{this.loading.init=false;}},
-            async evolveAlgorithm(){ this.loading.evolve=true; try{const{data}=await axios.post('/api/genetic-algorithm/evolve',{sessionId:this.sessionId,generationIndex:this.generationIndex}); this.generationIndex=data.nextGeneration; this.coverage=data.coverage; this.populationSize=data.populationSize; this.finished=data.finished; this.generationSummaries.push({generationIndex:this.generationIndex,coverage:this.coverage,populationSize:this.populationSize});}catch(e){console.error(e);}finally{this.loading.evolve=false;}},
-            async showDetails(genIdx){ this.detailGenIndex=genIdx; this.generationDetails=[]; try{const{data}=await axios.get('/api/genetic-algorithm/population',{params:{sessionId:this.sessionId,generationIndex:genIdx}}); if(data.chromosomes) this.generationDetails=data.chromosomes;}catch(e){console.error(e);}},
+        mounted() {
+            this.loadClassStructure();
+            this.loadConfig();
+        },
+        methods: {
+            /* 主流程 */
+            async loadClassStructure() {
+                this.loading.classes = true;
+                try {
+                    const resp = await axios.get('/api/java-structure');
+                    this.classList = resp.data;
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    this.loading.classes = false;
+                }
+            },
+            onClassChange() {
+                this.selectedMethod = '';
+            },
+            async initAlgorithm() {
+                this.loading.init = true;
+                this.sessionId = null;
+                this.generationSummaries = [];
+                try {
+                    const {data} = await axios.post('/api/genetic-algorithm/init', {
+                        className: this.selectedClass,
+                        methodName: this.selectedMethod
+                    });
+                    this.sessionId = data.sessionId;
+                    this.generationIndex = data.generationIndex;
+                    this.coverage = data.coverage;
+                    this.populationSize = data.populationSize;
+                    this.finished = false;
+                    this.generationSummaries.push({
+                        generationIndex: this.generationIndex,
+                        coverage: this.coverage,
+                        populationSize: this.populationSize
+                    });
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    this.loading.init = false;
+                }
+            },
+            async evolveAlgorithm() {
+                this.loading.evolve = true;
+                try {
+                    const {data} = await axios.post('/api/genetic-algorithm/evolve', {
+                        sessionId: this.sessionId,
+                        generationIndex: this.generationIndex
+                    });
+                    this.generationIndex = data.nextGeneration;
+                    this.coverage = data.coverage;
+                    this.populationSize = data.populationSize;
+                    this.finished = data.finished;
+                    this.generationSummaries.push({
+                        generationIndex: this.generationIndex,
+                        coverage: this.coverage,
+                        populationSize: this.populationSize
+                    });
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    this.loading.evolve = false;
+                }
+            },
+            async showDetails(genIdx) {
+                this.detailGenIndex = genIdx;
+                this.generationDetails = [];
+                try {
+                    const {data} = await axios.get('/api/genetic-algorithm/population', {
+                        params: {
+                            sessionId: this.sessionId,
+                            generationIndex: genIdx
+                        }
+                    });
+                    this.generationDetails = data.chromosomes;
+                    // 取示例：后端可返回 covered/uncovered 行号数组
+                    this.coveredLines = data.coveredLines || [];
+                    this.uncoveredLines = data.uncoveredLines || [];
+                    await this.fetchMethodCode();
+                } catch (e) {
+                    console.error(e);
+                }
+            },
+            /* 代码预览 */
+            async fetchMethodCode() {
+                try {
+                    const {data} = await axios.get('/api/java-structure/method-code', {
+                        params: {className: this.selectedClass, methodName: this.selectedMethod}
+                    });
+                    this.codeLines = data.codeLines;
+                } catch (e) {
+                    console.error(e);
+                }
+            },
+            getLineClass(lineNumber) {
+                if (this.coveredLines.includes(lineNumber)) return 'covered-line';
+                if (this.uncoveredLines.includes(lineNumber)) return 'uncovered-line';
+                return '';
+            },
             /* 配置 */
-            async loadConfig(){ try{ const resp=await axios.get('/api/config'); this.config=resp.data; this.formData={...resp.data}; this.toast('配置加载成功','success');}catch(e){this.toast('配置加载失败','error');}},
-            async submitConfig(){ try{ const resp=await axios.post('/api/config',this.formData,{headers:{'Content-Type':'application/json'}}); if(resp.status!==200)throw new Error(await resp.text()); this.loadConfig(); this.toast('配置更新成功','success');}catch(e){this.toast('配置更新失败','error');}},
-            closeModal(){ this.showModal=false; },
+            async loadConfig() {
+                try {
+                    const resp = await axios.get('/api/config');
+                    this.config = resp.data;
+                    this.formData = {...resp.data};
+                    this.toast('配置加载成功', 'success');
+                } catch (e) {
+                    this.toast('配置加载失败', 'error');
+                }
+            },
+            async submitConfig() {
+                try {
+                    const resp = await axios.post('/api/config', this.formData, {headers: {'Content-Type': 'application/json'}});
+                    this.loadConfig();
+                    this.toast('配置更新成功', 'success');
+                } catch (e) {
+                    this.toast('配置更新失败', 'error');
+                }
+            },
+            closeModal() {
+                this.showModal = false;
+            },
             /* Toast */
-            toast(msg,type){ this.messageQueue.push({msg,type}); if(!this.showToast) this.processQueue(); },
-            processQueue(){ if(!this.messageQueue.length)return; const{msg,type}=this.messageQueue.shift(); this.toastMessage=msg; this.toastType=type; this.showToast=true; setTimeout(()=>{this.showToast=false; setTimeout(()=>this.processQueue(),500);},3000); }
+            toast(msg, type) {
+                this.messageQueue.push({msg, type});
+                if (!this.showToast) this.processQueue();
+            },
+            processQueue() {
+                if (!this.messageQueue.length) return;
+                const {msg, type} = this.messageQueue.shift();
+                this.toastMessage = msg;
+                this.toastType = type;
+                this.showToast = true;
+                setTimeout(() => {
+                    this.showToast = false;
+                    setTimeout(() => this.processQueue(), 500);
+                }, 3000);
+            }
         }
     }).mount('#app');
 </script>
 </body>
-
 </html>
