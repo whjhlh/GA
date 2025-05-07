@@ -2,7 +2,10 @@ package com.whj.generate.core.domain;
 
 
 import java.io.Serial;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -26,19 +29,18 @@ public class GenePool extends BasePool {
     private final List<Integer> parameterIndexes = new CopyOnWriteArrayList<>();
 
     /**
-     * 总基因数
+     * 加载指定参数索引的基因列表
      */
-    private Integer geneCount = 0;
+    public synchronized void loadGenes(int paramIndex, Object[] genes) {
+        if (genes == null || genes.length == 0) {
+            throw new IllegalArgumentException("基因数组不能为空");
+        }
 
-    private final Random random = new Random();
-
-
-    public void loadGenes(int paramIndex, Object[] genes) {
         parameterGenes.put(paramIndex, genes.clone());
-        geneCount += genes.length;
+
         if (!parameterIndexes.contains(paramIndex)) {
             parameterIndexes.add(paramIndex);
-            Collections.sort(parameterIndexes); // 保持参数顺序
+            parameterIndexes.sort(Integer::compareTo);
         }
     }
 
@@ -66,61 +68,23 @@ public class GenePool extends BasePool {
         return parameterGenes.getOrDefault(paramIndex, new Object[0]).length;
     }
 
-    public Object getRandomGene(int paramIndex) {
-        Object[] genes = parameterGenes.get(paramIndex);
-        if (genes == null || genes.length == 0) {
-            throw new IllegalStateException("No genes loaded for parameter index: " + paramIndex);
-        }
-        int index = random.nextInt(genes.length);
-        return genes[index];
-    }
-
     public Object[] getThresholdValues(int paramIndex) {
         return parameterGenes.getOrDefault(paramIndex, new Object[0]).clone();
     }
 
     public double getAverageGeneCount() {
-        return geneCount / (double) parameterIndexes.size();
+        if (parameterIndexes.isEmpty()) return 0;
+        int total = parameterGenes.values().stream().mapToInt(arr -> arr.length).sum();
+        return total / (double) parameterIndexes.size();
     }
-
     /**
-     * 生成参数组合
-     *
-     * @param paramIndexes
-     * @return
+     * 获取基因库的最大基因数
      */
-    public Object[][] getParameterCombinations(int[] paramIndexes) {
-        List<Object[]> combinations = new ArrayList<>();
-        int total = 1;
-
-        // 计算总组合数
-        for (int idx : paramIndexes) {
-            total *= getGeneTypeCount(idx);
-        }
-
-        // 生成笛卡尔积
-        int[] counters = new int[paramIndexes.length];
-        while (combinations.size() < total) {
-            Object[] combo = new Object[paramIndexes.length];
-            for (int i = 0; i < paramIndexes.length; i++) {
-                combo[i] = parameterGenes.get(paramIndexes[i])[counters[i]];
-            }
-            combinations.add(combo);
-
-            // 更新计数器
-            for (int i = 0; i < counters.length; i++) {
-                if (++counters[i] < getGeneTypeCount(paramIndexes[i])) {
-                    break;
-                }
-                counters[i] = 0;
-            }
-        }
-        return combinations.toArray(new Object[0][]);
+    public int getMaxGeneCount() {
+        return parameterGenes.values().stream()
+                .mapToInt(arr -> arr.length)
+                .max()
+                .orElse(0);
     }
 
-    // 基因有效性验证
-    public boolean validateGene(int paramIndex, Object gene) {
-        return Arrays.stream(parameterGenes.get(paramIndex))
-                .anyMatch(g -> Objects.equals(g, gene));
-    }
 }
