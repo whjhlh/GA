@@ -237,16 +237,20 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     }
 
     /**
-     * 动态计算变异率
+     * 动态变异率
      *
      * @param pool
      * @return
      */
     private double getDynamicMutationRate(GenePool pool) {
         // 基因类型越多变异率越高
-        double diversityFactor = pool.getAverageGeneCount() / 10.0;
-        return Math.min(GeneticAlgorithmConfig.MUTATION_RATE * (0.3 + 0.1 * diversityFactor), 0.35);
+        double diversityFactor = pool.getAverageGeneCount() /  pool.getMaxGeneCount();
+        if(GeneticAlgorithmConfig.MUTATION_RATE==-1){
+            return diversityFactor;
+        }
+        return (GeneticAlgorithmConfig.MUTATION_RATE+ diversityFactor)/2;
     }
+
 
     /**
      * 轮盘赌选择父代

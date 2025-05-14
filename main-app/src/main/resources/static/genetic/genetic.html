@@ -340,7 +340,15 @@
 
             <!-- 进化记录表格 -->
             <table>
-                <thead><!-- 表头保持不变 --></thead>
+
+                <thead>
+                <tr>
+                    <th>迭代</th>
+                    <th>覆盖率</th>
+                    <th>种群规模</th>
+                    <th>种群用例详情</th>
+                </tr>
+                </thead>
                 <tbody>
                 <tr :key="gen.generationIndex" v-for="gen in generationSummaries">
                     <td>{{ gen.generationIndex }}</td>
@@ -360,7 +368,14 @@
             <div class="detail-section" v-if="generationDetails.length">
                 <h3>第 {{ detailGenIndex }} 代染色体详情</h3>
                 <table>
-                    <thead><!-- 表头保持不变 --></thead>
+                    <thead>
+                    <tr>
+                        <th>用例序号</th>
+                        <th>方法入参</th>
+                        <th>覆盖率</th>
+                        <th>适应分数</th>
+                    </tr>
+                    </thead>
                     <tbody>
                     <tr :key="c.id" v-for="c in generationDetails">
                         <td>{{ c.id }}</td>
@@ -399,7 +414,7 @@
                         <thead>
                         <tr>
                             <th>类型</th>
-                            <th>项目</th>
+                            <th>字段名</th>
                             <th>值</th>
                         </tr>
                         </thead>

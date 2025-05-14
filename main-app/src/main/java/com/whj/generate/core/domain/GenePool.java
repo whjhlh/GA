@@ -87,4 +87,10 @@ public class GenePool extends BasePool {
                 .orElse(0);
     }
 
+    public void loadGenes(List<String> paramsList) {
+        int paramIndex = 0;
+        for(String param : paramsList){
+            genePool.loadGenes(paramIndex++, geneticMap.get(param).toArray());
+        }
+    }
 }

@@ -22,6 +22,7 @@ public interface ParamThresholdExtractor {
 
     /**
      * 解析参数名
+     *
      * @param method
      * @return
      */

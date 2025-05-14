@@ -71,45 +71,6 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
         }
     }
 
-    private static List<String> getParams(MethodDeclaration method) {
-        return method.getParameters().stream()
-                .map(NodeWithSimpleName::getNameAsString)
-                .toList();
-    }
-
-    private static CompilationUnit getCompilationUnit(Class<?> targetClass, String methodName) {
-        String filePath = getFilePath(targetClass, StandardCharsets.UTF_8);
-        String javaCode = null;
-        try {
-            javaCode = getJavaCode(targetClass, filePath);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        PARAM_NAME_SIMPLE_NAME_MAP = scanParamsUltraFast(javaCode, methodName);
-        CompilationUnit cu = FILE_CACHE.computeIfAbsent(filePath, p -> {
-            try {
-                return StaticJavaParser.parse(new File(p));
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        return cu;
-    }
-
-    private static void handledThresholdsByInt(List<String> params, Map<String, Set<Object>> paramValues, Expression left, Expression right, BinaryExpr.Operator op) {
-        if (left instanceof NameExpr leftName && right.isIntegerLiteralExpr()) {
-            String paramName = leftName.getNameAsString();
-            if (params.contains(paramName)) {
-                int value = right.asIntegerLiteralExpr().asNumber().intValue();
-                if(thresholdsMap.containsKey(paramName)){
-                    thresholdsMap.get(paramName).add(value);
-                }else {
-                    thresholdsMap.put(paramName,new HashSet<>());
-                }
-                addThresholdsByInt(paramName, op, value, paramValues);
-            }
-        }
-    }
 
     @Override
     public Map<String, Set<Object>> extractThresholds(Class<?> targetClass, String methodName) {
@@ -148,6 +109,55 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
         });
 
         return paramValues;
+    }
+
+    /**
+     * 获取方法参数
+     * @param method
+     * @return
+     */
+    @Override
+    public List<String> resolveParameterNames(Method method) {
+        return Collections.unmodifiableList(paramsConst);
+    }
+    private static List<String> getParams(MethodDeclaration method) {
+        return method.getParameters().stream()
+                .map(NodeWithSimpleName::getNameAsString)
+                .toList();
+    }
+
+    private static CompilationUnit getCompilationUnit(Class<?> targetClass, String methodName) {
+        String filePath = getFilePath(targetClass, StandardCharsets.UTF_8);
+        String javaCode = null;
+        try {
+            javaCode = getJavaCode(targetClass, filePath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        PARAM_NAME_SIMPLE_NAME_MAP = scanParamsUltraFast(javaCode, methodName);
+        CompilationUnit cu = FILE_CACHE.computeIfAbsent(filePath, p -> {
+            try {
+                return StaticJavaParser.parse(new File(p));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        return cu;
+    }
+
+    private static void handledThresholdsByInt(List<String> params, Map<String, Set<Object>> paramValues, Expression left, Expression right, BinaryExpr.Operator op) {
+        if (left instanceof NameExpr leftName && right.isIntegerLiteralExpr()) {
+            String paramName = leftName.getNameAsString();
+            if (params.contains(paramName)) {
+                int value = right.asIntegerLiteralExpr().asNumber().intValue();
+                if(thresholdsMap.containsKey(paramName)){
+                    thresholdsMap.get(paramName).add(value);
+                }else {
+                    thresholdsMap.put(paramName,new HashSet<>());
+                }
+                addThresholdsByInt(paramName, op, value, paramValues);
+            }
+        }
     }
 
     // 类型安全转换方法（防御性编程）
@@ -378,13 +388,4 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
         }
     }
 
-    /**
-     * 获取方法参数
-     * @param method
-     * @return
-     */
-    @Override
-    public List<String> resolveParameterNames(Method method) {
-        return Collections.unmodifiableList(paramsConst);
-    }
 }
