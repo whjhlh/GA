@@ -6,23 +6,51 @@ import com.whj.generate.common.config.GeneticAlgorithmConfig;
  * @author whj
  * @date 2025-05-04 下午10:12
  */
-public class GeneticAlgorithmConfigDTO {
+public class ParamDTO {
     private static long VERSION = 0L;
+    /**
+     * 版本号
+     */
     private long configVersion;
-    private Double crossoverRate;
-    private Double mutationRate;
     private String initPhase;
+
+    /*--进化操作--*/
+    /**
+     * 交叉概率
+     */
+    private Double crossoverRate;
+    /**
+     * 变异概率
+     */
+    private Double mutationRate;
+    /*--进化终止--*/
+    /**
+     * 最大迭代次数
+     */
     private Integer maxGenerationCount;
+    /**
+     * 目标覆盖率
+     */
     private Integer targetCoverage;
+    /*--适应度权重--*/
+    /*
+     * 多样性奖励权重
+     */
     private Double noveltyWeight;
+    /*
+     * 多样性惩罚权重
+     */
     private Double diversityPenalty;
+    /**
+     * 基础权重-覆盖率
+     */
     private Double baseWeight;
     // 空参构造器
-    public GeneticAlgorithmConfigDTO() {}
+    public ParamDTO() {}
 
     // 静态工厂方法创建当前配置
-    public static GeneticAlgorithmConfigDTO current() {
-        GeneticAlgorithmConfigDTO dto = new GeneticAlgorithmConfigDTO();
+    public static ParamDTO current() {
+        ParamDTO dto = new ParamDTO();
         dto.setCrossoverRate(GeneticAlgorithmConfig.CROSSOVER_RATE);
         dto.setMutationRate(GeneticAlgorithmConfig.MUTATION_RATE);
         dto.setInitPhase(GeneticAlgorithmConfig.INIT_PHASE);

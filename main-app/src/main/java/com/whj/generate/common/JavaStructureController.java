@@ -32,6 +32,7 @@ public class JavaStructureController {
     }
     @GetMapping("/method-code")
     public Map<String, Object> getMethodCode(String className, String methodName) throws IOException {
+        System.out.println("GET /api/java-structure/method-code 被调用");
         List<Map<String, Object>> codeLines = javaStructureService.extractMethodCodeWithLineNumbers(className, methodName);
         Map<String, Object> result = new HashMap<>();
         result.put("codeLines", codeLines);

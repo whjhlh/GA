@@ -17,8 +17,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.whj.generate.utill.FileUtil.reportedInFile;
@@ -52,6 +51,7 @@ public class GeneticAlgorithmController {
     @PostMapping("/init")
     @ResponseBody
     public InitResponse init(@RequestBody AlgorithmRequest request) {
+        System.out.println("POST init 被调用");
         try {
             Class<?> targetClass = Class.forName("com.whj.generate.whjtest." + request.getClassName());
             Nature nature = new Nature();
@@ -74,6 +74,7 @@ public class GeneticAlgorithmController {
     @PostMapping("/evolve")
     @ResponseBody
     public EvolveResponse evolve(@RequestBody EvolveRequest request) {
+        System.out.println("POST evolve 被调用");
         Nature nature = sessions.get(request.getSessionId());
         if (nature == null) {
             throw new IllegalArgumentException("无效的 sessionId: " + request.getSessionId());
@@ -86,6 +87,40 @@ public class GeneticAlgorithmController {
 
         return ChromosomeConvertor.getEvolveResponse(request, genIndex, nextPop, finished);
     }
+
+
+    @GetMapping("/generation-details")
+    @ResponseBody
+    public PopulationResponse getPopulation(@RequestParam String sessionId,
+                                            @RequestParam int generationIndex) {
+        System.out.println("GET population 被调用");
+        Nature nature = sessions.get(sessionId);
+        if (nature == null || generationIndex < 0 || generationIndex >= nature.getPopulationList().size()) {
+            throw new IllegalArgumentException("无效的参数");
+        }
+        Population pop = nature.getPopulationList().get(generationIndex);
+        Map<Chromosome, Integer> chromosomeSequenceMap = getChromosomeSequenceMap();
+
+        return ChromosomeConvertor.getPopulationResponse(sessionId, generationIndex, pop, chromosomeSequenceMap);
+    }
+    /**
+     * 获取种群可视化数据（多目标指标随代数的变化）
+     */
+    @GetMapping("/visualization")
+    @ResponseBody
+    public List<Map<String, Object>> getPopulationVisualization(@RequestParam String sessionId) {
+        System.out.println("GET population-visualization 被调用");
+        Nature nature = sessions.get(sessionId);
+        if (nature == null || nature.getPopulationList().isEmpty()) {
+            throw new IllegalArgumentException("无效的 sessionId 或种群数据为空");
+        }
+
+        ChromosomeCoverageTracker tracker = geneticAlgorithmService.getCoverageTracker();
+        List<Population> populations = nature.getPopulationList();
+
+        return buildVisualResult(populations, tracker);
+    }
+
 
     /**
      * 改造后的算法入口（改为接收动态参数）
@@ -137,19 +172,28 @@ public class GeneticAlgorithmController {
         ChromosomeCoverageTracker coverageTracker = geneticAlgorithmService.getCoverageTracker();
         reportedInFile(duration, population, phase, coverageTracker);
     }
+    private static List<Map<String, Object>> buildVisualResult(List<Population> populations, ChromosomeCoverageTracker tracker) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        double previousCoverage = 0.0;
 
-    @GetMapping("/population")
-    @ResponseBody
-    public PopulationResponse getPopulation(@RequestParam String sessionId,
-                                            @RequestParam int generationIndex) {
-        Nature nature = sessions.get(sessionId);
-        if (nature == null || generationIndex < 0 || generationIndex >= nature.getPopulationList().size()) {
-            throw new IllegalArgumentException("无效的参数");
+        for (int i = 0; i < populations.size(); i++) {
+            Population pop = populations.get(i);
+
+            double coverage = pop.getCurrentCoverage();
+            double deltaCoverage = coverage - previousCoverage;
+            previousCoverage = coverage;
+
+            double similarity = tracker.getSimilarityAtGeneration(pop);
+
+            Map<String, Object> dataPoint = new HashMap<>();
+            dataPoint.put("generation", i);
+            dataPoint.put("coverage", coverage);
+            dataPoint.put("deltaCoverage", deltaCoverage);
+            dataPoint.put("similarity", similarity);
+
+            result.add(dataPoint);
         }
-        Population pop = nature.getPopulationList().get(generationIndex);
-        Map<Chromosome, Integer> chromosomeSequenceMap = getChromosomeSequenceMap();
-
-        return ChromosomeConvertor.getPopulationResponse(sessionId, generationIndex, pop, chromosomeSequenceMap);
+        return result;
     }
 
     private Map<Chromosome, Integer> getChromosomeSequenceMap() {

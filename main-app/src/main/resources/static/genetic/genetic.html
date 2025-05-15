@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>进化算法测试生成系统</title>
+    <title>遗传算法测试用例生成系统</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
     <style>
         :root {
             --primary-blue: #1677FF;
@@ -19,11 +20,9 @@
             --error-red: #F5222D;
             --radius: 8px;
         }
-
         * {
             box-sizing: border-box;
         }
-
         body {
             margin: 0;
             background: var(--bg-light);
@@ -31,7 +30,6 @@
             color: var(--text-dark);
             line-height: 1.5;
         }
-
         .container {
             max-width: 1000px;
             margin: 40px auto;
@@ -40,39 +38,40 @@
             border-radius: var(--radius);
             border: 1px solid var(--border-gray);
         }
-
         h1 {
             margin: 0 0 24px;
             font-size: 24px;
             color: var(--primary-blue);
         }
-
-        .panel {
+        .panel, .config-panel, .visualization {
             background: #fff;
             padding: 16px;
             border: 1px solid var(--border-gray);
             border-radius: var(--radius);
             margin-bottom: 24px;
         }
-
-        .flex-row {
+        .flex-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            align-items: end;
+        }
+        .form-group, .action-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .action-bar {
             display: flex;
             gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
+            margin-top: 16px;
+            justify-content: flex-start;
         }
-
-        .flex-grow {
-            flex: 1;
-        }
-
         label {
             display: block;
             margin-bottom: 4px;
             font-weight: 500;
             color: var(--text-dark);
         }
-
         select, input[type='text'], input[type='number'] {
             width: 100%;
             padding: 8px 12px;
@@ -81,7 +80,6 @@
             font-size: 14px;
             background: #fff;
         }
-
         .btn, button {
             padding: 8px 16px;
             border: none;
@@ -91,57 +89,53 @@
             font-weight: 500;
             transition: background 0.2s;
         }
-
         .btn-primary {
             background: var(--primary-blue);
             color: #fff;
         }
-
         .btn-primary:hover {
             background: var(--accent-blue);
         }
-
         .btn-secondary {
             background: #fff;
             color: var(--primary-blue);
             border: 1px solid var(--primary-blue);
         }
-
         .btn-secondary:hover {
             background: var(--light-blue);
         }
-
+        .btn-config {
+            background: var(--accent-blue);
+            color: white;
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+        .btn-detail {
+            padding: 4px 8px;
+            font-size: 12px;
+            background-color: var(--light-blue);
+            color: var(--primary-blue);
+            border: 1px solid var(--primary-blue);
+        }
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 16px 0;
             background: #fff;
         }
-
         th, td {
             padding: 12px;
             border: 1px solid var(--border-gray);
             text-align: left;
         }
-
         th {
             background: var(--light-blue);
             font-weight: 600;
             color: var(--text-dark);
         }
-
         tr:nth-child(even) {
             background: var(--bg-light);
         }
-
-        .result-container {
-            padding: 16px;
-            background: var(--light-blue);
-            border-left: 4px solid var(--primary-blue);
-            border-radius: var(--radius);
-            margin-bottom: 16px;
-        }
-
         .code-viewer {
             font-family: 'Courier New', monospace;
             font-size: 13px;
@@ -154,24 +148,19 @@
             line-height: 1.6;
             position: relative;
         }
-
         .code-line {
             display: block;
             padding-left: 8px;
             border-left: 4px solid transparent;
         }
-
         .covered-line {
             background-color: #e6ffed;
             border-left-color: var(--success-green);
         }
-
         .uncovered-line {
             background-color: #fff1f0;
             border-left-color: var(--error-red);
         }
-
-        /* Modal */
         .modal-mask {
             position: fixed;
             top: 0;
@@ -183,8 +172,8 @@
             justify-content: center;
             align-items: center;
             padding: 16px;
+            z-index: 1000;
         }
-
         .modal-container {
             background: #fff;
             width: 600px;
@@ -193,7 +182,6 @@
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
-
         .modal-header {
             background: var(--primary-blue);
             color: #fff;
@@ -202,11 +190,11 @@
             justify-content: space-between;
             align-items: center;
         }
-
         .modal-body {
             padding: 16px;
+            max-height: 70vh;
+            overflow-y: auto;
         }
-
         .close-btn {
             background: transparent;
             border: none;
@@ -214,17 +202,6 @@
             color: #fff;
             cursor: pointer;
         }
-
-        .config-table th, .config-table td {
-            border-color: var(--border-gray);
-        }
-
-        .operation-area {
-            padding: 16px;
-            text-align: right;
-            background: var(--light-blue);
-        }
-
         .message-toast {
             position: fixed;
             bottom: 24px;
@@ -234,28 +211,25 @@
             color: #fff;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 1001;
+            transform: translateY(20px);
         }
-
         .message-toast.show {
             opacity: 1;
+            transform: translateY(0);
         }
-
         .message-toast.success {
             background: var(--success-green);
         }
-
         .message-toast.error {
             background: var(--error-red);
         }
-
-        /* 添加选项卡样式 */
         .tab-nav {
             display: flex;
             margin-bottom: 1rem;
             border-bottom: 1px solid #ddd;
         }
-
         .tab-btn {
             padding: 12px 24px;
             border: none;
@@ -266,388 +240,787 @@
             transition: all 0.3s;
             border-bottom: 2px solid transparent;
         }
-
         .tab-btn:hover {
             color: #333;
             background: #f5f5f5;
         }
-
         .tab-btn.active {
             color: #2196F3;
             border-bottom-color: #2196F3;
             font-weight: 500;
         }
+        .chart-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .chart-box {
+            height: 400px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+        }
+        .status-indicators {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .indicator {
+            background-color: var(--light-blue);
+            padding: 8px 12px;
+            border-radius: var(--radius);
+            border: 1px solid var(--primary-blue);
+        }
+        .indicator label {
+            font-weight: bold;
+            margin-right: 8px;
+            color: var(--primary-blue);
+        }
+        .indicator span {
+            font-weight: normal;
+        }
+        .status-success {
+            color: var(--success-green);
+            font-weight: bold;
+        }
+        .status-processing {
+            color: var(--accent-blue);
+            font-weight: bold;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
 <div class="container" id="app">
-    <h1>进化算法测试生成系统</h1>
-    <button @click="showModal=true" class="btn-secondary" style="margin-bottom:16px;">配置参数</button>
+    <header class="header">
+        <h1>遗传算法测试用例生成系统</h1>
+        <button @click="showModal = true" class="btn btn-config">配置参数</button>
+    </header>
 
-    <!-- 配置面板 -->
-    <div class="panel">
-        <div class="flex-row">
-            <div class="flex-grow">
-                <label>选择目标类</label>
+    <section class="config-panel">
+        <div class="flex-grid">
+            <div class="form-group">
+                <label>选择目标类:</label>
                 <select @change="onClassChange" v-model="selectedClass">
                     <option value="">-- 请选择类 --</option>
-                    <option :key="cls.className" :value="cls.className" v-for="cls in classList">{{ cls.className }}
-                    </option>
+                    <option v-for="cls in classList" :key="cls.className" :value="cls.className">{{ cls.className }}</option>
                 </select>
             </div>
-            <div class="flex-grow">
-                <label>选择目标方法</label>
+            <div class="form-group">
+                <label>选择目标方法:</label>
                 <select :disabled="!selectedClass" v-model="selectedMethod">
                     <option value="">-- 请选择方法 --</option>
-                    <option :key="m.methodName" :value="m.methodName" v-for="m in methodList">{{ m.methodName }}
-                    </option>
+                    <option v-for="m in methodList" :key="m.methodName" :value="m.methodName">{{ m.methodName }}</option>
                 </select>
             </div>
-            <button :disabled="loading.classes" @click="loadClassStructure" class="btn-secondary">刷新类结构</button>
-        </div>
-        <div class="flex-row" style="justify-content:flex-end; margin-top:16px;">
-            <button :disabled="!canStart||loading.init" @click="initAlgorithm" class="btn-secondary">初始化</button>
-            <button :disabled="!sessionId||finished||loading.evolve" @click="evolveAlgorithm" class="btn-primary">
-                下一代
-            </button>
-        </div>
-    </div>
-
-    <!-- 概览结果 -->
-    <div class="panel" v-if="sessionId">
-        <!-- 导航选项卡 -->
-        <div class="tab-nav">
-            <button :class="{ active: activeTab === 'evolution' }"
-                    @click="activeTab = 'evolution'"
-                    class="tab-btn">
-                进化概览
-            </button>
-            <button :class="{ active: activeTab === 'source' }"
-                    @click="activeTab = 'source'"
-                    class="tab-btn">
-                源码概览
-            </button>
-        </div>
-
-        <!-- 进化概览内容 -->
-        <div v-show="activeTab === 'evolution'">
-            <div class="result-container">
-                <div>当前代数：{{ generationIndex }}</div>
-                <div>覆盖率：{{ coverage }}%</div>
-                <div>种群规模：{{ populationSize }}</div>
-                <div>完成：{{ finished ? '是' : '否' }}</div>
+            <div class="action-group">
+                <label>&nbsp;</label>
+                <button @click="loadClassStructure" :disabled="loading.classes" class="btn btn-secondary">
+                    {{ loading.classes ? '加载中...' : '刷新类结构' }}
+                </button>
             </div>
+        </div>
+        <div class="action-bar">
+            <button @click="initAlgorithm" :disabled="!canStart || loading.init" class="btn btn-secondary">
+                {{ loading.init ? '初始化中...' : '初始化算法' }}
+            </button>
+            <button @click="evolveAlgorithm" :disabled="!canEvolve || loading.evolve" class="btn btn-primary">
+                {{ loading.evolve ? '进化中...' : '执行下一代' }}
+            </button>
+        </div>
+    </section>
 
-            <!-- 进化记录表格 -->
-            <table>
+    <section class="visualization" v-if="sessionId">
+        <div class="chart-container">
+            <div ref="coverageChartEl" class="chart-box"></div>
+            <div ref="similarityChartEl" class="chart-box"></div>
+        </div>
 
-                <thead>
-                <tr>
-                    <th>迭代</th>
-                    <th>覆盖率</th>
-                    <th>种群规模</th>
-                    <th>种群用例详情</th>
-                </tr>
-                </thead>
+        <nav class="tab-nav">
+            <button v-for="tab in tabs"
+                    :key="tab.id"
+                    :class="['tab-btn', { active: activeTab === tab.id }]"
+                    @click="activeTab = tab.id">
+                {{ tab.label }}
+            </button>
+        </nav>
 
-                <tbody>
-                <tr :key="gen.generationIndex" v-for="gen in generationSummaries">
-                    <td>{{ gen.generationIndex }}</td>
-                    <td>{{ gen.coverage }}%</td>
-                    <td>{{ gen.populationSize }}</td>
-                    <td>
-                        <button @click="showDetails(gen.generationIndex)"
-                                class="btn-secondary">
-                            详情
-                        </button>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-
-            <!-- 染色体详情 -->
-            <div class="detail-section" v-if="generationDetails.length">
+        <div v-show="activeTab === 'evolution'" class="tab-content">
+            <div class="status-indicators">
+                <div class="indicator"><label>当前代数:</label> <span>{{ generationIndex }}</span></div>
+                <div class="indicator"><label>覆盖率:</label> <span>{{ coverage.toFixed(2) }}%</span></div>
+                <div class="indicator"><label>种群规模:</label> <span>{{ populationSize }}</span></div>
+                <div class="indicator"><label>完成状态:</label> <span :class="finished ? 'status-success' : 'status-processing'">{{ finished ? '已完成' : '进行中' }}</span></div>
+            </div>
+            <div class="generation-table">
+                <table>
+                    <thead>
+                    <tr>
+                        <th v-for="col in tableColumns" :key="col.key">{{ col.label }}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(gen) in generationSummaries" :key="gen.generationIndex">
+                        <td>{{ gen.generationIndex }}</td>
+                        <td>{{ typeof gen.coverage === 'number' ? gen.coverage.toFixed(2) + '%' : 'N/A' }}</td>
+                        <td>{{ gen.populationSize !== undefined ? gen.populationSize : 'N/A' }}</td>
+                        <td>
+                            <button @click="showDetails(gen.generationIndex)" class="btn btn-detail">查看详情</button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div v-if="generationDetails.length" class="chromosome-details panel">
                 <h3>第 {{ detailGenIndex }} 代染色体详情</h3>
                 <table>
                     <thead>
                     <tr>
-                        <th>用例序号</th>
-                        <th>方法入参</th>
+                        <th>用例ID</th>
+                        <th>参数组合 (Genes)</th>
                         <th>覆盖率</th>
-                        <th>适应分数</th>
+                        <th>适应度</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr :key="c.id" v-for="c in generationDetails">
+                    <tr v-for="c in generationDetails" :key="c.id">
                         <td>{{ c.id }}</td>
-                        <td>{{ c.genes }}</td>
-                        <td>{{ c.coveragePercent }}%</td>
-                        <td>{{ c.fitness }}</td>
+                        <td class="gene-data">{{ formatGenes(c.genes) }}</td>
+                        <td>{{ typeof c.coveragePercent === 'number' ? c.coveragePercent.toFixed(2) + '%' : 'N/A' }}</td>
+                        <td>{{ typeof c.fitness === 'number' ? c.fitness.toFixed(4) : 'N/A' }}</td>
                     </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- 源码概览内容 -->
-        <div class="source-section" v-show="activeTab === 'source' && codeLines.length">
-            <h3>源码预览</h3>
-            <pre class="code-viewer"><code>
-            <span :class="getLineClass(line.lineNumber)"
-                  :key="idx"
-                  class="code-line"
-                  v-for="(line, idx) in codeLines">
-                {{ line.lineNumber.toString().padStart(3, ' ') }} | {{ line.content }}
-            </span>
-        </code></pre>
-        </div>
-    </div>
-    <!-- 参数配置弹窗 -->
-    <div @click.self="closeModal" class="modal-mask" v-if="showModal">
-        <div class="modal-container">
-            <div class="modal-header">
-                <h2>参数配置</h2>
-                <button @click="closeModal" class="close-btn">×</button>
-            </div>
-            <div class="modal-body">
-                <form @submit.prevent="submitConfig">
-                    <table class="config-table">
-                        <thead>
-                        <tr>
-                            <th>类型</th>
-                            <th>字段名</th>
-                            <th>值</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td rowspan="2">生成</td>
-                            <td>目标覆盖率(%)</td>
-                            <td><input max="100" min="0" type="number" v-model.number="formData.targetCoverage"/></td>
-                        </tr>
-                        <tr>
-                            <td>最大迭代次数</td>
-                            <td><input min="1" type="number" v-model.number="formData.maxGenerationCount"/></td>
-                        </tr>
-                        <tr>
-                            <td rowspan="6">进化</td>
-                            <td>交叉概率</td>
-                            <td><input max="1" min="0" step="0.01" type="number"
-                                       v-model.number="formData.crossoverRate"/></td>
-                        </tr>
-                        <tr>
-                            <td>变异概率</td>
-                            <td><input max="1" min="0" step="0.01" type="number"
-                                       v-model.number="formData.mutationRate"/></td>
-                        </tr>
-                        <tr>
-                            <td>新行覆盖权重</td>
-                            <td><input step="0.1" type="number" v-model.number="formData.noveltyWeight"/></td>
-                        </tr>
-                        <tr>
-                            <td>多样性惩罚</td>
-                            <td><input step="0.1" type="number" v-model.number="formData.diversityPenalty"/></td>
-                        </tr>
-                        <tr>
-                            <td>基础权重</td>
-                            <td><input step="0.1" type="number" v-model.number="formData.baseWeight"/></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    <div class="operation-area">
-                        <button class="btn-primary" type="submit">保存</button>
-                        <button @click="loadConfig" class="btn-secondary" type="button">重置</button>
-                        <button @click="closeModal" class="btn-secondary" type="button">取消</button>
-                    </div>
-                </form>
+        <div v-show="activeTab === 'source'" class="tab-content panel">
+            <div class="source-preview">
+                <h3>源代码覆盖率分析</h3>
+                <p v-if="loading.sourceCode">加载源代码中...</p>
+                <p v-else-if="!codeLines.length">暂无源代码数据，请确保已选择类和方法，并已开始算法执行。</p>
+                <pre v-else class="code-viewer"><code><span v-for="line in codeLines"
+                                                            :key="line.lineNumber"
+                                                            :class="['code-line', getLineClass(line.lineNumber)]">
+    {{ line.lineNumber.toString().padStart(4, ' ') }} | {{ line.content }}
+</span></code></pre>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- 通知 -->
-    <div :class="['message-toast', toastType, { show: showToast }]
-      ">
-        <svg class="toast-icon" v-if="toastType==='success'" viewBox="0 0 24 24">
-            <path d="M6 12l4 4 8-8" fill="none" stroke="white" stroke-width="2"/>
-        </svg>
-        <svg class="toast-icon" v-if="toastType==='error'" viewBox="0 0 24 24">
-            <path d="M6 6l12 12M6 18L18 6" fill="none" stroke="white" stroke-width="2"/>
-        </svg>
-        <span class="toast-content">{{ toastMessage }}</span>
-    </div>
+    <config-modal
+            v-if="showModal"
+            :initial-form-data="formData"
+            @submit="submitConfig"
+            @close="closeModal">
+    </config-modal>
+
+    <notification-toast
+            :message="toastMessage"
+            :type="toastType"
+            :visible="showToast">
+    </notification-toast>
 </div>
 
 <script>
-    const {createApp} = Vue;
-    createApp({
-        data() {
-            return {
-                /* 主数据 */
-                classList: [], selectedClass: '', selectedMethod: '',
-                sessionId: null, generationIndex: 0, coverage: 0, populationSize: 0, finished: false,
-                loading: {classes: false, init: false, evolve: false},
-                generationSummaries: [], generationDetails: [], detailGenIndex: null,
-                activeTab: 'evolution',
-                /* 代码预览 */
-                codeLines: [], coveredLines: [], uncoveredLines: [],
-                /* 模态框 */
-                showModal: false, config: {}, formData: {},
-                /* Toast */
-                showToast: false, toastMessage: '', toastType: 'success', messageQueue: []
+    const { createApp, ref, reactive, computed, watch, onMounted, onBeforeUnmount } = Vue;
+
+    const ConfigModal = {
+        props: ['initialFormData'],
+        emits: ['submit', 'close'],
+        setup(props, { emit }) {
+            const localFormData = reactive({});
+            const parameters = computed(() => [
+                { key: 'crossoverRate', label: '交叉率 (0-1)', type: 'number', step: 0.01, default: 0.8, min:0, max:1 },
+                { key: 'mutationRate', label: '变异率 (0-1)', type: 'number', step: 0.01, default: 0.1, min:0, max:1 },
+                { key: 'maxGenerationCount', label: '最大代数', type: 'number', default: 100, min:1 },
+                { key: 'targetCoverage', label: '目标覆盖率 (%)', type: 'number', default: 80, min:1, max:100 },
+                { key: 'noveltyWeight', label: '新颖性权重 (0-1)', type: 'number', step: 0.01, default: 0.2, min:0, max:1 },
+                { key: 'diversityPenalty', label: '多样性惩罚 (0-1)', type: 'number', step: 0.01, default: 0.1, min:0, max:1 },
+                { key: 'baseWeight', label: '基础权重 (0-1)', type: 'number', step: 0.01, default: 0.7, min:0, max:1 }
+            ]);
+
+            watch(() => props.initialFormData, (newData) => {
+                parameters.value.forEach(param => {
+                    localFormData[param.key] = newData && newData[param.key] !== undefined ? newData[param.key] : param.default;
+                });
+            }, { deep: true, immediate: true });
+
+            const handleSubmit = () => {
+                for (const param of parameters.value) {
+                    const value = localFormData[param.key];
+                    if (value === null || value === '' || value === undefined) {
+                        alert(`${param.label} 不能为空`);
+                        return;
+                    }
+                    if (param.min !== undefined && value < param.min) {
+                        alert(`${param.label} 不能小于 ${param.min}`);
+                        return;
+                    }
+                    if (param.max !== undefined && value > param.max) {
+                        alert(`${param.label} 不能大于 ${param.max}`);
+                        return;
+                    }
+                }
+                emit('submit', { ...localFormData });
             };
+            const handleClose = () => emit('close');
+
+            return { localFormData, parameters, handleSubmit, handleClose };
         },
-        computed: {
-            methodList() {
-                const cls = this.classList.find(c => c.className === this.selectedClass);
-                return cls ? cls.methods : [];
-            },
-            canStart() {
-                return this.selectedClass && this.selectedMethod;
+        template: `
+          <div class="modal-mask">
+            <div class="modal-container">
+              <div class="modal-header">
+                <h3>算法参数配置</h3>
+                <button @click="handleClose" class="close-btn">&times;</button>
+              </div>
+              <div class="modal-body">
+                <div v-for="param in parameters" :key="param.key" class="form-group" style="margin-bottom: 15px;">
+                  <label :for="param.key">{{ param.label }}:</label>
+                  <input
+                      type="number"
+                      :step="param.step || 0.01"
+                      :min="param.min"
+                      :max="param.max"
+                      :id="param.key"
+                      v-model.number="localFormData[param.key]">
+                </div>
+              </div>
+              <div class="operation-area" style="padding: 16px; text-align: right; background: var(--light-blue);">
+                <button @click="handleClose" class="btn btn-secondary" style="margin-right: 10px;">取消</button>
+                <button @click="handleSubmit" class="btn btn-primary">保存配置</button>
+              </div>
+            </div>
+          </div>
+        `
+    };
+
+    const NotificationToast = {
+        props: ['message', 'type', 'visible'],
+        template: `
+          <div :class="['message-toast', type, { show: visible }]">
+            {{ message }}
+          </div>
+        `
+    };
+
+    class ChartManager {
+        constructor(chartEl, baseOptions) {
+            if (!chartEl) {
+                console.error('Chart element not provided for ChartManager');
+                this.instance = null;
+                return;
             }
-        },
-        mounted() {
-            this.loadClassStructure();
-            this.loadConfig();
-        },
-        methods: {
-            /* 主流程 */
-            async loadClassStructure() {
-                this.loading.classes = true;
-                try {
-                    const resp = await axios.get('/api/java-structure');
-                    this.classList = resp.data;
-                } catch (e) {
-                    console.error(e);
-                } finally {
-                    this.loading.classes = false;
-                }
-            },
-            onClassChange() {
-                this.selectedMethod = '';
-            },
-            async initAlgorithm() {
-                this.loading.init = true;
-                this.sessionId = null;
-                this.generationSummaries = [];
-                try {
-                    const {data} = await axios.post('/api/genetic-algorithm/init', {
-                        className: this.selectedClass,
-                        methodName: this.selectedMethod
-                    });
-                    this.sessionId = data.sessionId;
-                    this.generationIndex = data.generationIndex;
-                    this.coverage = data.coverage;
-                    this.populationSize = data.populationSize;
-                    this.finished = false;
-                    this.generationSummaries.push({
-                        generationIndex: this.generationIndex,
-                        coverage: this.coverage,
-                        populationSize: this.populationSize
-                    });
-                } catch (e) {
-                    console.error(e);
-                } finally {
-                    this.loading.init = false;
-                }
-            },
-            async evolveAlgorithm() {
-                this.loading.evolve = true;
-                try {
-                    const {data} = await axios.post('/api/genetic-algorithm/evolve', {
-                        sessionId: this.sessionId,
-                        generationIndex: this.generationIndex
-                    });
-                    this.generationIndex = data.nextGeneration;
-                    this.coverage = data.coverage;
-                    this.populationSize = data.populationSize;
-                    this.finished = data.finished;
-                    this.generationSummaries.push({
-                        generationIndex: this.generationIndex,
-                        coverage: this.coverage,
-                        populationSize: this.populationSize
-                    });
-                } catch (e) {
-                    console.error(e);
-                } finally {
-                    this.loading.evolve = false;
-                }
-            },
-            async showDetails(genIdx) {
-                this.detailGenIndex = genIdx;
-                this.generationDetails = [];
-                try {
-                    const {data} = await axios.get('/api/genetic-algorithm/population', {
-                        params: {
-                            sessionId: this.sessionId,
-                            generationIndex: genIdx
-                        }
-                    });
-                    this.generationDetails = data.chromosomes;
-                    // 取示例：后端可返回 covered/uncovered 行号数组
-                    this.coveredLines = data.coveredLines || [];
-                    this.uncoveredLines = data.uncoveredLines || [];
-                    await this.fetchMethodCode();
-                } catch (e) {
-                    console.error(e);
-                }
-            },
-            /* 代码预览 */
-            async fetchMethodCode() {
-                try {
-                    const {data} = await axios.get('/api/java-structure/method-code', {
-                        params: {className: this.selectedClass, methodName: this.selectedMethod}
-                    });
-                    this.codeLines = data.codeLines;
-                } catch (e) {
-                    console.error(e);
-                }
-            },
-            getLineClass(lineNumber) {
-                if (this.coveredLines.includes(lineNumber)) return 'covered-line';
-                if (this.uncoveredLines.includes(lineNumber)) return 'uncovered-line';
-                return '';
-            },
-            /* 配置 */
-            async loadConfig() {
-                try {
-                    const resp = await axios.get('/api/config');
-                    this.config = resp.data;
-                    this.formData = {...resp.data};
-                    this.toast('配置加载成功', 'success');
-                } catch (e) {
-                    this.toast('配置加载失败', 'error');
-                }
-            },
-            async submitConfig() {
-                try {
-                    const resp = await axios.post('/api/config', this.formData, {headers: {'Content-Type': 'application/json'}});
-                    this.loadConfig();
-                    this.toast('配置更新成功', 'success');
-                } catch (e) {
-                    this.toast('配置更新失败', 'error');
-                }
-            },
-            closeModal() {
-                this.showModal = false;
-            },
-            /* Toast */
-            toast(msg, type) {
-                this.messageQueue.push({msg, type});
-                if (!this.showToast) this.processQueue();
-            },
-            processQueue() {
-                if (!this.messageQueue.length) return;
-                const {msg, type} = this.messageQueue.shift();
-                this.toastMessage = msg;
-                this.toastType = type;
-                this.showToast = true;
-                setTimeout(() => {
-                    this.showToast = false;
-                    setTimeout(() => this.processQueue(), 500);
-                }, 3000);
-            }
+            this.instance = echarts.init(chartEl);
+            this.baseOptions = {
+                tooltip: { trigger: 'axis', confine: true },
+                legend: { top: 30, type: 'scroll' },
+                grid: { top: 80, left: '10%', right: '10%', bottom: 60, containLabel: true },
+                toolbox: {
+                    show: true,
+                    feature: {
+                        saveAsImage: { title: '保存图片' },
+                        dataView: { title: '数据视图', readOnly: false },
+                        magicType: { type: ['line', 'bar', 'stack'], title: {line: '折线图', bar: '柱状图', stack: '堆叠'} },
+                        restore: { title: '还原' }
+                    }
+                },
+                ...baseOptions
+            };
+            this.instance.setOption(this.baseOptions);
         }
-    }).mount('#app');
+
+        setOption(option, notMerge = false) {
+            if (!this.instance) return;
+            this.instance.setOption(option, notMerge);
+        }
+
+        resize() {
+            if (!this.instance) return;
+            this.instance.resize();
+        }
+
+        dispose() {
+            if (!this.instance) return;
+            this.instance.dispose();
+        }
+    }
+
+    const app = createApp({
+        components: {
+            ConfigModal,
+            NotificationToast
+        },
+        setup() {
+            const classList = ref([]);
+            const selectedClass = ref('');
+            const selectedMethod = ref('');
+            const sessionId = ref(null);
+            const generationIndex = ref(0);
+            const coverage = ref(0);
+            const populationSize = ref(0);
+            const finished = ref(false);
+            const loading = reactive({
+                classes: false,
+                init: false,
+                evolve: false,
+                config: false,
+                details: false,
+                visualization: false,
+                sourceCode: false
+            });
+
+            const generationSummaries = ref([]);
+            const generationDetails = ref([]);
+            const detailGenIndex = ref(null);
+            const codeLines = ref([]);
+            const coveredLines = ref([]);
+            const uncoveredLines = ref([]);
+
+            const activeTab = ref('evolution');
+            const showModal = ref(false);
+            const formData = reactive({});
+
+            const toastMessage = ref('');
+            const toastType = ref('success');
+            const showToast = ref(false);
+
+            const coverageChartEl = ref(null);
+            const similarityChartEl = ref(null);
+            let coverageChart = null;
+            let similarityChart = null;
+
+            const methodList = computed(() => {
+                const cls = classList.value.find(c => c.className === selectedClass.value);
+                return cls?.methods || [];
+            });
+
+            const canStart = computed(() => selectedClass.value && selectedMethod.value && !loading.init);
+            const canEvolve = computed(() => sessionId.value && !finished.value && !loading.evolve);
+
+            const tableColumns = ref([
+                { key: 'generationIndex', label: '代数' },
+                { key: 'coverage', label: '覆盖率 (%)' },
+                { key: 'populationSize', label: '种群规模' },
+                { key: 'actions', label: '操作' }
+            ]);
+
+            const tabs = ref([
+                { id: 'evolution', label: '进化概览' },
+                { id: 'source', label: '源码分析' }
+            ]);
+
+            const toast = (message, type = 'success', duration = 3000) => {
+                toastMessage.value = message;
+                toastType.value = type;
+                showToast.value = true;
+                setTimeout(() => { showToast.value = false; }, duration);
+            };
+
+            const handleError = (error, messagePrefix) => {
+                console.error(messagePrefix, error);
+                const errorMsg = error.response?.data?.message || error.response?.data || error.message || '发生未知错误';
+                toast(`${messagePrefix}: ${errorMsg}`, 'error');
+            };
+
+            async function loadConfig() {
+                loading.config = true;
+                try {
+                    const { data } = await axios.get('/api/param.json');
+                    Object.assign(formData, data);
+                    toast('算法配置已加载。', 'success');
+                } catch (error) {
+                    handleError(error, '加载算法配置失败');
+                    const modalDefaults = (ConfigModal.setup({initialFormData:{}}, {emit:()=>{}})).parameters.value;
+                    modalDefaults.forEach(param => {
+                        if (formData[param.key] === undefined) formData[param.key] = param.default;
+                    });
+                    console.warn('加载配置失败，已回退到默认参数。');
+                } finally {
+                    loading.config = false;
+                }
+            }
+
+            async function loadClassStructure() {
+                loading.classes = true;
+                try {
+                    const { data } = await axios.get('/api/java-structure');
+                    classList.value = data;
+                    if (data.length > 0) {
+                        selectedClass.value = data[0].className;
+                        onClassChange();
+                    }
+                    toast('类结构加载成功。');
+                } catch (error) {
+                    handleError(error, '加载类结构失败');
+                    classList.value = [];
+                } finally {
+                    loading.classes = false;
+                }
+            }
+
+            const onClassChange = () => {
+                selectedMethod.value = '';
+                const cls = classList.value.find(c => c.className === selectedClass.value);
+                if (cls && cls.methods && cls.methods.length > 0) {
+                    selectedMethod.value = cls.methods[0].methodName;
+                }
+                if (activeTab.value === 'source') { // If source tab is active, reload code
+                    loadMethodCode();
+                }
+            };
+
+            watch(activeTab, (newTab) => {
+                if (newTab === 'source' && selectedClass.value && selectedMethod.value && sessionId.value) {
+                    loadMethodCode();
+                }
+            });
+            watch(selectedMethod, (newMethod) => {
+                if (activeTab.value === 'source' && selectedClass.value && newMethod && sessionId.value) {
+                    loadMethodCode();
+                }
+            });
+
+            async function loadMethodCode() {
+                if (!selectedClass.value || !selectedMethod.value) {
+                    codeLines.value = []; // Clear if no method selected
+                    return;
+                }
+
+                loading.sourceCode = true;
+                codeLines.value = [];
+
+                try {
+                    const { data } = await axios.get(`/api/java-structure/method-code?className=${selectedClass.value}&methodName=${selectedMethod.value}`);
+                    if (data && data.codeLines) {
+                        codeLines.value = data.codeLines;
+                        // Assuming coverage data (coveredLines, uncoveredLines) might come from elsewhere or a different call in future
+                        // For now, just loading the code.
+                        toast('源代码加载成功。');
+                    } else {
+                        codeLines.value = [];
+                        toast('未找到源代码。', 'info');
+                    }
+                } catch (error) {
+                    codeLines.value = [];
+                    handleError(error, '加载源代码失败');
+                } finally {
+                    loading.sourceCode = false;
+                }
+            }
+
+            function updateGlobalStateForInit(initData) {
+                if (typeof initData.generationIndex === 'number') {
+                    generationIndex.value = initData.generationIndex;
+                } else {
+                    console.warn('updateGlobalStateForInit: initData.generationIndex is invalid:', initData.generationIndex);
+                    generationIndex.value = 0; // Default to 0 if invalid
+                }
+                coverage.value = typeof initData.coverage === 'number' ? initData.coverage : 0;
+                populationSize.value = typeof initData.populationSize === 'number' ? initData.populationSize : 0;
+                finished.value = !!initData.finished;
+            }
+
+            async function initAlgorithm() {
+                if (!canStart.value) return;
+                loading.init = true;
+                generationSummaries.value = [];
+                generationDetails.value = [];
+                sessionId.value = null;
+                try {
+                    const payload = {
+                        className: selectedClass.value,
+                        methodName: selectedMethod.value,
+                        config: { ...formData }
+                    };
+                    const { data: initData } = await axios.post('/api/genetic-algorithm/init', payload);
+
+                    sessionId.value = initData.sessionId;
+                    updateGlobalStateForInit(initData);
+
+                    const initialSummaryEntry = {
+                        generationIndex: generationIndex.value, // Should be 0 from initData
+                        coverage: coverage.value,
+                        populationSize: populationSize.value,
+                        similarity: undefined
+                    };
+                    generationSummaries.value = [initialSummaryEntry];
+
+                    toast(`算法已初始化，会话ID: ${initData.sessionId}`);
+                    await fetchVisualizationData();
+                    if (activeTab.value === 'source') { // Load source code after init if on source tab
+                        loadMethodCode();
+                    }
+                } catch (error) {
+                    handleError(error, '初始化算法失败');
+                } finally {
+                    loading.init = false;
+                }
+            }
+
+            async function evolveAlgorithm() {
+                if (!canEvolve.value) return;
+                loading.evolve = true;
+                try {
+                    const generationToEvolve = generationIndex.value; // Current completed generation index (e.g., 0)
+
+                    const { data: evolveData } = await axios.post('/api/genetic-algorithm/evolve', {
+                        sessionId: sessionId.value,
+                        generationIndex: generationToEvolve
+                    });
+
+                    // evolveData.generationIndex is the one sent (e.g., 0)
+                    // evolveData.coverage, .populationSize are for the NEWLY completed generation (e.g., gen 1)
+                    const newCompletedGenerationIndex = generationToEvolve + 1;
+
+                    // Update global state indicators for the NEWLY completed generation
+                    generationIndex.value = newCompletedGenerationIndex;
+                    coverage.value = typeof evolveData.coverage === 'number' ? evolveData.coverage : 0;
+                    populationSize.value = typeof evolveData.populationSize === 'number' ? evolveData.populationSize : 0;
+                    finished.value = !!evolveData.finished;
+
+                    // Add/Update generationSummaries for the NEWLY completed generation
+                    const newSummaryEntry = {
+                        generationIndex: newCompletedGenerationIndex,
+                        coverage: coverage.value,
+                        populationSize: populationSize.value,
+                        similarity: undefined // Will be filled by fetchVisualizationData
+                    };
+
+                    const existingIndex = generationSummaries.value.findIndex(
+                        item => item.generationIndex === newSummaryEntry.generationIndex
+                    );
+
+                    if (existingIndex >= 0) {
+                        generationSummaries.value[existingIndex] = {
+                            ...generationSummaries.value[existingIndex], // Preserve potential existing similarity
+                            ...newSummaryEntry // Overwrite with fresh data from evolve
+                        };
+                    } else {
+                        generationSummaries.value.push(newSummaryEntry);
+                    }
+
+                    generationSummaries.value.sort((a, b) => a.generationIndex - b.generationIndex);
+
+                    toast(`第 ${newCompletedGenerationIndex} 代进化完成。`);
+                    await fetchVisualizationData();
+
+                } catch (error) {
+                    handleError(error, '进化操作失败');
+                    // Potentially revert generationIndex if evolve failed mid-update, or rely on fetchVisualizationData to correct history
+                } finally {
+                    loading.evolve = false;
+                }
+            }
+
+            async function fetchVisualizationData() {
+                if (!sessionId.value) return;
+                loading.visualization = true;
+                try {
+                    const { data: vizHistory } = await axios.get(`/api/genetic-algorithm/visualization?sessionId=${sessionId.value}`);
+
+                    const newSummaries = vizHistory.map(item => ({
+                        generationIndex: item.generation,
+                        coverage: item.coverage,
+                        similarity: item.similarity,
+                        deltaCoverage: item.deltaCoverage,
+                        // populationSize is not in vizHistory, so we need to merge carefully
+                    }));
+
+                    // Merge newSummaries with existing generationSummaries to preserve populationSize
+                    const mergedSummaries = [];
+                    const existingMap = new Map(generationSummaries.value.map(s => [s.generationIndex, s]));
+
+                    for (const vizItem of newSummaries) {
+                        const existingEntry = existingMap.get(vizItem.generationIndex);
+                        if (existingEntry) {
+                            mergedSummaries.push({
+                                ...vizItem,
+                                populationSize: existingEntry.populationSize // Preserve from init/evolve direct response
+                            });
+                        } else {
+                            mergedSummaries.push({
+                                ...vizItem,
+                                populationSize: undefined // No prior populationSize known
+                            });
+                        }
+                    }
+                    // Add any entries from existingSummaries that were not in vizHistory (should be rare if vizHistory is complete)
+                    for (const existingEntry of generationSummaries.value) {
+                        if (!mergedSummaries.some(ms => ms.generationIndex === existingEntry.generationIndex)) {
+                            mergedSummaries.push(existingEntry);
+                        }
+                    }
+
+                    generationSummaries.value = mergedSummaries.sort((a, b) => a.generationIndex - b.generationIndex);
+
+                    // Update charts with the potentially more complete historical data
+                    updateCoverageChart(generationSummaries.value);
+                    updateSimilarityChart(generationSummaries.value);
+
+                    // Update global status indicators based on the latest generation in summaries if available
+                    if (generationSummaries.value.length > 0) {
+                        const latestGenSummary = generationSummaries.value[generationSummaries.value.length - 1];
+                        if (latestGenSummary.generationIndex === generationIndex.value) { // Ensure consistency
+                            coverage.value = typeof latestGenSummary.coverage === 'number' ? latestGenSummary.coverage : 0;
+                            // populationSize in global indicator is already updated by evolve/init directly.
+                            // similarity is not a global indicator.
+                        }
+                    }
+
+                    toast('可视化数据已更新。');
+                } catch (error) {
+                    handleError(error, '获取可视化数据失败');
+                    // Don't clear summaries on viz error, might have partial valid data from evolve/init
+                } finally {
+                    loading.visualization = false;
+                }
+            }
+
+            function updateCoverageChart(summaries) {
+                if (!coverageChart) return;
+                const xAxisData = summaries.map(s => `第${s.generationIndex}代`);
+                const seriesData = [{
+                    name: '覆盖率 (%)',
+                    type: 'line',
+                    smooth: true,
+                    data: summaries.map(s => typeof s.coverage === 'number' ? s.coverage.toFixed(2) : null),
+                    yAxisIndex: 0,
+                    color: '#5470C6'
+                }];
+                coverageChart.setOption({
+                    xAxis: [{ data: xAxisData }],
+                    series: seriesData
+                }, false);
+            }
+
+            function updateSimilarityChart(summaries) {
+                if (!similarityChart) return;
+                const xAxisData = summaries.map(s => `第${s.generationIndex}代`);
+                const seriesData = [{
+                    name: '平均染色体相似度',
+                    type: 'line',
+                    smooth: true,
+                    data: summaries.map(s => typeof s.similarity === 'number' ? s.similarity.toFixed(4) : null),
+                    color: '#FAC858'
+                }];
+                similarityChart.setOption({
+                    xAxis: [{ data: xAxisData }],
+                    series: seriesData
+                }, false);
+            }
+
+            async function showDetails(genIdx) {
+                if (genIdx === undefined) {
+                    toast('无法显示详情：代数信息无效。', 'error');
+                    return;
+                }
+                detailGenIndex.value = genIdx;
+                loading.details = true;
+                try {
+                    const { data } = await axios.get(`/api/genetic-algorithm/generation-details?sessionId=${sessionId.value}&generationIndex=${genIdx}`);
+                    generationDetails.value = data.chromosomes || [];
+                    toast(`已加载第 ${genIdx} 代的详细数据。`);
+                } catch (error) {
+                    handleError(error, `加载第 ${genIdx} 代详情失败`);
+                    generationDetails.value = [];
+                } finally {
+                    loading.details = false;
+                }
+            }
+
+            const getLineClass = (lineNumber) => {
+                // Placeholder for actual coverage data integration
+                // if (coveredLines.value.includes(lineNumber)) return 'covered-line';
+                // if (uncoveredLines.value.includes(lineNumber)) return 'uncovered-line';
+                return '';
+            };
+
+            const formatGenes = (genes) => {
+                if (!genes || typeof genes !== 'object') return '';
+                return Object.entries(genes).map(([k, v]) => `${k}=${v}`).join(', ');
+            };
+
+            const initializeCharts = () => {
+                if (coverageChartEl.value && !coverageChart) {
+                    coverageChart = new ChartManager(coverageChartEl.value, {
+                        title: { text: '覆盖率 vs 迭代数', left: 'center' },
+                        legend: { data: ['覆盖率 (%)'], top: 35 },
+                        xAxis: { type: 'category', name: '代数', boundaryGap: false, data: [] },
+                        yAxis: { name: '覆盖率 (%)', type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%' } },
+                        series: [{ name: '覆盖率 (%)', type: 'line', smooth: true, data: [], color: '#5470C6' }]
+                    });
+                }
+                if (similarityChartEl.value && !similarityChart) {
+                    similarityChart = new ChartManager(similarityChartEl.value, {
+                        title: { text: '平均染色体相似度 vs 迭代数', left: 'center' },
+                        legend: { data: ['平均染色体相似度'], top: 35 },
+                        xAxis: { type: 'category', name: '代数', boundaryGap: false, data: [] },
+                        yAxis: { name: '相似度', type: 'value', min: 0, max: 1, axisLabel: { formatter: '{value}' } }, // Assuming similarity is 0-1
+                        series: [{ name: '平均染色体相似度', type: 'line', smooth: true, data: [], color: '#FAC858' }]
+                    });
+                }
+            };
+
+            const handleResize = () => {
+                [coverageChart, similarityChart].forEach(chart => chart?.resize());
+            };
+
+            async function submitConfig(newConfig) {
+                loading.config = true;
+                try {
+                    await axios.post('/api/param.json', newConfig);
+                    Object.assign(formData, newConfig);
+                    toast('算法配置已更新。', 'success');
+                    showModal.value = false;
+                    if (sessionId.value) {
+                        toast('配置已更新，如需应用到当前运行，请重新初始化算法。', 'info', 5000);
+                    }
+                } catch (error) {
+                    handleError(error, '保存算法配置失败');
+                } finally {
+                    loading.config = false;
+                }
+            }
+
+            const closeModal = () => showModal.value = false;
+
+            onMounted(async () => {
+                initializeCharts();
+                await loadConfig();
+                await loadClassStructure();
+                window.addEventListener('resize', handleResize);
+            });
+
+            onBeforeUnmount(() => {
+                window.removeEventListener('resize', handleResize);
+                [coverageChart, similarityChart].forEach(chart => chart?.dispose());
+            });
+
+            return {
+                classList, selectedClass, selectedMethod, sessionId, generationIndex, coverage, populationSize, finished, loading,
+                generationSummaries, generationDetails, detailGenIndex, codeLines, coveredLines, uncoveredLines,
+                activeTab, showModal, formData,
+                toastMessage, toastType, showToast,
+                coverageChartEl, similarityChartEl,
+                methodList, canStart, canEvolve, tableColumns, tabs,
+                loadClassStructure, initAlgorithm, evolveAlgorithm, showDetails, getLineClass, formatGenes, onClassChange, loadMethodCode,
+                submitConfig, closeModal, toast,
+            };
+        }
+    });
+
+    app.mount('#app');
+
 </script>
 </body>
 </html>

@@ -3,6 +3,7 @@ package com.whj.generate.core.service;
 import com.google.common.collect.Sets;
 import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.core.domain.Chromosome;
+import com.whj.generate.utill.SimilarityUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
@@ -58,24 +59,10 @@ public class FitnessCalculatorService {
                 .filter(c -> !c.equals(target)) // 使用equals确保正确过滤
                 .mapToDouble(other -> {
                     Set<Integer> otherLines = tracker.getLinesCoveredBy(other);
-                    return jaccardSimilarity(targetLines, otherLines);
+                    return SimilarityUtils.jaccardSimilarity(targetLines, otherLines);
                 })
                 .average()
                 .orElse(0.0);
     }
 
-
-    /**
-     * 计算Jaccard相似度
-     *
-     * @param a
-     * @param b
-     * @return
-     */
-    private double jaccardSimilarity(Set<Integer> a, Set<Integer> b) {
-        if (a.isEmpty() && b.isEmpty()) return 0;
-        int intersection = Sets.intersection(a, b).size();
-        int union = Sets.union(a, b).size();
-        return (double) intersection / union;
-    }
 }

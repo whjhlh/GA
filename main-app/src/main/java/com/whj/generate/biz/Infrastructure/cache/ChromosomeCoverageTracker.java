@@ -5,7 +5,11 @@ package com.whj.generate.biz.Infrastructure.cache;
  * @date 2025-04-20 下午7:01
  */
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.whj.generate.core.domain.Chromosome;
+import com.whj.generate.core.domain.Population;
+import com.whj.generate.utill.SimilarityUtils;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -244,4 +248,22 @@ public class ChromosomeCoverageTracker {
     public Map<Chromosome, Integer> getChromosomeSequenceMap() {
         return chromosomeSequenceMap;
     }
+
+    /**
+     * 获取种群平均相似度
+     * @param pop
+     * @return
+     */
+    public double getSimilarityAtGeneration(Population pop) {
+        List<Chromosome> chromosomes =Lists.newArrayList(pop.getChromosomeSet());
+        // 收集每个染色体的覆盖行集合
+        List<Set<Integer>> linesList = chromosomes.stream()
+                .map(this::getLinesCoveredBy)
+                .collect(Collectors.toList());
+        // 调用工具类计算平均相似度
+        return SimilarityUtils.averagePopulationSimilarity(linesList);
+    }
+
+
+
 }

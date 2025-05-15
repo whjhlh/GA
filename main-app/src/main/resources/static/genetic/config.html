@@ -335,7 +335,7 @@
         methods: {
             async loadConfig() {
                 try {
-                    const response = await fetch('/api/config');
+                    const response = await fetch('/api/param.json');
                     const data = await response.json();
                     this.config = data;
                     this.formData = {...data};
@@ -347,7 +347,7 @@
             },
             async submitConfig() {
                 try {
-                    const response = await fetch('/api/config', {
+                    const response = await fetch('/api/param.json', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(this.formData)

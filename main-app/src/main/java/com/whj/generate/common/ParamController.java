@@ -1,7 +1,7 @@
 package com.whj.generate.common;
 
 import com.whj.generate.common.config.GeneticAlgorithmConfig;
-import com.whj.generate.common.dto.GeneticAlgorithmConfigDTO;
+import com.whj.generate.common.dto.ParamDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,11 +11,12 @@ import org.springframework.web.bind.annotation.*;
  * @date 2025-05-04 下午10:11
  */
 @RestController
-@RequestMapping("/api/config")
-public class ConfigController {
+@RequestMapping("/api/param.json")
+public class ParamController {
     //http://localhost:8080/genetic/config.html
     @PostMapping
-    public ResponseEntity<String> updateConfig(@RequestBody GeneticAlgorithmConfigDTO dto) {
+    public ResponseEntity<String> updateConfig(@RequestBody ParamDTO dto) {
+        System.out.println("GET /api/param.json 被调用");
         try {
             fillInGeneticAlgorithmConfig(dto);
             return ResponseEntity.ok("Configuration updated successfully");
@@ -23,17 +24,20 @@ public class ConfigController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    /*
+     * 获取当前配置
+     */
     @GetMapping
-    public ResponseEntity<GeneticAlgorithmConfigDTO> getCurrentConfig() {
-        System.out.println("GET /api/config 被调用");
-        return ResponseEntity.ok(GeneticAlgorithmConfigDTO.current());
+    public ResponseEntity<ParamDTO> getCurrentConfig() {
+        System.out.println("GET /api/param.json 被调用");
+        return ResponseEntity.ok(ParamDTO.current());
     }
 
     /**
      * 更新配置
      * @param dto
      */
-    private void fillInGeneticAlgorithmConfig(GeneticAlgorithmConfigDTO dto) {
+    private void fillInGeneticAlgorithmConfig(ParamDTO dto) {
         if (dto.getCrossoverRate() != null) {
             validateProbability(dto.getCrossoverRate(), "Crossover rate");
             GeneticAlgorithmConfig.CROSSOVER_RATE = dto.getCrossoverRate();
