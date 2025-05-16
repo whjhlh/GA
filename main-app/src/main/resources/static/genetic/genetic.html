@@ -368,6 +368,9 @@
                     </tr>
                     </thead>
                     <tbody>
+                    <tr v-if="generationSummaries.length === 0">
+                        <td :colspan="tableColumns.length" style="text-align: center;">暂无进化历史数据</td>
+                    </tr>
                     <tr v-for="(gen) in generationSummaries" :key="gen.generationIndex">
                         <td>{{ gen.generationIndex }}</td>
                         <td>{{ typeof gen.coverage === 'number' ? gen.coverage.toFixed(2) + '%' : 'N/A' }}</td>
@@ -477,40 +480,40 @@
             return { localFormData, parameters, handleSubmit, handleClose };
         },
         template: `
-          <div class="modal-mask">
+        <div class="modal-mask">
             <div class="modal-container">
-              <div class="modal-header">
-                <h3>算法参数配置</h3>
-                <button @click="handleClose" class="close-btn">&times;</button>
-              </div>
-              <div class="modal-body">
-                <div v-for="param in parameters" :key="param.key" class="form-group" style="margin-bottom: 15px;">
-                  <label :for="param.key">{{ param.label }}:</label>
-                  <input
-                      type="number"
-                      :step="param.step || 0.01"
-                      :min="param.min"
-                      :max="param.max"
-                      :id="param.key"
-                      v-model.number="localFormData[param.key]">
+                <div class="modal-header">
+                    <h3>算法参数配置</h3>
+                    <button @click="handleClose" class="close-btn">&times;</button>
                 </div>
-              </div>
-              <div class="operation-area" style="padding: 16px; text-align: right; background: var(--light-blue);">
-                <button @click="handleClose" class="btn btn-secondary" style="margin-right: 10px;">取消</button>
-                <button @click="handleSubmit" class="btn btn-primary">保存配置</button>
-              </div>
+                <div class="modal-body">
+                    <div v-for="param in parameters" :key="param.key" class="form-group" style="margin-bottom: 15px;">
+                        <label :for="param.key">{{ param.label }}:</label>
+                        <input
+                            type="number"
+                            :step="param.step || 0.01"
+                            :min="param.min"
+                            :max="param.max"
+                            :id="param.key"
+                            v-model.number="localFormData[param.key]">
+                    </div>
+                </div>
+                <div class="operation-area" style="padding: 16px; text-align: right; background: var(--light-blue);">
+                    <button @click="handleClose" class="btn btn-secondary" style="margin-right: 10px;">取消</button>
+                    <button @click="handleSubmit" class="btn btn-primary">保存配置</button>
+                </div>
             </div>
-          </div>
-        `
+        </div>
+    `
     };
 
     const NotificationToast = {
         props: ['message', 'type', 'visible'],
         template: `
-          <div :class="['message-toast', type, { show: visible }]">
+        <div :class="['message-toast', type, { show: visible }]">
             {{ message }}
-          </div>
-        `
+        </div>
+    `
     };
 
     class ChartManager {
@@ -534,10 +537,10 @@
                         restore: { title: '还原' }
                     }
                 },
-                ...baseOptions
+                ...baseOptions // Merges specific chart options like title, xAxis, yAxis, series
             };
             this.instance.setOption(this.baseOptions);
-            console.log('ChartManager initialized for element:', chartEl);
+            console.log('ChartManager initialized for element:', chartEl, 'with base options:', JSON.parse(JSON.stringify(this.baseOptions)));
         }
 
         setOption(option, notMerge = false) {
@@ -545,6 +548,7 @@
                 console.warn('Chart instance is null, cannot setOption.');
                 return;
             }
+            console.log('ChartManager.setOption called with:', JSON.parse(JSON.stringify(option)), 'notMerge:', notMerge);
             this.instance.setOption(option, notMerge);
         }
 
@@ -650,10 +654,8 @@
                         yAxis: { name: '覆盖率 (%)', type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%' } },
                         series: [{ name: '覆盖率 (%)', type: 'line', smooth: true, data: [], yAxisIndex: 0, color: '#5470C6' }]
                     });
-                } else if (coverageChartEl.value && coverageChart) {
-                    console.log("Coverage Chart already initialized.");
                 } else {
-                    console.warn("Coverage chart element (coverageChartEl) not found during initialization.");
+                    console.warn("Coverage chart element not found or chart already initialized during initializeCharts call.", coverageChartEl.value, coverageChart);
                 }
 
                 if (similarityChartEl.value && !similarityChart) {
@@ -665,10 +667,8 @@
                         yAxis: { name: '相似度', type: 'value', min: 0, max: 1, axisLabel: { formatter: '{value}' } },
                         series: [{ name: '平均染色体相似度', type: 'line', smooth: true, data: [], color: '#FAC858' }]
                     });
-                } else if (similarityChartEl.value && similarityChart) {
-                    console.log("Similarity Chart already initialized.");
                 } else {
-                    console.warn("Similarity chart element (similarityChartEl) not found during initialization.");
+                    console.warn("Similarity chart element not found or chart already initialized during initializeCharts call.", similarityChartEl.value, similarityChart);
                 }
             };
 
@@ -775,8 +775,9 @@
                 loading.init = true;
                 toast('开始初始化算法...', 'info');
 
-                if (coverageChart) { coverageChart.dispose(); coverageChart = null; }
-                if (similarityChart) { similarityChart.dispose(); similarityChart = null; }
+                if (coverageChart && coverageChart.instance) { coverageChart.dispose(); coverageChart = null; }
+                if (similarityChart && similarityChart.instance) { similarityChart.dispose(); similarityChart = null; }
+
                 generationSummaries.value = [];
                 generationDetails.value = [];
                 sessionId.value = null;
@@ -807,10 +808,11 @@
                         similarity: undefined
                     };
                     generationSummaries.value = [initialSummaryEntry];
-                    console.log('Initial generationSummaries after init:', JSON.parse(JSON.stringify(generationSummaries.value)));
+                    console.log('Initial generationSummaries after init (before fetchViz):', JSON.parse(JSON.stringify(generationSummaries.value)));
 
-                    toast(`算法已初始化, 会话ID: ${initData.sessionId}. 获取初始数据...`, 'success');
+                    toast(`算法已初始化, 会话ID: ${initData.sessionId}. 获取初始可视化数据...`, 'success');
                     await fetchVisualizationData();
+
                     if (activeTab.value === 'source') {
                         loadMethodCode();
                     }
@@ -852,7 +854,10 @@
                         item => item.generationIndex === newSummaryEntry.generationIndex
                     );
                     if (existingIndex >= 0) {
-                        generationSummaries.value[existingIndex] = { ...generationSummaries.value[existingIndex], ...newSummaryEntry };
+                        generationSummaries.value[existingIndex] = {
+                            ...generationSummaries.value[existingIndex],
+                            ...newSummaryEntry
+                        };
                     } else {
                         generationSummaries.value.push(newSummaryEntry);
                     }
@@ -877,40 +882,39 @@
                     const { data: vizHistory } = await axios.get(`/api/genetic-algorithm/visualization?sessionId=${sessionId.value}`);
                     console.log('fetchVisualizationData response (vizHistory):', JSON.parse(JSON.stringify(vizHistory)));
 
-                    const newSummariesFromViz = vizHistory.map(item => ({
-                        generationIndex: item.generation,
-                        coverage: item.coverage,
-                        similarity: item.similarity,
-                        deltaCoverage: item.deltaCoverage,
-                    }));
+                    const existingSummariesMap = new Map(generationSummaries.value.map(s => [s.generationIndex, s]));
 
-                    const mergedSummaries = [];
-                    const existingMap = new Map(generationSummaries.value.map(s => [s.generationIndex, s]));
+                    const newSummaries = vizHistory.map(item => {
+                        const existing = existingSummariesMap.get(item.generation);
+                        return {
+                            generationIndex: item.generation,
+                            coverage: item.coverage,
+                            similarity: item.similarity,
+                            deltaCoverage: item.deltaCoverage,
+                            populationSize: existing ? existing.populationSize : undefined
+                        };
+                    });
 
-                    for (const vizItem of newSummariesFromViz) {
-                        const existingEntry = existingMap.get(vizItem.generationIndex);
-                        if (existingEntry) {
-                            mergedSummaries.push({ ...vizItem, populationSize: existingEntry.populationSize });
-                        } else {
-                            mergedSummaries.push({ ...vizItem, populationSize: undefined });
-                        }
-                    }
-                    for (const existingEntry of generationSummaries.value) {
-                        if (!mergedSummaries.some(ms => ms.generationIndex === existingEntry.generationIndex)) {
-                            mergedSummaries.push(existingEntry);
+                    for (const [genIdx, existingSummary] of existingSummariesMap.entries()) {
+                        if (!newSummaries.some(ns => ns.generationIndex === genIdx)) {
+                            newSummaries.push(existingSummary);
                         }
                     }
 
-                    generationSummaries.value = mergedSummaries.sort((a, b) => a.generationIndex - b.generationIndex);
+                    generationSummaries.value = newSummaries.sort((a, b) => a.generationIndex - b.generationIndex);
                     console.log('Final generationSummaries after fetchViz merge:', JSON.parse(JSON.stringify(generationSummaries.value)));
+
+                    if ((!coverageChart || !coverageChart.instance) && coverageChartEl.value) initializeCharts();
+                    if ((!similarityChart || !similarityChart.instance) && similarityChartEl.value) initializeCharts();
 
                     updateCoverageChart(generationSummaries.value);
                     updateSimilarityChart(generationSummaries.value);
 
                     if (generationSummaries.value.length > 0) {
-                        const latestGenSummary = generationSummaries.value[generationSummaries.value.length - 1];
-                        if (latestGenSummary.generationIndex === generationIndex.value) {
-                            coverage.value = typeof latestGenSummary.coverage === 'number' ? latestGenSummary.coverage : 0;
+                        const latestGenSummary = generationSummaries.value.find(s => s.generationIndex === generationIndex.value) ||
+                            generationSummaries.value[generationSummaries.value.length - 1];
+                        if (latestGenSummary) {
+                            coverage.value = typeof latestGenSummary.coverage === 'number' ? latestGenSummary.coverage : coverage.value;
                         }
                     }
                     toast('可视化数据已更新。', 'success');
@@ -922,21 +926,33 @@
             }
 
             function updateCoverageChart(summaries) {
-                if (!coverageChart) {
-                    console.warn('覆盖率图表实例未初始化，无法更新。');
+                if (!coverageChart || !coverageChart.instance) {
+                    console.warn('覆盖率图表实例未初始化或已销毁，无法更新。');
                     return;
                 }
                 if (!summaries || summaries.length === 0) {
                     console.warn('覆盖率图表：无数据可供更新，将清空图表。');
-                    coverageChart.setOption({ xAxis: [{ data: [] }], series: [{ name: '覆盖率 (%)', data: [] }] }, true);
+                    coverageChart.setOption({
+                        xAxis: { data: [] },
+                        series: [{ name: '覆盖率 (%)', data: [] }]
+                    }, true);
                     return;
                 }
                 console.log('Updating coverage chart with summaries:', JSON.parse(JSON.stringify(summaries)));
                 const xAxisData = summaries.map(s => `第${s.generationIndex}代`);
-                const seriesCoverageData = summaries.map(s => typeof s.coverage === 'number' ? s.coverage.toFixed(2) : null);
+                const seriesCoverageData = summaries.map(s => {
+                    const cov = parseFloat(s.coverage);
+                    return isNaN(cov) ? null : cov;
+                });
 
+                console.log('Data for Coverage Chart update:', JSON.stringify({ xAxisData, seriesCoverageData }));
                 coverageChart.setOption({
-                    xAxis: [{ data: xAxisData }],
+                    xAxis: {
+                        type: 'category',
+                        name: '代数',
+                        boundaryGap: false,
+                        data: xAxisData
+                    },
                     series: [{
                         name: '覆盖率 (%)',
                         type: 'line',
@@ -950,21 +966,33 @@
             }
 
             function updateSimilarityChart(summaries) {
-                if (!similarityChart) {
-                    console.warn('相似度图表实例未初始化，无法更新。');
+                if (!similarityChart || !similarityChart.instance) {
+                    console.warn('相似度图表实例未初始化或已销毁，无法更新。');
                     return;
                 }
                 if (!summaries || summaries.length === 0) {
                     console.warn('相似度图表：无数据可供更新，将清空图表。');
-                    similarityChart.setOption({ xAxis: [{ data: [] }], series: [{ name: '平均染色体相似度', data: [] }] }, true);
+                    similarityChart.setOption({
+                        xAxis: { data: [] },
+                        series: [{ name: '平均染色体相似度', data: [] }]
+                    }, true);
                     return;
                 }
                 console.log('Updating similarity chart with summaries:', JSON.parse(JSON.stringify(summaries)));
                 const xAxisData = summaries.map(s => `第${s.generationIndex}代`);
-                const seriesSimilarityData = summaries.map(s => typeof s.similarity === 'number' ? s.similarity.toFixed(4) : null);
+                const seriesSimilarityData = summaries.map(s => {
+                    const sim = parseFloat(s.similarity);
+                    return isNaN(sim) ? null : sim;
+                });
 
+                console.log('Data for Similarity Chart update:', JSON.stringify({ xAxisData, seriesSimilarityData }));
                 similarityChart.setOption({
-                    xAxis: [{ data: xAxisData }],
+                    xAxis: {
+                        type: 'category',
+                        name: '代数',
+                        boundaryGap: false,
+                        data: xAxisData
+                    },
                     series: [{
                         name: '平均染色体相似度',
                         type: 'line',
@@ -1006,8 +1034,8 @@
             };
 
             const handleResize = () => {
-                if (coverageChart) coverageChart.resize();
-                if (similarityChart) similarityChart.resize();
+                if (coverageChart && coverageChart.instance) coverageChart.resize();
+                if (similarityChart && similarityChart.instance) similarityChart.resize();
             };
 
             async function submitConfig(newConfig) {
@@ -1031,7 +1059,6 @@
             const closeModal = () => showModal.value = false;
 
             onMounted(async () => {
-                // initializeCharts is now called after sessionId is set in initAlgorithm
                 await loadConfig();
                 await loadClassStructure();
                 window.addEventListener('resize', handleResize);
@@ -1039,8 +1066,8 @@
 
             onBeforeUnmount(() => {
                 window.removeEventListener('resize', handleResize);
-                if (coverageChart) coverageChart.dispose();
-                if (similarityChart) similarityChart.dispose();
+                if (coverageChart && coverageChart.instance) coverageChart.dispose();
+                if (similarityChart && similarityChart.instance) similarityChart.dispose();
             });
 
             return {
