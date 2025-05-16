@@ -431,7 +431,7 @@
 </div>
 
 <script>
-    const { createApp, ref, reactive, computed, watch, onMounted, onBeforeUnmount } = Vue;
+    const { createApp, ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } = Vue;
 
     const ConfigModal = {
         props: ['initialFormData'],
@@ -537,10 +537,14 @@
                 ...baseOptions
             };
             this.instance.setOption(this.baseOptions);
+            console.log('ChartManager initialized for element:', chartEl);
         }
 
         setOption(option, notMerge = false) {
-            if (!this.instance) return;
+            if (!this.instance) {
+                console.warn('Chart instance is null, cannot setOption.');
+                return;
+            }
             this.instance.setOption(option, notMerge);
         }
 
@@ -551,7 +555,9 @@
 
         dispose() {
             if (!this.instance) return;
+            console.log('Disposing chart instance:', this.instance.getDom().id || 'unknown chart');
             this.instance.dispose();
+            this.instance = null;
         }
     }
 
@@ -623,6 +629,7 @@
                 toastMessage.value = message;
                 toastType.value = type;
                 showToast.value = true;
+                console.log(`Toast (${type}): ${message}`);
                 setTimeout(() => { showToast.value = false; }, duration);
             };
 
@@ -632,8 +639,42 @@
                 toast(`${messagePrefix}: ${errorMsg}`, 'error');
             };
 
+            const initializeCharts = () => {
+                console.log("Attempting to initialize charts...");
+                if (coverageChartEl.value && !coverageChart) {
+                    console.log("Initializing Coverage Chart with element:", coverageChartEl.value);
+                    coverageChart = new ChartManager(coverageChartEl.value, {
+                        title: { text: '覆盖率 vs 迭代数', left: 'center' },
+                        legend: { data: ['覆盖率 (%)'], top: 35 },
+                        xAxis: { type: 'category', name: '代数', boundaryGap: false, data: [] },
+                        yAxis: { name: '覆盖率 (%)', type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%' } },
+                        series: [{ name: '覆盖率 (%)', type: 'line', smooth: true, data: [], yAxisIndex: 0, color: '#5470C6' }]
+                    });
+                } else if (coverageChartEl.value && coverageChart) {
+                    console.log("Coverage Chart already initialized.");
+                } else {
+                    console.warn("Coverage chart element (coverageChartEl) not found during initialization.");
+                }
+
+                if (similarityChartEl.value && !similarityChart) {
+                    console.log("Initializing Similarity Chart with element:", similarityChartEl.value);
+                    similarityChart = new ChartManager(similarityChartEl.value, {
+                        title: { text: '平均染色体相似度 vs 迭代数', left: 'center' },
+                        legend: { data: ['平均染色体相似度'], top: 35 },
+                        xAxis: { type: 'category', name: '代数', boundaryGap: false, data: [] },
+                        yAxis: { name: '相似度', type: 'value', min: 0, max: 1, axisLabel: { formatter: '{value}' } },
+                        series: [{ name: '平均染色体相似度', type: 'line', smooth: true, data: [], color: '#FAC858' }]
+                    });
+                } else if (similarityChartEl.value && similarityChart) {
+                    console.log("Similarity Chart already initialized.");
+                } else {
+                    console.warn("Similarity chart element (similarityChartEl) not found during initialization.");
+                }
+            };
+
             async function loadConfig() {
                 loading.config = true;
+                toast('正在加载算法配置...', 'info');
                 try {
                     const { data } = await axios.get('/api/param.json');
                     Object.assign(formData, data);
@@ -644,7 +685,7 @@
                     modalDefaults.forEach(param => {
                         if (formData[param.key] === undefined) formData[param.key] = param.default;
                     });
-                    console.warn('加载配置失败，已回退到默认参数。');
+                    toast('加载配置失败，已回退到默认参数。', 'info');
                 } finally {
                     loading.config = false;
                 }
@@ -652,6 +693,7 @@
 
             async function loadClassStructure() {
                 loading.classes = true;
+                toast('正在加载类结构...', 'info');
                 try {
                     const { data } = await axios.get('/api/java-structure');
                     classList.value = data;
@@ -659,7 +701,7 @@
                         selectedClass.value = data[0].className;
                         onClassChange();
                     }
-                    toast('类结构加载成功。');
+                    toast('类结构加载成功。', 'success');
                 } catch (error) {
                     handleError(error, '加载类结构失败');
                     classList.value = [];
@@ -674,7 +716,7 @@
                 if (cls && cls.methods && cls.methods.length > 0) {
                     selectedMethod.value = cls.methods[0].methodName;
                 }
-                if (activeTab.value === 'source') { // If source tab is active, reload code
+                if (activeTab.value === 'source') {
                     loadMethodCode();
                 }
             };
@@ -692,20 +734,17 @@
 
             async function loadMethodCode() {
                 if (!selectedClass.value || !selectedMethod.value) {
-                    codeLines.value = []; // Clear if no method selected
+                    codeLines.value = [];
                     return;
                 }
-
                 loading.sourceCode = true;
+                toast(`正在加载 ${selectedClass.value} - ${selectedMethod.value} 的源代码...`, 'info');
                 codeLines.value = [];
-
                 try {
                     const { data } = await axios.get(`/api/java-structure/method-code?className=${selectedClass.value}&methodName=${selectedMethod.value}`);
                     if (data && data.codeLines) {
                         codeLines.value = data.codeLines;
-                        // Assuming coverage data (coveredLines, uncoveredLines) might come from elsewhere or a different call in future
-                        // For now, just loading the code.
-                        toast('源代码加载成功。');
+                        toast('源代码加载成功。', 'success');
                     } else {
                         codeLines.value = [];
                         toast('未找到源代码。', 'info');
@@ -723,19 +762,29 @@
                     generationIndex.value = initData.generationIndex;
                 } else {
                     console.warn('updateGlobalStateForInit: initData.generationIndex is invalid:', initData.generationIndex);
-                    generationIndex.value = 0; // Default to 0 if invalid
+                    generationIndex.value = 0;
                 }
                 coverage.value = typeof initData.coverage === 'number' ? initData.coverage : 0;
                 populationSize.value = typeof initData.populationSize === 'number' ? initData.populationSize : 0;
                 finished.value = !!initData.finished;
+                console.log('Global state updated for init:', JSON.parse(JSON.stringify({generationIndex: generationIndex.value, coverage: coverage.value, populationSize: populationSize.value, finished: finished.value })));
             }
 
             async function initAlgorithm() {
                 if (!canStart.value) return;
                 loading.init = true;
+                toast('开始初始化算法...', 'info');
+
+                if (coverageChart) { coverageChart.dispose(); coverageChart = null; }
+                if (similarityChart) { similarityChart.dispose(); similarityChart = null; }
                 generationSummaries.value = [];
                 generationDetails.value = [];
                 sessionId.value = null;
+                generationIndex.value = 0;
+                coverage.value = 0;
+                populationSize.value = 0;
+                finished.value = false;
+
                 try {
                     const payload = {
                         className: selectedClass.value,
@@ -743,25 +792,31 @@
                         config: { ...formData }
                     };
                     const { data: initData } = await axios.post('/api/genetic-algorithm/init', payload);
+                    console.log('initAlgorithm response:', JSON.parse(JSON.stringify(initData)));
 
                     sessionId.value = initData.sessionId;
                     updateGlobalStateForInit(initData);
 
+                    await nextTick();
+                    initializeCharts();
+
                     const initialSummaryEntry = {
-                        generationIndex: generationIndex.value, // Should be 0 from initData
+                        generationIndex: generationIndex.value,
                         coverage: coverage.value,
                         populationSize: populationSize.value,
                         similarity: undefined
                     };
                     generationSummaries.value = [initialSummaryEntry];
+                    console.log('Initial generationSummaries after init:', JSON.parse(JSON.stringify(generationSummaries.value)));
 
-                    toast(`算法已初始化，会话ID: ${initData.sessionId}`);
+                    toast(`算法已初始化, 会话ID: ${initData.sessionId}. 获取初始数据...`, 'success');
                     await fetchVisualizationData();
-                    if (activeTab.value === 'source') { // Load source code after init if on source tab
+                    if (activeTab.value === 'source') {
                         loadMethodCode();
                     }
                 } catch (error) {
                     handleError(error, '初始化算法失败');
+                    sessionId.value = null;
                 } finally {
                     loading.init = false;
                 }
@@ -770,53 +825,45 @@
             async function evolveAlgorithm() {
                 if (!canEvolve.value) return;
                 loading.evolve = true;
+                const nextGenDisplay = generationIndex.value + 1;
+                toast(`开始执行第 ${nextGenDisplay} 代进化...`, 'info');
                 try {
-                    const generationToEvolve = generationIndex.value; // Current completed generation index (e.g., 0)
-
+                    const generationToEvolve = generationIndex.value;
                     const { data: evolveData } = await axios.post('/api/genetic-algorithm/evolve', {
                         sessionId: sessionId.value,
                         generationIndex: generationToEvolve
                     });
+                    console.log('evolveAlgorithm response:', JSON.parse(JSON.stringify(evolveData)));
 
-                    // evolveData.generationIndex is the one sent (e.g., 0)
-                    // evolveData.coverage, .populationSize are for the NEWLY completed generation (e.g., gen 1)
                     const newCompletedGenerationIndex = generationToEvolve + 1;
-
-                    // Update global state indicators for the NEWLY completed generation
                     generationIndex.value = newCompletedGenerationIndex;
                     coverage.value = typeof evolveData.coverage === 'number' ? evolveData.coverage : 0;
                     populationSize.value = typeof evolveData.populationSize === 'number' ? evolveData.populationSize : 0;
                     finished.value = !!evolveData.finished;
+                    console.log('Global state updated for evolve:', JSON.parse(JSON.stringify({generationIndex: generationIndex.value, coverage: coverage.value, populationSize: populationSize.value, finished: finished.value })));
 
-                    // Add/Update generationSummaries for the NEWLY completed generation
                     const newSummaryEntry = {
                         generationIndex: newCompletedGenerationIndex,
                         coverage: coverage.value,
                         populationSize: populationSize.value,
-                        similarity: undefined // Will be filled by fetchVisualizationData
+                        similarity: undefined
                     };
-
                     const existingIndex = generationSummaries.value.findIndex(
                         item => item.generationIndex === newSummaryEntry.generationIndex
                     );
-
                     if (existingIndex >= 0) {
-                        generationSummaries.value[existingIndex] = {
-                            ...generationSummaries.value[existingIndex], // Preserve potential existing similarity
-                            ...newSummaryEntry // Overwrite with fresh data from evolve
-                        };
+                        generationSummaries.value[existingIndex] = { ...generationSummaries.value[existingIndex], ...newSummaryEntry };
                     } else {
                         generationSummaries.value.push(newSummaryEntry);
                     }
-
                     generationSummaries.value.sort((a, b) => a.generationIndex - b.generationIndex);
+                    console.log('generationSummaries after evolve (before fetchViz):', JSON.parse(JSON.stringify(generationSummaries.value)));
 
-                    toast(`第 ${newCompletedGenerationIndex} 代进化完成。`);
+                    toast(`第 ${newCompletedGenerationIndex} 代进化完成。正在更新可视化...`, 'success');
                     await fetchVisualizationData();
 
                 } catch (error) {
                     handleError(error, '进化操作失败');
-                    // Potentially revert generationIndex if evolve failed mid-update, or rely on fetchVisualizationData to correct history
                 } finally {
                     loading.evolve = false;
                 }
@@ -825,36 +872,29 @@
             async function fetchVisualizationData() {
                 if (!sessionId.value) return;
                 loading.visualization = true;
+                toast('正在获取并刷新可视化数据...', 'info', 2000);
                 try {
                     const { data: vizHistory } = await axios.get(`/api/genetic-algorithm/visualization?sessionId=${sessionId.value}`);
+                    console.log('fetchVisualizationData response (vizHistory):', JSON.parse(JSON.stringify(vizHistory)));
 
-                    const newSummaries = vizHistory.map(item => ({
+                    const newSummariesFromViz = vizHistory.map(item => ({
                         generationIndex: item.generation,
                         coverage: item.coverage,
                         similarity: item.similarity,
                         deltaCoverage: item.deltaCoverage,
-                        // populationSize is not in vizHistory, so we need to merge carefully
                     }));
 
-                    // Merge newSummaries with existing generationSummaries to preserve populationSize
                     const mergedSummaries = [];
                     const existingMap = new Map(generationSummaries.value.map(s => [s.generationIndex, s]));
 
-                    for (const vizItem of newSummaries) {
+                    for (const vizItem of newSummariesFromViz) {
                         const existingEntry = existingMap.get(vizItem.generationIndex);
                         if (existingEntry) {
-                            mergedSummaries.push({
-                                ...vizItem,
-                                populationSize: existingEntry.populationSize // Preserve from init/evolve direct response
-                            });
+                            mergedSummaries.push({ ...vizItem, populationSize: existingEntry.populationSize });
                         } else {
-                            mergedSummaries.push({
-                                ...vizItem,
-                                populationSize: undefined // No prior populationSize known
-                            });
+                            mergedSummaries.push({ ...vizItem, populationSize: undefined });
                         }
                     }
-                    // Add any entries from existingSummaries that were not in vizHistory (should be rare if vizHistory is complete)
                     for (const existingEntry of generationSummaries.value) {
                         if (!mergedSummaries.some(ms => ms.generationIndex === existingEntry.generationIndex)) {
                             mergedSummaries.push(existingEntry);
@@ -862,61 +902,78 @@
                     }
 
                     generationSummaries.value = mergedSummaries.sort((a, b) => a.generationIndex - b.generationIndex);
+                    console.log('Final generationSummaries after fetchViz merge:', JSON.parse(JSON.stringify(generationSummaries.value)));
 
-                    // Update charts with the potentially more complete historical data
                     updateCoverageChart(generationSummaries.value);
                     updateSimilarityChart(generationSummaries.value);
 
-                    // Update global status indicators based on the latest generation in summaries if available
                     if (generationSummaries.value.length > 0) {
                         const latestGenSummary = generationSummaries.value[generationSummaries.value.length - 1];
-                        if (latestGenSummary.generationIndex === generationIndex.value) { // Ensure consistency
+                        if (latestGenSummary.generationIndex === generationIndex.value) {
                             coverage.value = typeof latestGenSummary.coverage === 'number' ? latestGenSummary.coverage : 0;
-                            // populationSize in global indicator is already updated by evolve/init directly.
-                            // similarity is not a global indicator.
                         }
                     }
-
-                    toast('可视化数据已更新。');
+                    toast('可视化数据已更新。', 'success');
                 } catch (error) {
                     handleError(error, '获取可视化数据失败');
-                    // Don't clear summaries on viz error, might have partial valid data from evolve/init
                 } finally {
                     loading.visualization = false;
                 }
             }
 
             function updateCoverageChart(summaries) {
-                if (!coverageChart) return;
+                if (!coverageChart) {
+                    console.warn('覆盖率图表实例未初始化，无法更新。');
+                    return;
+                }
+                if (!summaries || summaries.length === 0) {
+                    console.warn('覆盖率图表：无数据可供更新，将清空图表。');
+                    coverageChart.setOption({ xAxis: [{ data: [] }], series: [{ name: '覆盖率 (%)', data: [] }] }, true);
+                    return;
+                }
+                console.log('Updating coverage chart with summaries:', JSON.parse(JSON.stringify(summaries)));
                 const xAxisData = summaries.map(s => `第${s.generationIndex}代`);
-                const seriesData = [{
-                    name: '覆盖率 (%)',
-                    type: 'line',
-                    smooth: true,
-                    data: summaries.map(s => typeof s.coverage === 'number' ? s.coverage.toFixed(2) : null),
-                    yAxisIndex: 0,
-                    color: '#5470C6'
-                }];
+                const seriesCoverageData = summaries.map(s => typeof s.coverage === 'number' ? s.coverage.toFixed(2) : null);
+
                 coverageChart.setOption({
                     xAxis: [{ data: xAxisData }],
-                    series: seriesData
-                }, false);
+                    series: [{
+                        name: '覆盖率 (%)',
+                        type: 'line',
+                        smooth: true,
+                        data: seriesCoverageData,
+                        yAxisIndex: 0,
+                        color: '#5470C6'
+                    }]
+                }, true);
+                console.log('Coverage chart updated.');
             }
 
             function updateSimilarityChart(summaries) {
-                if (!similarityChart) return;
+                if (!similarityChart) {
+                    console.warn('相似度图表实例未初始化，无法更新。');
+                    return;
+                }
+                if (!summaries || summaries.length === 0) {
+                    console.warn('相似度图表：无数据可供更新，将清空图表。');
+                    similarityChart.setOption({ xAxis: [{ data: [] }], series: [{ name: '平均染色体相似度', data: [] }] }, true);
+                    return;
+                }
+                console.log('Updating similarity chart with summaries:', JSON.parse(JSON.stringify(summaries)));
                 const xAxisData = summaries.map(s => `第${s.generationIndex}代`);
-                const seriesData = [{
-                    name: '平均染色体相似度',
-                    type: 'line',
-                    smooth: true,
-                    data: summaries.map(s => typeof s.similarity === 'number' ? s.similarity.toFixed(4) : null),
-                    color: '#FAC858'
-                }];
+                const seriesSimilarityData = summaries.map(s => typeof s.similarity === 'number' ? s.similarity.toFixed(4) : null);
+
                 similarityChart.setOption({
                     xAxis: [{ data: xAxisData }],
-                    series: seriesData
-                }, false);
+                    series: [{
+                        name: '平均染色体相似度',
+                        type: 'line',
+                        smooth: true,
+                        data: seriesSimilarityData,
+                        color: '#FAC858'
+                    }]
+                }, true);
+                console.log('Similarity chart updated.');
             }
 
             async function showDetails(genIdx) {
@@ -926,10 +983,11 @@
                 }
                 detailGenIndex.value = genIdx;
                 loading.details = true;
+                toast(`正在加载第 ${genIdx} 代染色体详情...`, 'info');
                 try {
                     const { data } = await axios.get(`/api/genetic-algorithm/generation-details?sessionId=${sessionId.value}&generationIndex=${genIdx}`);
                     generationDetails.value = data.chromosomes || [];
-                    toast(`已加载第 ${genIdx} 代的详细数据。`);
+                    toast(`已加载第 ${genIdx} 代的详细数据。`, 'success');
                 } catch (error) {
                     handleError(error, `加载第 ${genIdx} 代详情失败`);
                     generationDetails.value = [];
@@ -939,9 +997,6 @@
             }
 
             const getLineClass = (lineNumber) => {
-                // Placeholder for actual coverage data integration
-                // if (coveredLines.value.includes(lineNumber)) return 'covered-line';
-                // if (uncoveredLines.value.includes(lineNumber)) return 'uncovered-line';
                 return '';
             };
 
@@ -950,33 +1005,14 @@
                 return Object.entries(genes).map(([k, v]) => `${k}=${v}`).join(', ');
             };
 
-            const initializeCharts = () => {
-                if (coverageChartEl.value && !coverageChart) {
-                    coverageChart = new ChartManager(coverageChartEl.value, {
-                        title: { text: '覆盖率 vs 迭代数', left: 'center' },
-                        legend: { data: ['覆盖率 (%)'], top: 35 },
-                        xAxis: { type: 'category', name: '代数', boundaryGap: false, data: [] },
-                        yAxis: { name: '覆盖率 (%)', type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%' } },
-                        series: [{ name: '覆盖率 (%)', type: 'line', smooth: true, data: [], color: '#5470C6' }]
-                    });
-                }
-                if (similarityChartEl.value && !similarityChart) {
-                    similarityChart = new ChartManager(similarityChartEl.value, {
-                        title: { text: '平均染色体相似度 vs 迭代数', left: 'center' },
-                        legend: { data: ['平均染色体相似度'], top: 35 },
-                        xAxis: { type: 'category', name: '代数', boundaryGap: false, data: [] },
-                        yAxis: { name: '相似度', type: 'value', min: 0, max: 1, axisLabel: { formatter: '{value}' } }, // Assuming similarity is 0-1
-                        series: [{ name: '平均染色体相似度', type: 'line', smooth: true, data: [], color: '#FAC858' }]
-                    });
-                }
-            };
-
             const handleResize = () => {
-                [coverageChart, similarityChart].forEach(chart => chart?.resize());
+                if (coverageChart) coverageChart.resize();
+                if (similarityChart) similarityChart.resize();
             };
 
             async function submitConfig(newConfig) {
                 loading.config = true;
+                toast('正在保存算法配置...', 'info');
                 try {
                     await axios.post('/api/param.json', newConfig);
                     Object.assign(formData, newConfig);
@@ -995,7 +1031,7 @@
             const closeModal = () => showModal.value = false;
 
             onMounted(async () => {
-                initializeCharts();
+                // initializeCharts is now called after sessionId is set in initAlgorithm
                 await loadConfig();
                 await loadClassStructure();
                 window.addEventListener('resize', handleResize);
@@ -1003,7 +1039,8 @@
 
             onBeforeUnmount(() => {
                 window.removeEventListener('resize', handleResize);
-                [coverageChart, similarityChart].forEach(chart => chart?.dispose());
+                if (coverageChart) coverageChart.dispose();
+                if (similarityChart) similarityChart.dispose();
             });
 
             return {
