@@ -524,21 +524,7 @@
                 return;
             }
             this.instance = echarts.init(chartEl);
-            this.baseOptions = {
-                tooltip: { trigger: 'axis', confine: true },
-                legend: { top: 30, type: 'scroll' },
-                grid: { top: 80, left: '10%', right: '10%', bottom: 60, containLabel: true },
-                toolbox: {
-                    show: true,
-                    feature: {
-                        saveAsImage: { title: '保存图片' },
-                        dataView: { title: '数据视图', readOnly: false },
-                        magicType: { type: ['line', 'bar', 'stack'], title: {line: '折线图', bar: '柱状图', stack: '堆叠'} },
-                        restore: { title: '还原' }
-                    }
-                },
-                ...baseOptions // Merges specific chart options like title, xAxis, yAxis, series
-            };
+            this.baseOptions = JSON.parse(JSON.stringify(baseOptions)); // Store a deep clone
             this.instance.setOption(this.baseOptions);
             console.log('ChartManager initialized for element:', chartEl, 'with base options:', JSON.parse(JSON.stringify(this.baseOptions)));
         }
@@ -932,10 +918,10 @@
                 }
                 if (!summaries || summaries.length === 0) {
                     console.warn('覆盖率图表：无数据可供更新，将清空图表。');
-                    coverageChart.setOption({
-                        xAxis: { data: [] },
-                        series: [{ name: '覆盖率 (%)', data: [] }]
-                    }, true);
+                    const emptyOption = JSON.parse(JSON.stringify(coverageChart.baseOptions));
+                    emptyOption.xAxis.data = [];
+                    emptyOption.series[0].data = [];
+                    coverageChart.setOption(emptyOption, true);
                     return;
                 }
                 console.log('Updating coverage chart with summaries:', JSON.parse(JSON.stringify(summaries)));
@@ -945,23 +931,13 @@
                     return isNaN(cov) ? null : cov;
                 });
 
-                console.log('Data for Coverage Chart update:', JSON.stringify({ xAxisData, seriesCoverageData }));
-                coverageChart.setOption({
-                    xAxis: {
-                        type: 'category',
-                        name: '代数',
-                        boundaryGap: false,
-                        data: xAxisData
-                    },
-                    series: [{
-                        name: '覆盖率 (%)',
-                        type: 'line',
-                        smooth: true,
-                        data: seriesCoverageData,
-                        yAxisIndex: 0,
-                        color: '#5470C6'
-                    }]
-                }, true);
+                const newOption = JSON.parse(JSON.stringify(coverageChart.baseOptions));
+                newOption.xAxis.data = xAxisData;
+                newOption.series[0].data = seriesCoverageData;
+
+                console.log('Data for Coverage Chart update:', JSON.stringify({ xAxisData, seriesCoverageData })); // Log data being set
+                console.log('Complete new option for Coverage Chart update:', JSON.stringify(newOption));
+                coverageChart.setOption(newOption, true);
                 console.log('Coverage chart updated.');
             }
 
@@ -972,10 +948,10 @@
                 }
                 if (!summaries || summaries.length === 0) {
                     console.warn('相似度图表：无数据可供更新，将清空图表。');
-                    similarityChart.setOption({
-                        xAxis: { data: [] },
-                        series: [{ name: '平均染色体相似度', data: [] }]
-                    }, true);
+                    const emptyOption = JSON.parse(JSON.stringify(similarityChart.baseOptions));
+                    emptyOption.xAxis.data = [];
+                    emptyOption.series[0].data = [];
+                    similarityChart.setOption(emptyOption, true);
                     return;
                 }
                 console.log('Updating similarity chart with summaries:', JSON.parse(JSON.stringify(summaries)));
@@ -985,22 +961,13 @@
                     return isNaN(sim) ? null : sim;
                 });
 
-                console.log('Data for Similarity Chart update:', JSON.stringify({ xAxisData, seriesSimilarityData }));
-                similarityChart.setOption({
-                    xAxis: {
-                        type: 'category',
-                        name: '代数',
-                        boundaryGap: false,
-                        data: xAxisData
-                    },
-                    series: [{
-                        name: '平均染色体相似度',
-                        type: 'line',
-                        smooth: true,
-                        data: seriesSimilarityData,
-                        color: '#FAC858'
-                    }]
-                }, true);
+                const newOption = JSON.parse(JSON.stringify(similarityChart.baseOptions));
+                newOption.xAxis.data = xAxisData;
+                newOption.series[0].data = seriesSimilarityData;
+
+                console.log('Data for Similarity Chart update:', JSON.stringify({ xAxisData, seriesSimilarityData })); // Log data being set
+                console.log('Complete new option for Similarity Chart update:', JSON.stringify(newOption));
+                similarityChart.setOption(newOption, true);
                 console.log('Similarity chart updated.');
             }
 
