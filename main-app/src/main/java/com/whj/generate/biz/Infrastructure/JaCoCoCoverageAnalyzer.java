@@ -81,7 +81,6 @@ public final class JaCoCoCoverageAnalyzer {
             // 修正参数传递逻辑（使用染色体携带的基因数据）
             Object[] params = chromosome.getGenes();
             //真实调用逻辑
-            //todo 重试机制-死刑
             ReflectionUtil.invokeSafe(method, params, instance);
 
             return agent.getExecutionData(false);
@@ -183,6 +182,7 @@ public final class JaCoCoCoverageAnalyzer {
         if (population == null) {
             return;
         }
+        Set<Integer> finalLastPopulationUnCovered = getLastPopulationUnCovered(nature);
         // 初始化覆盖率追踪器（线程安全）
         final List<byte[]> coverageDataList = new ArrayList<>();
         // 获取每个染色体的覆盖率数据
@@ -192,14 +192,46 @@ public final class JaCoCoCoverageAnalyzer {
             chromosomes.forEach(chromosome -> {
                         // 处理单个染色体覆盖率数据
                         processChromosome(nature, chromosome, coverageDataList);
-                        Set<Integer> uncovered = coverageTracker.getUncoveredLines(population.getTargetMethod());
+                        //获取未覆盖行
+                        Set<Integer> uncovered = getUncovered(nature, population, finalLastPopulationUnCovered);
                         fitnessCalculator.calculate(chromosome, coverageTracker, uncovered);
                     }
             );
             return calculateTotalCoverage(nature, coverageDataList, chromosomes.iterator().next().getMethod());
         }, GenerateErrorEnum.GET_OVERRIDE_FAIL, "种群覆盖率计算失败");
-
         population.setCurrentCoverage(totalCoverage);
+    }
+
+    /**
+     * 获取上次种群未覆盖行
+     * @param nature
+     * @return
+     */
+    private static Set<Integer> getLastPopulationUnCovered(Nature nature) {
+        Set<Integer> lastPopulationUnCovered = Set.of();
+        if (isNotInitPopulation(nature)) {
+            //获取上个种群
+            int size = nature.getPopulationList().size();
+            final Population lastPopulation = nature.getPopulationList().get(size-1);
+            lastPopulationUnCovered = coverageTracker.getPopulationUnCoveredLines(lastPopulation);
+        }
+        return lastPopulationUnCovered;
+    }
+    /**
+     * 获取当前种群未覆盖行
+     */
+    private static Set<Integer> getUncovered(Nature nature, Population population, Set<Integer> finalLastPopulationUnCovered) {
+        Set<Integer> uncovered;
+        if (isNotInitPopulation(nature)) {
+            uncovered = finalLastPopulationUnCovered;
+        } else {
+            uncovered = coverageTracker.getUncoveredLines(population.getTargetMethod());
+        }
+        return uncovered;
+    }
+
+    private static boolean isNotInitPopulation(Nature nature) {
+        return !nature.getPopulationList().isEmpty();
     }
 
     /**

@@ -11,6 +11,7 @@ public class EvolveResponse {
     private double coverage;
     private int populationSize;
     private boolean finished;
+    private String msg;
 
     public EvolveResponse(String sessionId, int nextGeneration, double coverage, int populationSize, boolean finished) {
         this.sessionId = sessionId;
@@ -18,6 +19,9 @@ public class EvolveResponse {
         this.coverage = coverage;
         this.populationSize = populationSize;
         this.finished = finished;
+    }
+    public EvolveResponse(String msg){
+        this.msg = msg;
     }
 
     public String getSessionId() {
@@ -59,5 +63,12 @@ public class EvolveResponse {
     public void setFinished(boolean finished) {
         this.finished = finished;
     }
-// getters omitted
+
+    public String getMsg() {
+        return msg;
+    }
+
+    public void setMsg(String msg) {
+        this.msg = msg;
+    }
 }

@@ -13,6 +13,7 @@ import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 import com.whj.generate.core.service.GeneticAlgorithmService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -20,14 +21,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.whj.generate.utill.FileUtil.reportedInFile;
 
 /**
  * @author whj
  * @date 2025-04-10 上午2:46
  */
 @Controller
-
 @RequestMapping("/api/genetic-algorithm")
 public class GeneticAlgorithmController {
     /**
@@ -40,10 +39,6 @@ public class GeneticAlgorithmController {
     private final Map<String, Nature> sessions = new ConcurrentHashMap<>();
 
 
-    // 构造函数注入
-    public GeneticAlgorithmController(GeneticAlgorithmService geneticAlgorithmService) {
-        this.geneticAlgorithmService = geneticAlgorithmService;
-    }
 
     /**
      * 初始化环境，返回 sessionId 和初始种群信息。
@@ -75,17 +70,22 @@ public class GeneticAlgorithmController {
     @ResponseBody
     public EvolveResponse evolve(@RequestBody EvolveRequest request) {
         System.out.println("POST evolve 被调用");
-        Nature nature = sessions.get(request.getSessionId());
-        if (nature == null) {
-            throw new IllegalArgumentException("无效的 sessionId: " + request.getSessionId());
-        }
+        Nature nature = checkAndGetNature(request.getSessionId());
+
         int genIndex = request.getGenerationIndex();
+        if (genIndex < 0 ) {
+            throw new IllegalArgumentException("无效的参数");
+        }
         // 执行一次进化
         Population nextPop = geneticAlgorithmService.evolvePopulation(nature, genIndex);
-        boolean finished = nextPop.getCurrentCoverage() >= GeneticAlgorithmConfig.TARGET_COVERAGE
-                || genIndex + 1 >= GeneticAlgorithmConfig.MAX_GENERATION_COUNT;
+        boolean finished = isPopulationFinished(nextPop, genIndex);
 
         return ChromosomeConvertor.getEvolveResponse(request, genIndex, nextPop, finished);
+    }
+
+    private static boolean isPopulationFinished(Population nextPop, int genIndex) {
+        return nextPop.getCurrentCoverage() >= GeneticAlgorithmConfig.TARGET_COVERAGE
+                || genIndex + 1 >= GeneticAlgorithmConfig.MAX_GENERATION_COUNT;
     }
 
 
@@ -94,8 +94,8 @@ public class GeneticAlgorithmController {
     public PopulationResponse getPopulation(@RequestParam String sessionId,
                                             @RequestParam int generationIndex) {
         System.out.println("GET population 被调用");
-        Nature nature = sessions.get(sessionId);
-        if (nature == null || generationIndex < 0 || generationIndex >= nature.getPopulationList().size()) {
+        Nature nature = checkAndGetNature(sessionId);
+        if (generationIndex < 0 || generationIndex >= nature.getPopulationList().size()) {
             throw new IllegalArgumentException("无效的参数");
         }
         Population pop = nature.getPopulationList().get(generationIndex);
@@ -103,6 +103,7 @@ public class GeneticAlgorithmController {
 
         return ChromosomeConvertor.getPopulationResponse(sessionId, generationIndex, pop, chromosomeSequenceMap);
     }
+
     /**
      * 获取种群可视化数据（多目标指标随代数的变化）
      */
@@ -110,10 +111,7 @@ public class GeneticAlgorithmController {
     @ResponseBody
     public List<Map<String, Object>> getPopulationVisualization(@RequestParam String sessionId) {
         System.out.println("GET population-visualization 被调用");
-        Nature nature = sessions.get(sessionId);
-        if (nature == null || nature.getPopulationList().isEmpty()) {
-            throw new IllegalArgumentException("无效的 sessionId 或种群数据为空");
-        }
+        Nature nature = checkAndGetNature(sessionId);
 
         ChromosomeCoverageTracker tracker = geneticAlgorithmService.getCoverageTracker();
         List<Population> populations = nature.getPopulationList();
@@ -121,56 +119,12 @@ public class GeneticAlgorithmController {
         return buildVisualResult(populations, tracker);
     }
 
-
-    /**
-     * 改造后的算法入口（改为接收动态参数）
-     *
-     * @param targetClass  目标类
-     * @param targetMethod 目标方法
-     */
-    @Async
-    protected void runGeneticAlgorithm(Class<?> targetClass, String targetMethod) {
-        final Nature nature = new Nature();
-
-        // 初始化环境时传入目标方法
-        initializeEnvironment(nature, targetClass, targetMethod);
-        // 执行进化过程
-        performEvolution(nature);
-    }
-
-    private void initializeEnvironment(Nature nature, Class<?> targetClass, String phaseName) {
-        long startTime = System.nanoTime();
-        Population population = geneticAlgorithmService.initEnvironment(nature, targetClass, phaseName);
-        logOperationDuration(startTime, population, GeneticAlgorithmConfig.INIT_PHASE);
-    }
-
-    /**
-     * 执行进化过程
-     *
-     * @param nature
-     */
-    private void performEvolution(Nature nature) {
-        int generationCount = 0;
-        Population currentPopulation = nature.getPopulationList().iterator().next();
-
-        while (shouldContinueEvolution(currentPopulation, generationCount)) {
-            long startTime = System.nanoTime();
-
-            currentPopulation = geneticAlgorithmService.evolvePopulation(nature, generationCount);
-            logOperationDuration(startTime, currentPopulation, String.valueOf(generationCount));
-            generationCount++;
+    private Nature checkAndGetNature(String sessionId) {
+        Nature nature = sessions.get(sessionId);
+        if (nature == null || nature.getPopulationList().isEmpty()) {
+            throw new IllegalArgumentException("无效的 sessionId 或种群数据为空");
         }
-    }
-
-    private boolean shouldContinueEvolution(Population population, int currentGeneration) {
-        return population.getCurrentCoverage() < GeneticAlgorithmConfig.TARGET_COVERAGE
-                && currentGeneration < GeneticAlgorithmConfig.MAX_GENERATION_COUNT;
-    }
-
-    private void logOperationDuration(long startTime, Population population, String phase) {
-        long duration = System.nanoTime() - startTime;
-        ChromosomeCoverageTracker coverageTracker = geneticAlgorithmService.getCoverageTracker();
-        reportedInFile(duration, population, phase, coverageTracker);
+        return nature;
     }
     private static List<Map<String, Object>> buildVisualResult(List<Population> populations, ChromosomeCoverageTracker tracker) {
         List<Map<String, Object>> result = new ArrayList<>();
@@ -206,5 +160,10 @@ public class GeneticAlgorithmController {
         String sessionId = UUID.randomUUID().toString();
         sessions.put(sessionId, nature);
         return sessionId;
+    }
+
+    // 构造函数注入
+    public GeneticAlgorithmController(GeneticAlgorithmService geneticAlgorithmService) {
+        this.geneticAlgorithmService = geneticAlgorithmService;
     }
 }

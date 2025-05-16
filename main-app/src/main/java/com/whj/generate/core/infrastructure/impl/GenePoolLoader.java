@@ -37,6 +37,9 @@ public class GenePoolLoader implements PoolLoader<GenePool> {
         //根据参数名，将基因位加载入基因池
         for(String param : paramsList){
             Object[] genes = geneticMap.get(param).toArray();
+            if (genes.length == 0) {
+                genes=new Object[]{null};
+            }
             genePool.loadGenes(paramIndex++, genes);
         }
         return genePool;
