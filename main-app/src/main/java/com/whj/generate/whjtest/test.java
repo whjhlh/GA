@@ -25,6 +25,12 @@ public class test {
            if(b<3){
                System.out.print("");
            }
+           if(c==2){
+               System.out.print("");
+           }
+           if(c>4){
+               System.out.print("");
+           }
        }
    }
 

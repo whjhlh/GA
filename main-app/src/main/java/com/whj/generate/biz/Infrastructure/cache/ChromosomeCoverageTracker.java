@@ -182,6 +182,7 @@ public class ChromosomeCoverageTracker {
      */
     public void clear() {
         coverageMap.clear();
+        chromosomeSequenceMap.clear();
     }
 
     /**

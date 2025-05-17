@@ -4,6 +4,7 @@ package com.whj.generate.common;
 import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.common.config.GeneticAlgorithmConfig;
 import com.whj.generate.common.convert.ChromosomeConvertor;
+import com.whj.generate.common.dto.CoveredDTO;
 import com.whj.generate.common.req.AlgorithmRequest;
 import com.whj.generate.common.req.EvolveRequest;
 import com.whj.generate.common.req.InitResponse;
@@ -13,8 +14,6 @@ import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 import com.whj.generate.core.service.GeneticAlgorithmService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,6 +47,7 @@ public class GeneticAlgorithmController {
     public InitResponse init(@RequestBody AlgorithmRequest request) {
         System.out.println("POST init 被调用");
         try {
+            initTracker();
             Class<?> targetClass = Class.forName("com.whj.generate.whjtest." + request.getClassName());
             Nature nature = new Nature();
             // 初始化环境
@@ -60,6 +60,12 @@ public class GeneticAlgorithmController {
             throw new IllegalArgumentException("未找到类: " + request.getClassName(), e);
         } catch (Exception e) {
             throw new RuntimeException("初始化失败: " + e.getMessage());
+        }
+    }
+
+    private void initTracker() {
+        if(geneticAlgorithmService.getCoverageTracker()!=null){
+            geneticAlgorithmService.getCoverageTracker().clear();
         }
     }
 
@@ -117,6 +123,25 @@ public class GeneticAlgorithmController {
         List<Population> populations = nature.getPopulationList();
 
         return buildVisualResult(populations, tracker);
+    }
+
+    @GetMapping("/covered")
+    @ResponseBody
+    public CoveredDTO getCovered(@RequestParam Integer chromosomeSeq) {
+        System.out.println("GET /api/java-structure/covered 被调用");
+        ChromosomeCoverageTracker coverageTracker = geneticAlgorithmService.getCoverageTracker();
+        Map<Chromosome, Integer> chromosomeSequenceMap = coverageTracker.getChromosomeSequenceMap();
+        //查询value为chromosomeSeq的Integer
+        for (Map.Entry<Chromosome, Integer> entry : chromosomeSequenceMap.entrySet()) {
+            if (Objects.equals(entry.getValue(), chromosomeSeq)) {
+                CoveredDTO coveredDTO = new CoveredDTO();
+                Chromosome chromosome = entry.getKey();
+                coveredDTO.setCoveredLine(coverageTracker.getLinesCoveredBy(chromosome));
+                coveredDTO.setGenes(chromosome.getGenes());
+                return coveredDTO;
+            }
+        }
+        return new CoveredDTO();
     }
 
     private Nature checkAndGetNature(String sessionId) {
