@@ -41,6 +41,7 @@ public class ChromosomeCoverageTracker {
 
     /**
      * 初始化起始行和结束行
+     *
      * @param start
      * @param end
      */
@@ -79,6 +80,7 @@ public class ChromosomeCoverageTracker {
         }
         return currentUncovered;
     }
+
     /**
      * 构建一个 BitSet：位序号 0 对应 startLine，1 对应 startLine+1，以此类推，
      * 被覆盖的行在 BitSet 中对应 bit 会被置为 true。
@@ -117,7 +119,6 @@ public class ChromosomeCoverageTracker {
     }
 
 
-
     /**
      * 获取某个染色体覆盖的行
      *
@@ -131,13 +132,14 @@ public class ChromosomeCoverageTracker {
             return Collections.emptySet();
         }
         Set<Integer> lines = new HashSet<>();
-        for(Integer key : methodCoverage.keySet()){
-            if(methodCoverage.get(key).contains(chromosome)){
+        for (Integer key : methodCoverage.keySet()) {
+            if (methodCoverage.get(key).contains(chromosome)) {
                 lines.add(key);
             }
         }
         return lines;
     }
+
     /**
      * 记录一个染色体覆盖了某个方法的某些行
      *
@@ -162,6 +164,7 @@ public class ChromosomeCoverageTracker {
                 .map(m -> m.getOrDefault(line, Collections.emptySet()))
                 .orElse(Collections.emptySet());
     }
+
     /**
      * 获取某个方法覆盖情况
      */
@@ -186,45 +189,8 @@ public class ChromosomeCoverageTracker {
     }
 
     /**
-     * 生成可视化覆盖率报告（支持多级缩进格式）
-     *
-     * @return 格式化后的覆盖率报告字符串
-     */
-    public String generateCoverageReport() {
-        final StringBuilder report = new StringBuilder();
-        final String lineSeparator = System.lineSeparator();
-
-        // 输出方法-行号-染色体映射
-        report.append("=== 行覆盖详情 ===").append(lineSeparator);
-        coverageMap.forEach((method, lineMap) -> {
-            report.append("方法: ").append(formatMethodSignature(method)).append(lineSeparator);
-            lineMap.forEach((line, chromosomes) -> {
-                report.append("  行数 ").append(line).append("  染色体数量")
-                        .append(chromosomes.size()).append(lineSeparator);
-                report.append("染色体(序列号)");
-                chromosomes.forEach(ch -> report.append(formatChromosomeInfo(ch))
-                );
-                report.append(lineSeparator);
-            });
-            report.append(lineSeparator);
-        });
-
-        // 输出聚合统计
-        report.append(lineSeparator).append("=== 详情 ===").append(lineSeparator);
-        coverageMap.forEach((method, lineMap) -> {
-            int totalLines = lineMap.size();
-            long totalCoverage = lineMap.values().stream().mapToInt(Set::size).sum();
-            report.append(formatMethodSignature(method))
-                    .append(" | Covered Lines: ").append(totalLines)
-                    .append(" | Total Coverage Count: ").append(totalCoverage)
-                    .append(lineSeparator);
-        });
-
-        return report.toString();
-    }
-
-    /**
      * 获取覆盖该染色体的所有染色体
+     *
      * @param target
      * @return
      */
@@ -253,37 +219,18 @@ public class ChromosomeCoverageTracker {
         }
     }
 
-    /**
-     * 格式化方法签名（包含返回类型和参数）
-     */
-    private String formatMethodSignature(Method method) {
-        return String.format("%s %s(%s)",
-                method.getReturnType().getSimpleName(),
-                method.getName(),
-                Arrays.stream(method.getParameterTypes())
-                        .map(Class::getSimpleName)
-                        .collect(Collectors.joining(", "))
-        );
-    }
-
-    /**
-     * 格式化染色体信息（示例实现，可根据实际需求调整）
-     */
-    private String formatChromosomeInfo(Chromosome chromosome) {
-        return String.format("%s,", chromosomeSequenceMap.get(chromosome));
-    }
-
     public Map<Chromosome, Integer> getChromosomeSequenceMap() {
         return chromosomeSequenceMap;
     }
 
     /**
      * 获取种群相似度
+     *
      * @param pop
      * @return
      */
     public double getSimilarityAtGeneration(Population pop) {
-        List<Chromosome> chromosomes =Lists.newArrayList(pop.getChromosomeSet());
+        List<Chromosome> chromosomes = Lists.newArrayList(pop.getChromosomeSet());
         // 收集每个染色体的覆盖行集合
         List<Set<Integer>> linesList = chromosomes.stream()
                 .map(this::getLinesCoveredBy)
@@ -291,7 +238,6 @@ public class ChromosomeCoverageTracker {
         // 调用工具类计算平均相似度
         return SimilarityUtils.averagePopulationSimilarity(linesList);
     }
-
 
 
 }

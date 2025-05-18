@@ -1,5 +1,6 @@
 package com.whj.generate.core.service.impl;
 
+import com.google.common.collect.Lists;
 import com.whj.generate.biz.Infrastructure.JaCoCoCoverageAnalyzer;
 import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.common.config.GeneticAlgorithmConfig;
@@ -18,12 +19,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.*;
 import java.util.stream.IntStream;
 
 
@@ -42,7 +42,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     @Autowired
     @Qualifier("eliteDiverseStrategy")
     private SelectionStrategy selectionStrategy;
-
+    ExecutorService processPool = Executors.newWorkStealingPool();
 
     @Autowired
     public GeneticAlgorithmServiceImpl(
@@ -90,25 +90,30 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         // 进化生成新个体
         evolveNewGeneration(nature, population, newPopulation);
 
+        //计算种群适应度
         populationDataHandle(nature, newPopulation);
         return newPopulation;
     }
+
     @Override
     public ChromosomeCoverageTracker getCoverageTracker() {
         return coverageAnalyzer.getCoverageTracker();
     }
+
     /**
      * 处理种群数据
+     *
      * @param nature
      * @param newPopulation
      */
     private void populationDataHandle(Nature nature, Population newPopulation) {
         coverageAnalyzer.calculatePopulationCoverage(nature, newPopulation);
-        nature.addPopulation(newPopulation);
 
-        Set<Chromosome> chromosomes = newPopulation.getChromosomeSet();
+
         // 构建染色体序列
-        coverageAnalyzer.getCoverageTracker().buildChromosomeSequenceMap(chromosomes);
+        ChromosomeCoverageTracker coverageTracker = coverageAnalyzer.getCoverageTracker();
+        Set<Chromosome> chromosomeSet = newPopulation.getChromosomeSet();
+        coverageTracker.buildChromosomeSequenceMap(chromosomeSet);
     }
 
 
@@ -177,6 +182,94 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         List<Chromosome> select = selectionStrategy.select(src, coverageAnalyzer.getCoverageTracker());
         dest.addChromosomeSet(select);
     }
+    // 进化过程优化版本
+    private void evolveNewGeneration(Nature nature, Population srcPopulation, Population destPopulation) {
+        final int targetSize = srcPopulation.getChromosomeSet().size();
+        final GenePool genePool = srcPopulation.getGenePool();
+        Set<Chromosome> chromosomeSet = destPopulation.getChromosomeSet();
+        final List<Chromosome> destSet = Lists.newArrayList(chromosomeSet) ;
+
+        // 预生成随机决策参数
+        final int batchSize = targetSize - destSet.size();
+        final double[] crossoverRandoms = ThreadLocalRandom.current().doubles(batchSize).toArray();
+        final double[] mutationRandoms = ThreadLocalRandom.current().doubles(batchSize).toArray();
+
+        // 批量生成子代
+        List<Chromosome> childList = IntStream.range(0, batchSize)
+                .parallel()
+                .mapToObj(i -> generateChild(
+                        srcPopulation,
+                        genePool,
+                        crossoverRandoms[i],
+                        mutationRandoms[i]
+                ))
+                .toList();
+
+        for(Chromosome child:childList){
+            long percent = JaCoCoCoverageAnalyzer.calculateChromosomePercentage(nature, child);
+            child.setCoveragePercent(percent);
+            destSet.add(child);
+        }
+        destPopulation.addChromosomeSet(destSet);
+    }
+
+    // 优化后的子代生成方法
+    private Chromosome generateChild(Population population, GenePool genePool,
+                                              double crossoverRandom, double mutationRandom) {
+        // 批量选择父代（缓存提升）
+        Chromosome[] parents = selectParentsBulk(population);
+        return performGeneticOperations(
+                parents[0],
+                parents[1],
+                genePool,
+                crossoverRandom,
+                mutationRandom
+        );
+    }
+
+    // 批量选择父代（减少缓存访问次数）
+    private Chromosome[] selectParentsBulk(Population population) {
+        final double[] cumFitness = population.getCumulativeFitness();
+        final double totalFitness = population.getCachedTotalFitness();
+
+        // 单次阈值生成选择两个父代
+        double threshold1 = ThreadLocalRandom.current().nextDouble() * totalFitness;
+        double threshold2 = ThreadLocalRandom.current().nextDouble() * totalFitness;
+
+        int index1 = findIndex(threshold1, cumFitness);
+        int index2 = findIndex(threshold2, cumFitness);
+
+        Set<Chromosome> chromosomeSet = population.getChromosomeSet();
+        ArrayList<Chromosome> chromosomeLists = Lists.newArrayList(chromosomeSet);
+        return new Chromosome[] {
+                chromosomeLists.get(index1),
+                chromosomeLists.get(index2)
+        };
+    }
+
+    // 遗传操作优化
+    private Chromosome performGeneticOperations(Chromosome p1, Chromosome p2,
+                                                GenePool pool, double crossoverRandom,
+                                                double mutationRandom) {
+        Object[] genes = Arrays.copyOf(p1.getGenes(), p1.getGenes().length);
+
+        // 合并交叉与变异决策
+        boolean doCrossover = crossoverRandom < GeneticAlgorithmConfig.CROSSOVER_RATE;
+        boolean doMutation = mutationRandom < getDynamicMutationRate(pool);
+
+        // 单点交叉优化
+        if (doCrossover) {
+            int crossPoint = ThreadLocalRandom.current().nextInt(genes.length);
+            System.arraycopy(p2.getGenes(), crossPoint, genes, crossPoint, genes.length - crossPoint);
+        }
+
+        // 变异操作
+        if (doMutation) {
+            mutateGene(genes, pool);
+        }
+
+        return new Chromosome(p1.getTargetClass(), p1.getMethod(), genes);
+    }
 
     /**
      * 进化下一代
@@ -185,14 +278,13 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
      * @param srcPopulation
      * @param destPopulation
      */
-    private void evolveNewGeneration(Nature nature, Population srcPopulation, Population destPopulation) {
+    private void evolveNewGeneration2(Nature nature, Population srcPopulation, Population destPopulation) {
         GenePool genePool = srcPopulation.getGenePool();
         while (destPopulation.getChromosomeSet().size() < srcPopulation.getChromosomeSet().size()) {
             Chromosome child = generateChild(srcPopulation, genePool);
             long percent = JaCoCoCoverageAnalyzer.calculateChromosomePercentage(nature, child);
             child.setCoveragePercent(percent);
             destPopulation.addChromosome(child);
-
         }
     }
 
@@ -205,6 +297,14 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         return performGeneticOperations(parent1, parent2, genePool);
     }
 
+    /**
+     * 交叉变异
+     *
+     * @param p1
+     * @param p2
+     * @param pool
+     * @return
+     */
     private Chromosome performGeneticOperations(Chromosome p1, Chromosome p2, GenePool pool) {
         Object[] genes = Arrays.copyOf(p1.getGenes(), p1.getGenes().length);
 
@@ -225,6 +325,21 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     }
 
     /**
+     * 动态变异率
+     *
+     * @param pool
+     * @return
+     */
+    private double getDynamicMutationRate(GenePool pool) {
+        // 基因类型越多变异率越高
+        double diversityFactor = pool.getAverageGeneCount() / pool.getMaxGeneCount();
+        if (GeneticAlgorithmConfig.MUTATION_RATE == -1) {
+            return diversityFactor;
+        }
+        return (GeneticAlgorithmConfig.MUTATION_RATE + diversityFactor) / 2;
+    }
+
+    /**
      * 基因变异
      *
      * @param genes
@@ -236,42 +351,44 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         genes[mutatePos] = availableGenes[ThreadLocalRandom.current().nextInt(availableGenes.length)];
     }
 
-    /**
-     * 动态变异率
-     *
-     * @param pool
-     * @return
-     */
-    private double getDynamicMutationRate(GenePool pool) {
-        // 基因类型越多变异率越高
-        double diversityFactor = pool.getAverageGeneCount() /  pool.getMaxGeneCount();
-        if(GeneticAlgorithmConfig.MUTATION_RATE==-1){
-            return diversityFactor;
-        }
-        return (GeneticAlgorithmConfig.MUTATION_RATE+ diversityFactor)/2;
-    }
-
 
     /**
      * 轮盘赌选择父代
+     * <p>
+     * 该方法用于在遗传算法中通过轮盘赌方式选择父代染色体轮盘赌选择是基于染色体的适应度进行比例选择的一种方法，
+     * 适应度较高的染色体有更高的概率被选中作为父代以产生下一代
      *
-     * @param population
-     * @return
+     * @param population 种群对象，包含一组染色体
+     * @return 返回被选中的父代染色体
      */
     private Chromosome selectParentByRoulette(Population population) {
-        double totalFitness = population.getChromosomeSet().stream()
-                .mapToDouble(c -> c.getCoveragePercent() + 1) // 避免0概率
-                .sum();
+        final double[] cumulativeFitness = population.getCumulativeFitness();
+        final double totalFitness = population.getCachedTotalFitness();
 
-        double threshold = ThreadLocalRandom.current().nextDouble() * totalFitness;
-        double accumulator = 0;
-
-        for (Chromosome c : population.getChromosomeSet()) {
-            accumulator += (c.getCoveragePercent() + 1);
-            if (accumulator >= threshold) {
-                return c;
-            }
+        // 处理极端情况
+        ArrayList<Chromosome> chromosomeList = Lists.newArrayList(population.getChromosomeSet());
+        if (totalFitness <= 0) {
+            return chromosomeList.get(
+                    ThreadLocalRandom.current().nextInt(chromosomeList.size())
+            );
         }
-        return population.getChromosomeSet().iterator().next();
+
+        // 二分查找
+        int index = findIndex(totalFitness, cumulativeFitness);
+        return chromosomeList.get(index);
     }
+
+    /**
+     * 二分查找
+     * @param totalFitness
+     * @param cumulativeFitness
+     * @return
+     */
+    private static int findIndex(double totalFitness, double[] cumulativeFitness) {
+        final double threshold = ThreadLocalRandom.current().nextDouble() * totalFitness;
+        int index = Arrays.binarySearch(cumulativeFitness, threshold);
+        index = (index >= 0) ? index : Math.min(-index - 1, cumulativeFitness.length - 1);
+        return index;
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.whj.generate.core.domain;
 
+import com.google.common.collect.Lists;
 import com.whj.generate.common.config.PopulationParams;
 import com.whj.generate.core.infrastructure.strategy.CombinationStrategy;
 
@@ -30,6 +31,10 @@ public class Population {
      * 染色体组合分发策略
      */
     private final CombinationStrategy strategy;
+
+    // 缓存优化
+    private transient double[] cumulativeFitness;
+    private transient double cachedTotalFitness;
 
     /**
      * 当前覆盖率
@@ -197,5 +202,25 @@ public class Population {
             return ((Number) g1).doubleValue() > ((Number) g2).doubleValue() ? g1 : g2;
         }
         return Math.random() < 0.5 ? g1 : g2;
+    }
+    // 当染色体适应度更新时调用此方法
+    public void updateFitnessCache() {
+        int size = chromosomeSet.size();
+        this.cumulativeFitness = new double[size];
+        this.cachedTotalFitness = 0;
+
+        for (int i = 0; i < size; i++) {
+            this.cachedTotalFitness += Lists.newArrayList(chromosomeSet).get(i).getCoveragePercent() + 1;
+            this.cumulativeFitness[i] = this.cachedTotalFitness;
+        }
+    }
+
+    // 获取方法
+    public double[] getCumulativeFitness() {
+        return cumulativeFitness;
+    }
+
+    public double getCachedTotalFitness() {
+        return cachedTotalFitness;
     }
 }

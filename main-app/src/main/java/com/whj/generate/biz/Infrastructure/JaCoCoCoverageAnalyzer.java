@@ -35,7 +35,7 @@ import java.util.Set;
  */
 @Component
 public final class JaCoCoCoverageAnalyzer {
-    // 覆盖率追踪器实例（线程安全）
+    // 覆盖率追踪器实例
     private static final ChromosomeCoverageTracker coverageTracker = new ChromosomeCoverageTracker();
 
     private static final String COVERAGE_ERROR_CONTEXT = "覆盖率分析失败";
@@ -200,6 +200,9 @@ public final class JaCoCoCoverageAnalyzer {
             return calculateTotalCoverage(nature, coverageDataList, chromosomes.iterator().next().getMethod());
         }, GenerateErrorEnum.GET_OVERRIDE_FAIL, "种群覆盖率计算失败");
         population.setCurrentCoverage(totalCoverage);
+        population.updateFitnessCache();
+
+        nature.addPopulation(population);
     }
 
     /**
@@ -264,7 +267,7 @@ public final class JaCoCoCoverageAnalyzer {
     /**
      * 从字节数据计算覆盖率百分比
      */
-    private static double calculateCoveragePercentage(Nature nature, byte[] data, Method method) {
+    private static double calculateCoveragePercentage(byte[] data, Method method) {
         return ExceptionWrapper.process(() -> {
             final ExecutionDataStore store = new ExecutionDataStore();
             readExecutionData(data, store, new SessionInfoStore());

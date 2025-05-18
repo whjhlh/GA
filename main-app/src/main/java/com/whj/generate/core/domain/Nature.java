@@ -17,7 +17,7 @@ public class Nature {
      */
     private List<Population> populationList;
     private Set<byte[]> methodCoverageDataSet;
-    private Map<Chromosome, byte[]> chromosomeCoverageDataMap = new HashMap<>();
+    private Map<Chromosome, byte[]> chromosomeCoverageDataMap;
 
     public Nature() {
         this.agent = RT.getAgent();
