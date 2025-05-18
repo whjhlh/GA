@@ -180,20 +180,26 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         List<Chromosome> select = selectionStrategy.select(src, coverageAnalyzer.getCoverageTracker());
         dest.addChromosomeSet(select);
     }
-    // 进化过程优化版本
+
+    /**
+     * 种群进化
+     * @param nature
+     * @param srcPopulation
+     * @param destPopulation
+     */
     private void evolveNewGeneration(Nature nature, Population srcPopulation, Population destPopulation) {
         final int targetSize = srcPopulation.getChromosomeSet().size();
         final GenePool genePool = srcPopulation.getGenePool();
 
-        // 使用线程安全集合存储新染色体（修复点1）
+        // 使用线程安全集合存储新染色体
         final Set<Chromosome> destSet = ConcurrentHashMap.newKeySet();
-        destSet.addAll(destPopulation.getChromosomeSet()); // 保留已有优秀个体
+        destSet.addAll(destPopulation.getChromosomeSet());
 
-        // 修正循环条件（修复点2）
+        // 修正循环条件
         while (destSet.size() < targetSize) {
             int batchSize = targetSize - destSet.size();
 
-            // 预生成随机参数（修复点3）
+            // 预生成随机参数
             final double[] crossoverRandoms = ThreadLocalRandom.current().doubles(batchSize).toArray();
             final double[] mutationRandoms = ThreadLocalRandom.current().doubles(batchSize).toArray();
 
@@ -206,7 +212,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
                             crossoverRandoms[i],
                             mutationRandoms[i]
                     ))
-                    .toList(); // 使用可变集合（修复点4）
+                    .toList();
 
             for(Chromosome child:childList){
                 long percent = JaCoCoCoverageAnalyzer.calculateChromosomePercentage(nature, child);
@@ -215,11 +221,18 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
             }
         }
 
-        // 最终更新种群（修复点6）
+        // 最终更新种群
         destPopulation.addChromosomeSet(Lists.newArrayList(destSet));
     }
 
-    // 优化后的子代生成方法
+    /**
+     * 子代生成
+     * @param population
+     * @param genePool
+     * @param crossoverRandom
+     * @param mutationRandom
+     * @return
+     */
     private Chromosome generateChild(Population population, GenePool genePool,
                                               double crossoverRandom, double mutationRandom) {
         // 批量选择父代（缓存提升）
