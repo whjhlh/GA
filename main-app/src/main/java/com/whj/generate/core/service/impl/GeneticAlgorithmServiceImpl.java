@@ -19,11 +19,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 
@@ -186,31 +184,39 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     private void evolveNewGeneration(Nature nature, Population srcPopulation, Population destPopulation) {
         final int targetSize = srcPopulation.getChromosomeSet().size();
         final GenePool genePool = srcPopulation.getGenePool();
-        Set<Chromosome> chromosomeSet = destPopulation.getChromosomeSet();
-        final List<Chromosome> destSet = Lists.newArrayList(chromosomeSet) ;
 
-        // 预生成随机决策参数
-        final int batchSize = targetSize - destSet.size();
-        final double[] crossoverRandoms = ThreadLocalRandom.current().doubles(batchSize).toArray();
-        final double[] mutationRandoms = ThreadLocalRandom.current().doubles(batchSize).toArray();
+        // 使用线程安全集合存储新染色体（修复点1）
+        final Set<Chromosome> destSet = ConcurrentHashMap.newKeySet();
+        destSet.addAll(destPopulation.getChromosomeSet()); // 保留已有优秀个体
 
-        // 批量生成子代
-        List<Chromosome> childList = IntStream.range(0, batchSize)
-                .parallel()
-                .mapToObj(i -> generateChild(
-                        srcPopulation,
-                        genePool,
-                        crossoverRandoms[i],
-                        mutationRandoms[i]
-                ))
-                .toList();
+        // 修正循环条件（修复点2）
+        while (destSet.size() < targetSize) {
+            int batchSize = targetSize - destSet.size();
 
-        for(Chromosome child:childList){
-            long percent = JaCoCoCoverageAnalyzer.calculateChromosomePercentage(nature, child);
-            child.setCoveragePercent(percent);
-            destSet.add(child);
+            // 预生成随机参数（修复点3）
+            final double[] crossoverRandoms = ThreadLocalRandom.current().doubles(batchSize).toArray();
+            final double[] mutationRandoms = ThreadLocalRandom.current().doubles(batchSize).toArray();
+
+            // 批量生成子代（保持并行处理）
+            List<Chromosome> childList = IntStream.range(0, batchSize)
+                    .parallel()
+                    .mapToObj(i -> generateChild(
+                            srcPopulation,
+                            genePool,
+                            crossoverRandoms[i],
+                            mutationRandoms[i]
+                    ))
+                    .toList(); // 使用可变集合（修复点4）
+
+            for(Chromosome child:childList){
+                long percent = JaCoCoCoverageAnalyzer.calculateChromosomePercentage(nature, child);
+                child.setCoveragePercent(percent);
+                destSet.add(child);
+            }
         }
-        destPopulation.addChromosomeSet(destSet);
+
+        // 最终更新种群（修复点6）
+        destPopulation.addChromosomeSet(Lists.newArrayList(destSet));
     }
 
     // 优化后的子代生成方法
@@ -247,7 +253,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         };
     }
 
-    // 遗传操作优化
+    // 遗传操作
     private Chromosome performGeneticOperations(Chromosome p1, Chromosome p2,
                                                 GenePool pool, double crossoverRandom,
                                                 double mutationRandom) {
@@ -271,58 +277,6 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         return new Chromosome(p1.getTargetClass(), p1.getMethod(), genes);
     }
 
-    /**
-     * 进化下一代
-     *
-     * @param nature
-     * @param srcPopulation
-     * @param destPopulation
-     */
-    private void evolveNewGeneration2(Nature nature, Population srcPopulation, Population destPopulation) {
-        GenePool genePool = srcPopulation.getGenePool();
-        while (destPopulation.getChromosomeSet().size() < srcPopulation.getChromosomeSet().size()) {
-            Chromosome child = generateChild(srcPopulation, genePool);
-            long percent = JaCoCoCoverageAnalyzer.calculateChromosomePercentage(nature, child);
-            child.setCoveragePercent(percent);
-            destPopulation.addChromosome(child);
-        }
-    }
-
-    private Chromosome generateChild(Population population, GenePool genePool) {
-        // 轮盘赌选择父代
-        Chromosome parent1 = selectParentByRoulette(population);
-        Chromosome parent2 = selectParentByRoulette(population);
-
-        // 交叉变异
-        return performGeneticOperations(parent1, parent2, genePool);
-    }
-
-    /**
-     * 交叉变异
-     *
-     * @param p1
-     * @param p2
-     * @param pool
-     * @return
-     */
-    private Chromosome performGeneticOperations(Chromosome p1, Chromosome p2, GenePool pool) {
-        Object[] genes = Arrays.copyOf(p1.getGenes(), p1.getGenes().length);
-
-        // 单点交叉
-        if (Math.random() < GeneticAlgorithmConfig.CROSSOVER_RATE) {
-            int crossPoint = ThreadLocalRandom.current().nextInt(genes.length);
-            for (int i = crossPoint; i < genes.length; i++) {
-                genes[i] = p2.getGenes()[i];
-            }
-        }
-
-        // 基于基因库的变异
-        if (Math.random() < getDynamicMutationRate(pool)) {
-            mutateGene(genes, pool);
-        }
-
-        return new Chromosome(p1.getTargetClass(), p1.getMethod(), genes);
-    }
 
     /**
      * 动态变异率
