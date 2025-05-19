@@ -9,7 +9,6 @@ import com.whj.generate.core.exception.ExceptionWrapper;
 import com.whj.generate.core.exception.GenerateErrorEnum;
 import com.whj.generate.core.service.CoverageService;
 import com.whj.generate.core.service.FitnessCalculatorService;
-import com.whj.generate.utill.SetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

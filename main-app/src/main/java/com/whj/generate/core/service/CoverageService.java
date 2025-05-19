@@ -1,6 +1,5 @@
 package com.whj.generate.core.service;
 
-import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 

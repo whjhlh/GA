@@ -4,11 +4,14 @@ import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.exception.ExceptionWrapper;
 import com.whj.generate.core.exception.GenerateErrorEnum;
-import com.whj.generate.core.service.FitnessCalculatorService;
+import com.whj.generate.utill.InputStreamUtil;
 import com.whj.generate.utill.ReflectionUtil;
 import org.jacoco.agent.rt.IAgent;
 import org.jacoco.agent.rt.internal_aeaf9ab.asm.Type;
-import org.jacoco.core.analysis.*;
+import org.jacoco.core.analysis.Analyzer;
+import org.jacoco.core.analysis.CoverageBuilder;
+import org.jacoco.core.analysis.ICounter;
+import org.jacoco.core.analysis.IMethodCoverage;
 import org.jacoco.core.data.ExecutionDataReader;
 import org.jacoco.core.data.ExecutionDataStore;
 import org.jacoco.core.data.SessionInfoStore;
@@ -20,7 +23,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,6 +33,9 @@ import java.util.List;
  */
 @Component
 public final class JaCoCoCoverageAnalyzer {
+    /**
+     * jaCocoAgent
+     */
     private final IAgent agent;
     /**
      * 覆盖率追踪器
@@ -56,7 +61,6 @@ public final class JaCoCoCoverageAnalyzer {
             final Object instance = method.getDeclaringClass().getDeclaredConstructor().newInstance();
             //真实调用逻辑
             ReflectionUtil.invokeSafe(method, params, instance);
-
             return agent.getExecutionData(false);
         }, GenerateErrorEnum.COLLECT_COVERAGE_FAIL, "覆盖率数据收集失败");
     }
@@ -78,7 +82,7 @@ public final class JaCoCoCoverageAnalyzer {
      */
     private double analyzeMethodCoverage(ExecutionDataStore store,
                                          Chromosome chromosome, Method method) throws Exception {
-        try (InputStream classStream = getClassByteStream(method)) {
+        try (InputStream classStream = InputStreamUtil.getClassByteStream(method)) {
             final CoverageBuilder builder = new CoverageBuilder();
             Analyzer analyzer = new Analyzer(store, builder);
             analyzer.analyzeClass(classStream, method.getDeclaringClass().getName());
@@ -92,31 +96,24 @@ public final class JaCoCoCoverageAnalyzer {
         }
     }
 
+
     /**
-     * 覆盖记录
-     * @param classCoverage
-     * @param method
-     * @param chromosome
+     * 分析方法覆盖率
      */
-    private void processClassCoverage(IClassCoverage classCoverage, Method method, Chromosome chromosome) {
-        // 记录每个覆盖行与染色体的映射关系
-        List<Integer> coveredLines = new ArrayList<>();
+    private static double analyzeMethodCoverage(ExecutionDataStore store, Method method) throws Exception {
+        try (InputStream classStream = InputStreamUtil.getClassByteStream(method)) {
+            final CoverageBuilder builder = new CoverageBuilder();
+            Analyzer analyzer = new Analyzer(store, builder);
+            analyzer.analyzeClass(classStream, method.getDeclaringClass().getName());
 
-        classCoverage.getMethods().stream()
-                .filter(mc -> isTargetMethod(mc, method))
-                .forEach(mc -> {
-                    for (int i = mc.getFirstLine(); i <= mc.getLastLine(); i++) {
-                        coverageTracker.init(mc.getFirstLine(), mc.getLastLine());
-                        if (mc.getLine(i).getStatus() == ICounter.FULLY_COVERED || mc.getLine(i).getStatus() == ICounter.PARTLY_COVERED) {
-                            coveredLines.add(i);
-                        }
-                    }
-                });
-
-        // 调用追踪器的记录方法
-        coverageTracker.recordCoverage(coveredLines, chromosome, chromosome.getMethod());
+            return builder.getClasses().stream()
+                    .flatMap(cc -> cc.getMethods().stream())
+                    .filter(mc -> isTargetMethod(mc, method))
+                    .findFirst()
+                    .map(mc -> calculateCoverageRatio(mc.getLineCounter()))
+                    .orElse(0.0);
+        }
     }
-
     /**
      * 计算最大覆盖率值
      */
@@ -163,17 +160,6 @@ public final class JaCoCoCoverageAnalyzer {
     }
 
     /**
-     * 从字节数据计算覆盖率百分比
-     */
-    private static double calculateCoveragePercentage(byte[] data, Method method) {
-        return ExceptionWrapper.process(() -> {
-            final ExecutionDataStore store = new ExecutionDataStore();
-            readExecutionData(data, store, new SessionInfoStore());
-            return analyzeMethodCoverage(store, method);
-        }, GenerateErrorEnum.GET_OVERRIDE_FAIL, COVERAGE_ERROR_CONTEXT);
-    }
-
-    /**
      * 读取执行数据到存储对象
      */
     private static void readExecutionData(byte[] data, ExecutionDataStore dataStore, SessionInfoStore sessionStore) {
@@ -187,30 +173,6 @@ public final class JaCoCoCoverageAnalyzer {
         }
     }
 
-    /**
-     * 分析方法覆盖率
-     */
-    private static double analyzeMethodCoverage(ExecutionDataStore store, Method method) throws Exception {
-        try (InputStream classStream = getClassByteStream(method)) {
-            final CoverageBuilder builder = new CoverageBuilder();
-            new Analyzer(store, builder).analyzeClass(classStream, method.getDeclaringClass().getName());
-
-            return builder.getClasses().stream()
-                    .flatMap(cc -> cc.getMethods().stream())
-                    .filter(mc -> isTargetMethod(mc, method))
-                    .findFirst()
-                    .map(mc -> calculateCoverageRatio(mc.getLineCounter()))
-                    .orElse(0.0);
-        }
-    }
-
-    /**
-     * 获取类字节码流
-     */
-    private static InputStream getClassByteStream(Method method) {
-        final String classResource = method.getDeclaringClass().getName().replace('.', '/') + ".class";
-        return method.getDeclaringClass().getClassLoader().getResourceAsStream(classResource);
-    }
 
     /**
      * 判断是否为目标方法

@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.whj.generate.utill.EnumScannerUtil.findEnumsInMethod;
+import static com.whj.generate.utill.ListUtil.defualtList;
 import static com.whj.generate.utill.PathUtils.getFilePath;
 import static com.whj.generate.utill.ReflectionUtil.getJavaCode;
 import static com.whj.generate.utill.UltraFastParamScannerUtil.scanParamsUltraFast;
@@ -135,14 +136,13 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
             throw new RuntimeException(e);
         }
         PARAM_NAME_SIMPLE_NAME_MAP = scanParamsUltraFast(javaCode, methodName);
-        CompilationUnit cu = FILE_CACHE.computeIfAbsent(filePath, p -> {
+        return FILE_CACHE.computeIfAbsent(filePath, p -> {
             try {
                 return StaticJavaParser.parse(new File(p));
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
         });
-        return cu;
     }
 
     private static void handledThresholdsByInt(List<String> params, Map<String, Set<Object>> paramValues, Expression left, Expression right, BinaryExpr.Operator op) {
@@ -328,7 +328,7 @@ public class GeneThresholdExtractor implements ParamThresholdExtractor {
             NameExpr nameExpr = (NameExpr) fieldAccessExpr.getScope();
             List<String> enumCodeList = ENUM_CODE_MAP.get(nameExpr.getNameAsString());
             //随机取一个非value的值
-            for (String enumCode : enumCodeList) {
+            for (String enumCode : defualtList(enumCodeList)) {
                 if (!value.equals(enumCode)) {
                     values.add(enumCode);
                     values.add(value.toLowerCase());

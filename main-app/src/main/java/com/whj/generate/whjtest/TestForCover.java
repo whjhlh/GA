@@ -56,4 +56,16 @@ public class TestForCover {
             }
         }
     }
+    public void test2(int a,int b,int c){
+        if(a==1){
+            if(b==2){
+                if(c==3){
+                    System.out.print("");
+                }
+                a=3;
+            }
+            a=2;
+            c=4;
+        }
+    }
 }

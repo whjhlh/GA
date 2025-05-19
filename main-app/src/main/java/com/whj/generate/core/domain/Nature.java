@@ -1,6 +1,7 @@
 package com.whj.generate.core.domain;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author whj
