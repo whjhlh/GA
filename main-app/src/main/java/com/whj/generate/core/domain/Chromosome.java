@@ -1,8 +1,5 @@
 package com.whj.generate.core.domain;
 
-import com.alibaba.fastjson.annotation.JSONField;
-
-import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
@@ -12,22 +9,7 @@ import java.util.Objects;
  * @description: 染色体领域模型
  * @date 2025-02-22 下午5:41
  */
-public class Chromosome implements Serializable {
-    /**
-     * 序列化
-     */
-    private static final long serialVersionUID = 124238713634L;
-    /**
-     * 目标测试类
-     */
-    @JSONField(serialize = false)
-    private final Class<?> targetClass;
-
-    /**
-     * 目标方法
-     */
-    @JSONField(serialize = false)
-    private final Method method;
+public class Chromosome extends ChromosomeBase {
     /**
      * 基因
      */
@@ -43,23 +25,20 @@ public class Chromosome implements Serializable {
     private long fitness;
 
     /**
-     *
      * @param targetClass
      * @param method
      * @param genes
      */
 
     public Chromosome(Class<?> targetClass, Method method, Object[] genes) {
-        this.targetClass = targetClass;
+        super(targetClass, method);
         Objects.requireNonNull(method, "Method cannot be null");
-        this.method = method;
         this.genes = Arrays.copyOf(genes, genes.length); // 防御性拷贝
     }
 
 
     public Chromosome(Class<?> targetClass, Method method) {
-        this.targetClass = targetClass;
-        this.method = method;
+        super(targetClass, method);
         genes = new Object[method.getParameterCount()];
     }
 
@@ -75,37 +54,12 @@ public class Chromosome implements Serializable {
         return Arrays.copyOf(genes, genes.length);
     }
 
-    public Method getMethod() {
-        return method;
-    }
-
-    public Class<?> getTargetClass() {
-        return targetClass;
-    }
-
-    /**
-     * 是否执行过，如果适应度为null,则认定为未执行过
-     */
-    public boolean isExecuted() {
-        return coveragePercent != 0;
-    }
-
     public double getFitness() {
         return fitness;
     }
 
     public void setFitness(long fitness) {
         this.fitness = fitness;
-    }
-
-    /**
-     * 判断两个染色体是否属于同一种基因型
-     *
-     * @param other
-     * @return
-     */
-    public boolean isSameSpecies(Chromosome other) {
-        return this.method.equals(other.method);
     }
 
     @Override

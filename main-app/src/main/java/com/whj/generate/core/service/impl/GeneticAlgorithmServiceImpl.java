@@ -31,21 +31,22 @@ import java.util.stream.IntStream;
 
 
 /**
- * @author whj
- * @date 2025-02-22 下午5:40
+ * 遗传算法实现类
+ * 负责初始化种群、进化种群等核心逻辑
  */
 @Service
 public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     private static final Logger logger = LoggerFactory.getLogger(GeneticAlgorithmServiceImpl.class);
-    /**
-     * 基因加载器
-     */
+
+    // 基因加载器
     private final GenPoolService genPoolService;
+    // 遗传算法线程池
     private final ForkJoinPool geneticThreadPool;
-
+    // 染色体覆盖率跟踪器
     private final ChromosomeCoverageTracker coverageTracker;
+    // 覆盖率服务
     private final CoverageService coverageService;
-
+    // 选择策略
     private final SelectionStrategy selectionStrategy;
 
     @Autowired
@@ -62,11 +63,12 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         this.selectionStrategy = selectionStrategy;
     }
 
-
     /**
      * 初始化种群
      *
-     * @param clazz 方法
+     * @param clazz      方法所属类
+     * @param methodName 方法名
+     * @return 初始化后的种群
      */
     @Override
     public Population initEnvironment(Nature nature, Class<?> clazz, String methodName) {
@@ -82,9 +84,9 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     /**
      * 进化种群
      *
-     * @param nature 种群
-     * @param count
-     * @return
+     * @param nature 自然环境
+     * @param count  种群计数
+     * @return 进化后的种群
      */
     @Override
     public Population evolvePopulation(Nature nature, Integer count) {
@@ -102,12 +104,11 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         return newPopulation;
     }
 
-
     /**
      * 处理种群数据
      *
-     * @param nature
-     * @param newPopulation
+     * @param nature        自然环境
+     * @param newPopulation 新种群
      */
     private void populationDataHandle(Nature nature, Population newPopulation) {
         coverageService.calculatePopulationCoverage(nature, newPopulation);
@@ -115,12 +116,11 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         coverageTracker.buildChromosomeSequenceMap(chromosomeSet);
     }
 
-
     /**
-     * 初始化种群大小 = (avg_genes)^(k/2)
+     * 初始化种群大小计算
      *
-     * @param population
-     * @return
+     * @param population 种群
+     * @return 种群大小
      */
     private int calculatePopulationSize(Population population) {
         if (null == population) {
@@ -131,11 +131,11 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     }
 
     /**
-     * 创建种群（初始化）
+     * 创建种群模型（初始化）
      *
-     * @param clazz
-     * @param method
-     * @return
+     * @param clazz  类
+     * @param method 方法
+     * @return 种群模型
      */
     private Population createPopulationModel(Class<?> clazz, Method method) {
         GenePool genePool = genPoolService.initGenePool(clazz, method);
@@ -145,13 +145,13 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     /**
      * 创建新种群（进化）
      *
-     * @param src
-     * @return
+     * @param src 源种群
+     * @return 新种群
      */
     private Population createNewPopulation(Population src) {
         return new Population(
                 src.getTargetClass(),
-                src.getTargetMethod(),
+                src.getMethod(),
                 src.getGenePool() // 关键点：继承基因库
         );
     }
@@ -159,7 +159,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     /**
      * 处理初始化种群
      *
-     * @param population
+     * @param population 种群
      */
     private void processInitPopulation(Population population) {
         if (null == population) {
@@ -187,9 +187,9 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     /**
      * 精英保留（保留历史最优解）
      *
-     * @param nature
-     * @param src
-     * @param dest
+     * @param nature 自然环境
+     * @param src    源种群
+     * @param dest   目标种群
      */
     private void preserveElites(Nature nature, Population src, Population dest) {
         List<Chromosome> select = selectionStrategy.select(nature, src);
@@ -199,8 +199,8 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     /**
      * 种群进化
      *
-     * @param srcPopulation
-     * @param destPopulation
+     * @param srcPopulation  源种群
+     * @param destPopulation 目标种群
      */
     private void evolveNewGeneration(Population srcPopulation, Population destPopulation) {
         final int targetSize = srcPopulation.getChromosomeSet().size();
@@ -237,11 +237,11 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     /**
      * 子代生成
      *
-     * @param population
-     * @param genePool
-     * @param crossoverRandom
-     * @param mutationRandom
-     * @return
+     * @param population      种群
+     * @param genePool        基因库
+     * @param crossoverRandom 交叉随机数
+     * @param mutationRandom  变异随机数
+     * @return 子代染色体
      */
     private Chromosome generateChild(Population population, GenePool genePool,
                                      double crossoverRandom, double mutationRandom) {
@@ -300,12 +300,11 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         return new Chromosome(p1.getTargetClass(), p1.getMethod(), genes);
     }
 
-
     /**
-     * 动态变异率
+     * 动态变异率计算
      *
-     * @param pool
-     * @return
+     * @param pool 基因库
+     * @return 动态变异率
      */
     private double getDynamicMutationRate(GenePool pool) {
         // 基因类型越多变异率越高
@@ -319,8 +318,8 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     /**
      * 基因变异
      *
-     * @param genes
-     * @param pool
+     * @param genes 基因数组
+     * @param pool  基因库
      */
     private void mutateGene(Object[] genes, GenePool pool) {
         int mutatePos = ThreadLocalRandom.current().nextInt(genes.length);

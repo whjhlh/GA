@@ -1,7 +1,6 @@
 package com.whj.generate.core.domain;
 
 import com.google.common.collect.Lists;
-import com.whj.generate.common.config.PopulationParams;
 import com.whj.generate.core.infrastructure.strategy.CombinationStrategy;
 
 import java.lang.reflect.Method;
@@ -10,15 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Population {
-    /**
-     * 种群标识1
-     */
-    private final Class<?> targetClass;
-    /**
-     * 种群标识2
-     */
-    private final Method targetMethod;
+public class Population extends PopulationBase {
     /**
      * 种群个体库
      */
@@ -47,19 +38,9 @@ public class Population {
 
 
     public Population(Class<?> targetClass, Method targetMethod, GenePool genePool) {
-        this.targetClass = targetClass;
-        this.targetMethod = targetMethod;
+        super(targetClass,  targetMethod);
         this.genePool = genePool;
         this.strategy = new CombinationStrategy(genePool);
-    }
-
-
-    public Class<?> getTargetClass() {
-        return targetClass;
-    }
-
-    public Method getTargetMethod() {
-        return targetMethod;
     }
 
     public GenePool getGenePool() {
@@ -87,8 +68,8 @@ public class Population {
      * @param chromosome
      */
     public void addChromosome(Chromosome chromosome) {
-        if (!chromosome.getMethod().equals(targetMethod)) {
-            throw new IllegalArgumentException(String.format("种群 %s 试图加入种群%s", chromosome.getMethod().getName(), targetMethod.getName()));
+        if (!chromosome.getMethod().equals(super.getMethod())) {
+            throw new IllegalArgumentException(String.format("种群 %s 试图加入种群%s", chromosome.getMethod().getName(), super.getMethod().getName()));
         }
         chromosomeSet.add(chromosome);
     }
@@ -107,9 +88,9 @@ public class Population {
      * @return
      */
     public Chromosome initChromosome() {
-        Method method = this.getTargetMethod();
+        Method method = super.getMethod();
         Object[] chromosomeGenes = strategy.generateMinimalCombination();
-        return new Chromosome(targetClass, method, chromosomeGenes);
+        return new Chromosome(super.getTargetClass(), method, chromosomeGenes);
     }
 
     /**

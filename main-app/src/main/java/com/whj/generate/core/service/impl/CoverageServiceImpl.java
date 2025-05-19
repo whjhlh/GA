@@ -3,15 +3,11 @@ package com.whj.generate.core.service.impl;
 import com.whj.generate.biz.Infrastructure.JaCoCoCoverageAnalyzer;
 import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.core.domain.Chromosome;
-import com.whj.generate.core.domain.GenePool;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 import com.whj.generate.core.exception.ExceptionWrapper;
 import com.whj.generate.core.exception.GenerateErrorEnum;
-import com.whj.generate.core.infrastructure.PoolLoader;
 import com.whj.generate.core.service.CoverageService;
-import com.whj.generate.core.service.FitnessCalculatorService;
-import com.whj.generate.core.service.GenPoolService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -35,10 +31,10 @@ public class CoverageServiceImpl implements CoverageService {
     /**
      * 适应度计算服务
      */
-    private final FitnessCalculatorService fitnessCalculator;
+    private final FitnessCalculatorServiceImpl fitnessCalculator;
 
     @Autowired
-    public CoverageServiceImpl(JaCoCoCoverageAnalyzer coverageAnalyzer, ChromosomeCoverageTracker coverageTracker, FitnessCalculatorService fitnessCalculator) {
+    public CoverageServiceImpl(JaCoCoCoverageAnalyzer coverageAnalyzer, ChromosomeCoverageTracker coverageTracker, FitnessCalculatorServiceImpl fitnessCalculator) {
         this.coverageAnalyzer = coverageAnalyzer;
         this.coverageTracker = coverageTracker;
         this.fitnessCalculator = fitnessCalculator;

@@ -4,7 +4,7 @@ import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
-import com.whj.generate.core.service.FitnessCalculatorService;
+import com.whj.generate.core.service.impl.FitnessCalculatorServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -21,12 +21,12 @@ import java.util.stream.Collectors;
 @Component
 @Qualifier("eliteDiverseStrategy")
 public class EliteDiverseStrategy implements SelectionStrategy {
-    private final FitnessCalculatorService fitnessCalculator;
+    private final FitnessCalculatorServiceImpl fitnessCalculator;
     private final ChromosomeCoverageTracker coverageTracker;
 
 
     @Autowired
-    public EliteDiverseStrategy(FitnessCalculatorService fitnessCalculator, ChromosomeCoverageTracker coverageTracker) {
+    public EliteDiverseStrategy(FitnessCalculatorServiceImpl fitnessCalculator, ChromosomeCoverageTracker coverageTracker) {
         this.fitnessCalculator = fitnessCalculator;
         this.coverageTracker = coverageTracker;
     }
@@ -40,7 +40,6 @@ public class EliteDiverseStrategy implements SelectionStrategy {
      */
     @Override
     public List<Chromosome> select(Nature nature, Population population) {
-        Set<Integer> uncovered = coverageTracker.getUncoveredLines(population.getTargetMethod());
         return population.getChromosomeSet().stream()
                 .sorted((a, b) -> Double.compare(
                         fitnessCalculator.calculate(nature,population,b),
