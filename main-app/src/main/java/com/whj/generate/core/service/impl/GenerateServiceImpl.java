@@ -20,12 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 /**
- * 优化点：
- * 1. 线程安全增强
- * 2. 异常处理优化
- * 3. 性能监控支持
- * 4. 代码可读性提升
- * 5. 资源管理改进
+ * 生成服务实现类
  */
 @Service
 public class GenerateServiceImpl implements GenerateService {
@@ -36,6 +31,13 @@ public class GenerateServiceImpl implements GenerateService {
     private final StrategyFactory strategyFactory;
     private final ForkJoinPool geneticThreadPool;
 
+    /**
+     * 构造函数注入依赖
+     *
+     * @param genPoolService 基因池服务
+     * @param strategyFactory 策略工厂
+     * @param geneticThreadPool 并行处理线程池
+     */
     @Autowired
     public GenerateServiceImpl(GenPoolService genPoolService,
                                StrategyFactory strategyFactory,
@@ -45,7 +47,13 @@ public class GenerateServiceImpl implements GenerateService {
         this.geneticThreadPool = geneticThreadPool;
     }
 
-
+    /**
+     * 并行生成种群
+     *
+     * @param clazz 类信息
+     * @param method 方法信息
+     * @return 生成的种群对象
+     */
     @Override
     public Population genertatePopulation(Class<?> clazz, Method method) {
         // 参数校验前置
@@ -60,7 +68,7 @@ public class GenerateServiceImpl implements GenerateService {
         generateChromosomesParallel(population, strategy, populationSize);
         ensurePopulationSize(population, strategy, populationSize);
 
-        logger.info("Generated population with {} chromosomes", population.getChromosomeSet().size());
+        logger.info("已生成包含 {} 条染色体的种群", population.getChromosomeSet().size());
         return population;
     }
 
@@ -76,11 +84,11 @@ public class GenerateServiceImpl implements GenerateService {
             ).get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.error("Population generation interrupted", e);
-            throw new PopulationGenerationException("Generation process interrupted", e);
+            logger.error("种群生成过程中被中断: {}", e.getMessage());
+            throw new PopulationGenerationException("生成过程被中断", e);
         } catch (ExecutionException e) {
-            logger.error("Failed to generate population", e.getCause());
-            throw new PopulationGenerationException("Generation execution failed", e.getCause());
+            logger.error("生成种群失败: {}", e.getCause().getMessage());
+            throw new PopulationGenerationException("生成执行失败", e.getCause());
         }
     }
 
@@ -94,7 +102,7 @@ public class GenerateServiceImpl implements GenerateService {
             Chromosome chromosome = new Chromosome(clazz, method, genes);
             population.addChromosome(chromosome);
         } catch (Exception e) {
-            logger.warn("Failed to generate chromosome: {}", e.getMessage());
+            logger.warn("生成染色体失败: {}", e.getMessage());
         }
     }
 
@@ -109,18 +117,18 @@ public class GenerateServiceImpl implements GenerateService {
             Chromosome chromosome = new Chromosome(population.getTargetClass(), population.getMethod(), genes);
 
             if (population.addChromosome(chromosome)) {
-                logger.debug("Added backup chromosome");
+                logger.debug("成功添加备份染色体");
             }
 
             if (retryCount.get() % 10 == 0) {
-                logger.warn("Population size {} < {}, retry count {}",
+                logger.warn("当前种群大小 {} < {}, 重试次数 {}",
                         population.getChromosomeSet().size(), targetSize, retryCount.get());
             }
         }
 
         if (population.getChromosomeSet().size() < targetSize) {
-            logger.error("Failed to reach target population size after {} retries", MAX_RETRIES);
-            throw new PopulationGenerationException("Failed to generate sufficient chromosomes");
+            logger.error("经过 {} 次重试后仍未能达到目标种群大小", MAX_RETRIES);
+            throw new PopulationGenerationException("未能生成足够的染色体");
         }
     }
 
@@ -130,19 +138,20 @@ public class GenerateServiceImpl implements GenerateService {
         double averageGenes = genePool.getAverageGeneCount();
 
         if (paramCount <= 0 || averageGenes <= 0) {
-            logger.error("Invalid gene pool parameters: paramCount={}, avgGenes={}",
+            logger.error("基因池参数无效: paramCount={}, avgGenes={}",
                     paramCount, averageGenes);
-            throw new IllegalArgumentException("Invalid gene pool parameters");
+            throw new IllegalArgumentException("基因池参数必须有效");
         }
 
         int size = (int) Math.pow(averageGenes, 0.5 * paramCount);
         return Math.max(1, Math.min(size, 10000));  // 限制合理范围
     }
 
+    // 输入参数校验
     private void validateInput(Class<?> clazz, Method method) {
         if (clazz == null || method == null) {
-            logger.error("Invalid input parameters: class={}, method={}", clazz, method);
-            throw new IllegalArgumentException("Class and method must not be null");
+            logger.error("输入参数无效: class={}, method={}", clazz, method);
+            throw new IllegalArgumentException("类和方法不能为空");
         }
     }
 
