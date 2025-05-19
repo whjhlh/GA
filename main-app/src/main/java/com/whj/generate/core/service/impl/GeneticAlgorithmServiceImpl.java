@@ -52,7 +52,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
             PoolLoader<GenePool> poolLoader,
             @Qualifier("geneticForkJoinPool") ForkJoinPool geneticThreadPool,
             JaCoCoCoverageAnalyzer coverageAnalyzer, ChromosomeCoverageTracker coverageTracker, CoverageService coverageService,
-            @Qualifier("eliteDiverseStrategy")SelectionStrategy selectionStrategy) {
+            @Qualifier("eliteDiverseStrategy") SelectionStrategy selectionStrategy) {
         this.poolLoader = poolLoader;
         this.geneticThreadPool = geneticThreadPool;
         this.coverageAnalyzer = coverageAnalyzer;
@@ -91,10 +91,10 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         Population newPopulation = createNewPopulation(population);
 
         // 精英保留（保留历史最优解）
-        preserveElites(population, newPopulation);
+        preserveElites(nature,population, newPopulation);
 
         // 进化生成新个体
-        evolveNewGeneration(nature, population, newPopulation);
+        evolveNewGeneration(population, newPopulation);
 
         //计算种群适应度
         populationDataHandle(nature, newPopulation);
@@ -173,22 +173,22 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     /**
      * 精英保留（保留历史最优解）
      *
+     * @param nature
      * @param src
      * @param dest
      */
-    private void preserveElites(Population src, Population dest) {
-        List<Chromosome> select = selectionStrategy.select(src);
+    private void preserveElites(Nature nature, Population src, Population dest) {
+        List<Chromosome> select = selectionStrategy.select(nature,src);
         dest.addChromosomeSet(select);
     }
 
     /**
      * 种群进化
      *
-     * @param nature
      * @param srcPopulation
      * @param destPopulation
      */
-    private void evolveNewGeneration(Nature nature, Population srcPopulation, Population destPopulation) {
+    private void evolveNewGeneration(Population srcPopulation, Population destPopulation) {
         final int targetSize = srcPopulation.getChromosomeSet().size();
         final GenePool genePool = srcPopulation.getGenePool();
 
@@ -196,7 +196,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         final Set<Chromosome> destSet = ConcurrentHashMap.newKeySet();
         destSet.addAll(destPopulation.getChromosomeSet());
 
-        // 修正循环条件
+        // 保证生成一定数量的染色体，保证多样性
         while (destSet.size() < targetSize) {
             int batchSize = targetSize - destSet.size();
 
@@ -312,33 +312,6 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         int mutatePos = ThreadLocalRandom.current().nextInt(genes.length);
         Object[] availableGenes = pool.getParameterGenes().get(mutatePos);
         genes[mutatePos] = availableGenes[ThreadLocalRandom.current().nextInt(availableGenes.length)];
-    }
-
-
-    /**
-     * 轮盘赌选择父代
-     * <p>
-     * 该方法用于在遗传算法中通过轮盘赌方式选择父代染色体轮盘赌选择是基于染色体的适应度进行比例选择的一种方法，
-     * 适应度较高的染色体有更高的概率被选中作为父代以产生下一代
-     *
-     * @param population 种群对象，包含一组染色体
-     * @return 返回被选中的父代染色体
-     */
-    private Chromosome selectParentByRoulette(Population population) {
-        final double[] cumulativeFitness = population.getCumulativeFitness();
-        final double totalFitness = population.getCachedTotalFitness();
-
-        // 处理极端情况
-        ArrayList<Chromosome> chromosomeList = Lists.newArrayList(population.getChromosomeSet());
-        if (totalFitness <= 0) {
-            return chromosomeList.get(
-                    ThreadLocalRandom.current().nextInt(chromosomeList.size())
-            );
-        }
-
-        // 二分查找
-        int index = findIndex(totalFitness, cumulativeFitness);
-        return chromosomeList.get(index);
     }
 
     /**

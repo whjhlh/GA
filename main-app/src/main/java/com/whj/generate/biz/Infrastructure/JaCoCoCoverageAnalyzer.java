@@ -32,20 +32,17 @@ import java.util.List;
 @Component
 public final class JaCoCoCoverageAnalyzer {
     private final IAgent agent;
-    // 覆盖率追踪器实例
+    /**
+     * 覆盖率追踪器
+     */
     private final ChromosomeCoverageTracker coverageTracker;
 
     private static final String COVERAGE_ERROR_CONTEXT = "覆盖率分析失败";
-    /**
-     * 适应度分析服务
-     */
-    private final FitnessCalculatorService fitnessCalculator;
 
     @Autowired
-    public JaCoCoCoverageAnalyzer(IAgent agent, ChromosomeCoverageTracker coverageTracker, FitnessCalculatorService fitnessCalculator) {
+    public JaCoCoCoverageAnalyzer(IAgent agent, ChromosomeCoverageTracker coverageTracker) {
         this.agent = agent;
         this.coverageTracker = coverageTracker;
-        this.fitnessCalculator = fitnessCalculator;
     }
 
 
@@ -88,13 +85,19 @@ public final class JaCoCoCoverageAnalyzer {
 
             // 处理类覆盖率数据
             builder.getClasses().forEach(cc -> {
-                processClassCoverage(cc, method, chromosome);
+                coverageTracker.processClassCoverage(cc, method, chromosome);
             });
 
             return calculateMaxCoverage(builder, method);
         }
     }
 
+    /**
+     * 覆盖记录
+     * @param classCoverage
+     * @param method
+     * @param chromosome
+     */
     private void processClassCoverage(IClassCoverage classCoverage, Method method, Chromosome chromosome) {
         // 记录每个覆盖行与染色体的映射关系
         List<Integer> coveredLines = new ArrayList<>();
@@ -111,7 +114,6 @@ public final class JaCoCoCoverageAnalyzer {
                 });
 
         // 调用追踪器的记录方法
-
         coverageTracker.recordCoverage(coveredLines, chromosome, chromosome.getMethod());
     }
 

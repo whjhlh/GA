@@ -2,6 +2,7 @@ package com.whj.generate.core.infrastructure.strategy;
 
 import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.core.domain.Chromosome;
+import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 import com.whj.generate.core.service.FitnessCalculatorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,16 +33,18 @@ public class EliteDiverseStrategy implements SelectionStrategy {
 
     /**
      * 获取适应度最高的30%的基因组
+     *
+     * @param nature
      * @param population
      * @return
      */
     @Override
-    public List<Chromosome> select(Population population) {
+    public List<Chromosome> select(Nature nature, Population population) {
         Set<Integer> uncovered = coverageTracker.getUncoveredLines(population.getTargetMethod());
         return population.getChromosomeSet().stream()
                 .sorted((a, b) -> Double.compare(
-                        fitnessCalculator.calculate(b, uncovered),
-                        fitnessCalculator.calculate(a, uncovered)
+                        fitnessCalculator.calculate(nature,population,b),
+                        fitnessCalculator.calculate(nature, population, a)
                 ))
                 .limit((long) (population.getChromosomeSet().size() * 0.3))
                 .collect(Collectors.toList());

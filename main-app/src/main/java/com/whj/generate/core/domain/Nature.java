@@ -1,8 +1,5 @@
 package com.whj.generate.core.domain;
 
-import org.jacoco.agent.rt.IAgent;
-import org.jacoco.agent.rt.RT;
-
 import java.util.*;
 
 /**
@@ -32,7 +29,7 @@ public class Nature {
         this.populationList.add(population);
     }
 
-    public boolean isInitPopulation() {
+    public boolean hasPopulation() {
         return populationList.isEmpty();
     }
 }

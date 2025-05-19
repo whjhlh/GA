@@ -9,6 +9,7 @@ import com.whj.generate.core.exception.ExceptionWrapper;
 import com.whj.generate.core.exception.GenerateErrorEnum;
 import com.whj.generate.core.service.CoverageService;
 import com.whj.generate.core.service.FitnessCalculatorService;
+import com.whj.generate.utill.SetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -52,28 +53,38 @@ public class CoverageServiceImpl implements CoverageService {
         if (population == null) {
             return;
         }
-        Set<Integer> finalLastPopulationUnCovered = getLastPopulationUnCovered(nature);
-        // 初始化覆盖率追踪器（线程安全）
-        final List<byte[]> coverageDataList = new ArrayList<>();
-        // 获取每个染色体的覆盖率数据
-        final Set<Chromosome> chromosomes = population.getChromosomeSet();
         // 遍历每个染色体，计算覆盖率并更新适应度
-        Long totalCoverage = ExceptionWrapper.process(() -> {
+        Long totalCoverage = getTotalCoverage(nature, population);
+        population.setCurrentCoverage(totalCoverage);
+        population.updateFitnessCache();
+        nature.addPopulation(population);
+    }
+
+    /**
+     * 获取种群总覆盖
+     * @param nature
+     * @param population
+     * @return
+     */
+    private Long getTotalCoverage(Nature nature, Population population) {
+        return ExceptionWrapper.process(() -> {
+            // 初始化覆盖率追踪器（线程安全）
+            final List<byte[]> coverageDataList = new ArrayList<>();
+            // 获取每个染色体的覆盖率数据
+            final Set<Chromosome> chromosomes = population.getChromosomeSet();
             chromosomes.forEach(chromosome -> {
                         // 处理单个染色体覆盖率数据
-                        processChromosome(nature, chromosome, coverageDataList);
-                        //获取未覆盖行
-                        Set<Integer> uncovered = getUncovered(nature, population, finalLastPopulationUnCovered);
-                        fitnessCalculator.calculate(chromosome, uncovered);
+                        processChromosome(chromosome, coverageDataList);
+                        fitnessCalculator.calculate(nature,population,chromosome);
                     }
             );
             return coverageAnalyzer.calculateTotalCoverage(coverageDataList, chromosomes.iterator().next().getMethod());
         }, GenerateErrorEnum.GET_OVERRIDE_FAIL, "种群覆盖率计算失败");
-        population.setCurrentCoverage(totalCoverage);
-        population.updateFitnessCache();
-
-        nature.addPopulation(population);
     }
+
+
+
+
 
     /**
      * 获取上次种群未覆盖行
@@ -81,9 +92,10 @@ public class CoverageServiceImpl implements CoverageService {
      * @param nature
      * @return
      */
-    public Set<Integer> getLastPopulationUnCovered(Nature nature) {
+    @Override
+    public Set<Integer> getLastPopulationUncovered(Nature nature) {
         Set<Integer> lastPopulationUnCovered = Set.of();
-        if (!nature.isInitPopulation()) {
+        if (!nature.hasPopulation()) {
             //获取上个种群
             int size = nature.getPopulationList().size();
             final Population lastPopulation = nature.getPopulationList().get(size - 1);
@@ -93,31 +105,21 @@ public class CoverageServiceImpl implements CoverageService {
     }
 
     /**
-     * 获取种群未覆盖
-     *
-     * @param nature
-     * @param population
-     * @param finalLastPopulationUnCovered
-     * @return
+     * 获取指定种群未覆盖行
      */
-    public Set<Integer> getUncovered(Nature nature, Population population, Set<Integer> finalLastPopulationUnCovered) {
-        Set<Integer> uncovered;
-        if (nature.isInitPopulation()) {
-            uncovered = finalLastPopulationUnCovered;
-        } else {
-            uncovered = coverageTracker.getUncoveredLines(population.getTargetMethod());
-        }
-        return uncovered;
+    @Override
+    public Set<Integer> getPopulationUncovered(Population population) {
+        return coverageTracker.getPopulationUnCoveredLines(population);
     }
 
 
     /**
      * 处理单个染色体覆盖率数据
      */
-    public void processChromosome(Nature nature, Chromosome chromosome, List<byte[]> dataCollector) {
+    public void processChromosome(Chromosome chromosome, List<byte[]> dataCollector) {
         final Method method = chromosome.getMethod();
         final byte[] coverageData = getOrCollectCoverageData(chromosome, method);
-        chromosome.setCoveragePercent(calculateChromosomePercentage(nature, chromosome));
+        chromosome.setCoveragePercent(calculateChromosomePercentage(chromosome));
         dataCollector.add(coverageData);
     }
 
@@ -125,7 +127,7 @@ public class CoverageServiceImpl implements CoverageService {
     /**
      * 计算染色体适应度（新增追踪逻辑）
      */
-    public long calculateChromosomePercentage(Nature nature, Chromosome chromosome) {
+    public long calculateChromosomePercentage(Chromosome chromosome) {
         final Method method = chromosome.getMethod();
         final byte[] data = getOrCollectCoverageData(chromosome, method);
         final double coverage = coverageAnalyzer.calculateCoveragePercentage(data, chromosome);

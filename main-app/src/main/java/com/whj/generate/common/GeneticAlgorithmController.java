@@ -14,6 +14,7 @@ import com.whj.generate.common.response.PopulationResponse;
 import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
+import com.whj.generate.core.service.CoverageService;
 import com.whj.generate.core.service.GeneticAlgorithmService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -34,15 +35,17 @@ public class GeneticAlgorithmController {
      */
     private final GeneticAlgorithmService geneticAlgorithmService;
     private final ChromosomeCoverageTracker coverageTracker;
-    private final SessionManager sessionManager;  // 新增会话管理组件
+    private final SessionManager sessionManager;
+    private final CoverageService coverageService;
 
     @Autowired
     public GeneticAlgorithmController(GeneticAlgorithmService geneticAlgorithmService,
                                       ChromosomeCoverageTracker coverageTracker,
-                                      SessionManager sessionManager) {
+                                      SessionManager sessionManager, CoverageService coverageService) {
         this.geneticAlgorithmService = geneticAlgorithmService;
         this.coverageTracker = coverageTracker;
         this.sessionManager = sessionManager;
+        this.coverageService = coverageService;
     }
 
     /**

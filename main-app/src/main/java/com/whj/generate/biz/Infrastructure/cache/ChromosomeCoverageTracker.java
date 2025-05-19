@@ -7,8 +7,14 @@ package com.whj.generate.biz.Infrastructure.cache;
 
 import com.google.common.collect.Lists;
 import com.whj.generate.core.domain.Chromosome;
+import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
+import com.whj.generate.utill.SetUtils;
 import com.whj.generate.utill.SimilarityUtils;
+import org.jacoco.agent.rt.internal_aeaf9ab.asm.Type;
+import org.jacoco.core.analysis.IClassCoverage;
+import org.jacoco.core.analysis.ICounter;
+import org.jacoco.core.analysis.IMethodCoverage;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -34,7 +40,7 @@ public class ChromosomeCoverageTracker {
      */
     private static Integer endLine;
 
-    private Map<Chromosome, byte[]> chromosomeCoverageDataMap =new HashMap<>();
+    private Map<Chromosome, byte[]> chromosomeCoverageDataMap = new HashMap<>();
 
     // 私有工具方法
     private static <T> Set<T> intersection(Set<T> a, Set<T> b) {
@@ -226,6 +232,39 @@ public class ChromosomeCoverageTracker {
     }
 
     /**
+     * 覆盖记录
+     *
+     * @param classCoverage
+     * @param method
+     * @param chromosome
+     */
+    public void processClassCoverage(IClassCoverage classCoverage, Method method, Chromosome chromosome) {
+        // 记录每个覆盖行与染色体的映射关系
+        List<Integer> coveredLines = new ArrayList<>();
+
+        classCoverage.getMethods().stream()
+                .filter(mc -> isTargetMethod(mc, method))
+                .forEach(mc -> {
+                    for (int i = mc.getFirstLine(); i <= mc.getLastLine(); i++) {
+                        init(mc.getFirstLine(), mc.getLastLine());
+                        if (mc.getLine(i).getStatus() == ICounter.FULLY_COVERED || mc.getLine(i).getStatus() == ICounter.PARTLY_COVERED) {
+                            coveredLines.add(i);
+                        }
+                    }
+                });
+        // 调用追踪器的记录方法
+        recordCoverage(coveredLines, chromosome, chromosome.getMethod());
+    }
+
+    /**
+     * 判断是否为目标方法
+     */
+    private static boolean isTargetMethod(IMethodCoverage mc, Method method) {
+        return mc.getName().equals(method.getName())
+                && mc.getDesc().equals(Type.getMethodDescriptor(method));
+    }
+
+    /**
      * 获取种群相似度
      *
      * @param pop
@@ -263,5 +302,51 @@ public class ChromosomeCoverageTracker {
 
     public void setChromosomeCoverageDataMap(Map<Chromosome, byte[]> chromosomeCoverageDataMap) {
         this.chromosomeCoverageDataMap = chromosomeCoverageDataMap;
+    }
+
+    /**
+     * 获取染色体新覆盖行
+     * @param nature
+     * @param population
+     * @param chromosome
+     * @return
+     */
+    public Set<Integer> getNewCovered(Nature nature, Population population, Chromosome chromosome) {
+        Set<Integer> uncovered = getUncovered(nature, population);
+        Set<Integer> linesCoveredBy = getLinesCoveredBy(chromosome);
+        return SetUtils.intersection(uncovered, linesCoveredBy);
+    }
+
+    /**
+     * 获取未覆盖行<br/>
+     * 首先获取环境中上一代，若上代没有，则获取当前种群未覆盖行
+     *
+     * @param nature
+     * @param population
+     * @return
+     */
+    public Set<Integer> getUncovered(Nature nature, Population population) {
+        Set<Integer> uncovered = getLastPopulationUnCovered(nature);
+        if (uncovered.isEmpty()) {
+            uncovered = getPopulationUnCoveredLines(population);
+        }
+        return uncovered;
+    }
+
+    /**
+     * 获取上次种群未覆盖行
+     *
+     * @param nature
+     * @return
+     */
+    public Set<Integer> getLastPopulationUnCovered(Nature nature) {
+        Set<Integer> lastPopulationUnCovered = Set.of();
+        if (!nature.hasPopulation()) {
+            //获取上个种群
+            int size = nature.getPopulationList().size();
+            final Population lastPopulation = nature.getPopulationList().get(size - 1);
+            lastPopulationUnCovered = getPopulationUnCoveredLines(lastPopulation);
+        }
+        return lastPopulationUnCovered;
     }
 }
