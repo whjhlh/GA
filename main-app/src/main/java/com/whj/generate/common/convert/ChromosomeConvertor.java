@@ -38,7 +38,7 @@ public class ChromosomeConvertor {
         );
     }
 
-    public static PopulationResponse getPopulationResponse(String sessionId, int generationIndex, Population pop, Map<Chromosome, Integer> chromosomeSequenceMap) {
+    public static PopulationResponse getPopulationResponse(String sessionId, int generationIndex, Population pop,Map<Chromosome, Integer> chromosomeSequenceMap) {
         List<ChromosomeDTO> list = pop.getChromosomeSet().stream()
                 .map(c -> getChromosomeDTO(chromosomeSequenceMap, c))
                 .collect(Collectors.toList());

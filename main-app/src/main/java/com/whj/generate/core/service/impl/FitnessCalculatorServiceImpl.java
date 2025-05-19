@@ -81,11 +81,11 @@ public class FitnessCalculatorServiceImpl implements FitnessCalculatorService {
         if (coveringChromosomes.isEmpty()) {
             return 0.0;
         }
-        Set<Integer> targetLines = coverageTracker.getLinesCoveredBy(target);
+        Set<Integer> targetLines = coverageTracker.getChromosomeCovered(target);
         return coveringChromosomes.parallelStream()
                 .filter(c -> !c.equals(target)) // 使用equals确保正确过滤
                 .mapToDouble(other -> {
-                    Set<Integer> otherLines = coverageTracker.getLinesCoveredBy(other);
+                    Set<Integer> otherLines = coverageTracker.getChromosomeCovered(other);
                     return SimilarityUtils.jaccardSimilarity(targetLines, otherLines);
                 })
                 .average()

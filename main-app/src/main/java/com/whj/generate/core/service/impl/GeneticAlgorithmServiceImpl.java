@@ -11,6 +11,7 @@ import com.whj.generate.core.infrastructure.strategy.SelectionStrategy;
 import com.whj.generate.core.service.CoverageService;
 import com.whj.generate.core.service.GenPoolService;
 import com.whj.generate.core.service.GeneticAlgorithmService;
+import com.whj.generate.core.service.GenerateService;
 import com.whj.generate.utill.ReflectionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     private final CoverageService coverageService;
     // 选择策略
     private final SelectionStrategy selectionStrategy;
+    private final GenerateService generateService;
 
     @Autowired
     public GeneticAlgorithmServiceImpl(
@@ -55,12 +57,14 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
             ChromosomeCoverageTracker coverageTracker,
             CoverageService coverageService,
             @Qualifier("geneticForkJoinPool") ForkJoinPool geneticThreadPool,
-            @Qualifier("eliteDiverseStrategy") SelectionStrategy selectionStrategy) {
+            @Qualifier("eliteDiverseStrategy") SelectionStrategy selectionStrategy,
+            GenerateService generateService) {
         this.genPoolService = genPoolService;
         this.geneticThreadPool = geneticThreadPool;
         this.coverageTracker = coverageTracker;
         this.coverageService = coverageService;
         this.selectionStrategy = selectionStrategy;
+        this.generateService = generateService;
     }
 
     /**
@@ -73,9 +77,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     @Override
     public Population initEnvironment(Nature nature, Class<?> clazz, String methodName) {
         Method testMethod = ReflectionUtil.findMethod(clazz, methodName);
-        Population population = createPopulationModel(clazz, testMethod);
-        // 处理初始化种群
-        processInitPopulation(population);
+        Population population = generateService.genertatePopulation(clazz, testMethod);
         // 处理初始化种群数据
         populationDataHandle(nature, population);
         return population;

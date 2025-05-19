@@ -1,15 +1,12 @@
-package com.whj.generate.common.dto;
-
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+package com.whj.generate.core.domain;
 
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * @author whj
- * @date 2025-05-17 上午11:26
+ * @date 2025-05-19 下午6:01
  */
-public class CoveredDTO {
+public class Covered {
     /**
      * 染色体序号
      */
@@ -17,13 +14,11 @@ public class CoveredDTO {
     /**
      * 覆盖行
      */
-    @JsonSerialize(as = TreeSet.class)
-    Set<Integer> coveredLine=new TreeSet<>();
+    Set<Integer> coveredLine;
     /**
      * 未覆盖行
      */
-    @JsonSerialize(as = TreeSet.class)
-    Set<Integer> unCoveredLine =new TreeSet<>();
+    Set<Integer> unCoveredLine;
     /**
      * 基因
      */

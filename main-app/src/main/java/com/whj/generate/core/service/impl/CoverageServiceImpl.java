@@ -2,12 +2,15 @@ package com.whj.generate.core.service.impl;
 
 import com.whj.generate.biz.Infrastructure.JaCoCoCoverageAnalyzer;
 import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
+import com.whj.generate.common.service.JavaStructureService;
 import com.whj.generate.core.domain.Chromosome;
+import com.whj.generate.core.domain.Covered;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 import com.whj.generate.core.exception.ExceptionWrapper;
 import com.whj.generate.core.exception.GenerateErrorEnum;
 import com.whj.generate.core.service.CoverageService;
+import com.whj.generate.utill.SetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,20 +35,19 @@ public class CoverageServiceImpl implements CoverageService {
      * 适应度计算服务
      */
     private final FitnessCalculatorServiceImpl fitnessCalculator;
+    /**
+     * java结构服务
+     */
+    private final JavaStructureService javaStructureService;
 
     @Autowired
-    public CoverageServiceImpl(JaCoCoCoverageAnalyzer coverageAnalyzer, ChromosomeCoverageTracker coverageTracker, FitnessCalculatorServiceImpl fitnessCalculator) {
+    public CoverageServiceImpl(JaCoCoCoverageAnalyzer coverageAnalyzer, ChromosomeCoverageTracker coverageTracker, FitnessCalculatorServiceImpl fitnessCalculator, JavaStructureService javaStructureService) {
         this.coverageAnalyzer = coverageAnalyzer;
         this.coverageTracker = coverageTracker;
         this.fitnessCalculator = fitnessCalculator;
+        this.javaStructureService = javaStructureService;
     }
 
-    /**
-     * 计算种群覆盖率并更新适应度
-     *
-     * @param nature     环境参数
-     * @param population 种群对象
-     */
     @Override
     public void calculatePopulationCoverage(Nature nature, Population population) {
         if (population == null) {
@@ -58,36 +60,6 @@ public class CoverageServiceImpl implements CoverageService {
         nature.addPopulation(population);
     }
 
-    /**
-     * 获取种群总覆盖
-     *
-     * @param nature
-     * @param population
-     * @return
-     */
-    private Long getTotalCoverage(Nature nature, Population population) {
-        return ExceptionWrapper.process(() -> {
-            // 初始化覆盖率追踪器（线程安全）
-            final List<byte[]> coverageDataList = new ArrayList<>();
-            // 获取每个染色体的覆盖率数据
-            final Set<Chromosome> chromosomes = population.getChromosomeSet();
-            chromosomes.forEach(chromosome -> {
-                        // 处理单个染色体覆盖率数据
-                        processChromosome(chromosome, coverageDataList);
-                        fitnessCalculator.calculate(nature, population, chromosome);
-                    }
-            );
-            return coverageAnalyzer.calculateTotalCoverage(coverageDataList, chromosomes.iterator().next().getMethod());
-        }, GenerateErrorEnum.GET_OVERRIDE_FAIL, "种群覆盖率计算失败");
-    }
-
-
-    /**
-     * 获取上次种群未覆盖行
-     *
-     * @param nature
-     * @return
-     */
     @Override
     public Set<Integer> getLastPopulationUncovered(Nature nature) {
         Set<Integer> lastPopulationUnCovered = Set.of();
@@ -100,13 +72,45 @@ public class CoverageServiceImpl implements CoverageService {
         return lastPopulationUnCovered;
     }
 
-    /**
-     * 获取指定种群未覆盖行
-     */
     @Override
     public Set<Integer> getPopulationUncovered(Population population) {
         return coverageTracker.getPopulationUnCoveredLines(population);
     }
+
+    @Override
+    public Covered getCovered(Integer chromosomeSeq) {
+        //查询value为chromosomeSeq的Integer
+        Chromosome chromosome = coverageTracker.getChromosomeById(chromosomeSeq);
+        Covered covered = new Covered();
+        if(chromosome!=null){
+            String className = chromosome.getTargetClass().getSimpleName();
+            String methodName = chromosome.getMethod().getName();
+
+            Set<Integer> chromosomeCovered = coverageTracker.getChromosomeCovered(chromosome);
+            Set<Integer> chromosomeUnCovered = coverageTracker.getChromosomeUnCovered(chromosome);
+
+            Set<Integer> cantNotCoveredLines = javaStructureService.cantNotCoveredLines(className, methodName);
+            chromosomeCovered=SetUtils.leftDifference(chromosomeCovered,cantNotCoveredLines);
+            chromosomeUnCovered=SetUtils.leftDifference(chromosomeUnCovered,cantNotCoveredLines);
+
+            covered.setCoveredLine(chromosomeCovered);
+            covered.setUnCoveredLine(chromosomeUnCovered);
+            covered.setGenes(chromosome.getGenes());
+            covered.setChromosomeId(String.valueOf(chromosomeSeq));
+        }
+        return covered;
+    }
+
+    @Override
+    public Chromosome getChromosomeById(Integer chromosomeId) {
+        return coverageTracker.getChromosomeById(chromosomeId);
+    }
+
+    @Override
+    public Map<Chromosome, Integer> getChromosomeSequenceMap() {
+        return coverageTracker.getChromosomeSequenceMap();
+    }
+
 
 
     /**
@@ -131,6 +135,29 @@ public class CoverageServiceImpl implements CoverageService {
                         k -> coverageAnalyzer.collectNewCoverageData(method, chromosome.getGenes())))
                 .orElseGet(
                         () -> coverageAnalyzer.collectNewCoverageData(method, chromosome.getGenes()));
+    }
+
+    /**
+     * 获取种群总覆盖
+     *
+     * @param nature
+     * @param population
+     * @return
+     */
+    private Long getTotalCoverage(Nature nature, Population population) {
+        return ExceptionWrapper.process(() -> {
+            // 初始化覆盖率追踪器（线程安全）
+            final List<byte[]> coverageDataList = new ArrayList<>();
+            // 获取每个染色体的覆盖率数据
+            final Set<Chromosome> chromosomes = population.getChromosomeSet();
+            chromosomes.forEach(chromosome -> {
+                        // 处理单个染色体覆盖率数据
+                        processChromosome(chromosome, coverageDataList);
+                        fitnessCalculator.calculate(nature, population, chromosome);
+                    }
+            );
+            return coverageAnalyzer.calculateTotalCoverage(coverageDataList, chromosomes.iterator().next().getMethod());
+        }, GenerateErrorEnum.GET_OVERRIDE_FAIL, "种群覆盖率计算失败");
     }
 
 }

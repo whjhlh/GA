@@ -25,8 +25,10 @@ public enum GenerateErrorEnum {
      * 染色体收集行覆盖失败
      */
     COLLECT_COVERAGE_FAIL("1004", "染色体收集行覆盖失败", "染色体收集行覆盖失败"),
-
-    ;
+    /**
+     * 解析失败
+     */
+    PARSE_ERROR("1005","解析失败" ,"解析失败" );
 
 
     private String code;

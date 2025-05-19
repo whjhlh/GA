@@ -1,8 +1,11 @@
 package com.whj.generate.core.service;
 
+import com.whj.generate.core.domain.Chromosome;
+import com.whj.generate.core.domain.Covered;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -29,4 +32,20 @@ public interface CoverageService {
      * @return
      */
     Set<Integer> getPopulationUncovered(Population population);
+
+    /**
+     * 获取染色体覆盖行
+     *
+     * @param chromosome
+     * @return
+     */
+    Covered getCovered(Integer chromosome);
+    /**
+     * 根据id查询染色体
+     */
+    Chromosome getChromosomeById(Integer chromosomeId);
+    /**
+     * 根据染色体查ID
+     */
+    Map<Chromosome, Integer>  getChromosomeSequenceMap();
 }

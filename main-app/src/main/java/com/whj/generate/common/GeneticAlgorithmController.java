@@ -12,6 +12,7 @@ import com.whj.generate.common.req.InitResponse;
 import com.whj.generate.common.response.EvolveResponse;
 import com.whj.generate.common.response.PopulationResponse;
 import com.whj.generate.core.domain.Chromosome;
+import com.whj.generate.core.domain.Covered;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 import com.whj.generate.core.service.CoverageService;
@@ -107,8 +108,7 @@ public class GeneticAlgorithmController {
             throw new IllegalArgumentException("无效的参数");
         }
         Population pop = nature.getPopulationList().get(generationIndex);
-        Map<Chromosome, Integer> chromosomeSequenceMap = getChromosomeSequenceMap();
-
+        Map<Chromosome, Integer> chromosomeSequenceMap = coverageService.getChromosomeSequenceMap();
         return ChromosomeConvertor.getPopulationResponse(sessionId, generationIndex, pop, chromosomeSequenceMap);
     }
 
@@ -130,19 +130,13 @@ public class GeneticAlgorithmController {
     @ResponseBody
     public CoveredDTO getCovered(@RequestParam Integer chromosomeSeq) {
         System.out.println("GET /api/java-structure/covered 被调用");
-        Map<Chromosome, Integer> chromosomeSequenceMap = getChromosomeSequenceMap();
-        //查询value为chromosomeSeq的Integer
-        for (Map.Entry<Chromosome, Integer> entry : chromosomeSequenceMap.entrySet()) {
-            if (Objects.equals(entry.getValue(), chromosomeSeq)) {
-                CoveredDTO coveredDTO = new CoveredDTO();
-                Chromosome chromosome = entry.getKey();
-                coveredDTO.setCoveredLine(coverageTracker.getLinesCoveredBy(chromosome));
-                coveredDTO.setGenes(chromosome.getGenes());
-                coveredDTO.setChromosomeId(entry.getValue().toString());
-                return coveredDTO;
-            }
-        }
-        return new CoveredDTO();
+        Covered covered = coverageService.getCovered(chromosomeSeq);
+        CoveredDTO coveredDTO = new CoveredDTO();
+        coveredDTO.setChromosomeId(covered.getChromosomeId());
+        coveredDTO.setGenes(covered.getGenes());
+        coveredDTO.getCoveredLine().addAll(covered.getCoveredLine());
+        coveredDTO.getUnCoveredLine().addAll(covered.getUnCoveredLine());
+        return coveredDTO;
     }
 
     private Nature checkAndGetNature(String sessionId) {
@@ -172,9 +166,5 @@ public class GeneticAlgorithmController {
             result.add(dataPoint);
         }
         return result;
-    }
-
-    private Map<Chromosome, Integer> getChromosomeSequenceMap() {
-        return coverageTracker.getChromosomeSequenceMap();
     }
 }

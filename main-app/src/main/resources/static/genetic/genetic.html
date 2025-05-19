@@ -20,9 +20,11 @@
             --error-red: #F5222D;
             --radius: 8px;
         }
+
         * {
             box-sizing: border-box;
         }
+
         body {
             margin: 0;
             background: var(--bg-light);
@@ -30,6 +32,7 @@
             color: var(--text-dark);
             line-height: 1.5;
         }
+
         .container {
             max-width: 1000px;
             margin: 40px auto;
@@ -38,11 +41,13 @@
             border-radius: var(--radius);
             border: 1px solid var(--border-gray);
         }
+
         h1 {
             margin: 0 0 24px;
             font-size: 24px;
             color: var(--primary-blue);
         }
+
         .panel, .config-panel, .visualization {
             background: #fff;
             padding: 16px;
@@ -50,28 +55,33 @@
             border-radius: var(--radius);
             margin-bottom: 24px;
         }
+
         .flex-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             align-items: end;
         }
+
         .form-group, .action-group {
             display: flex;
             flex-direction: column;
         }
+
         .action-bar {
             display: flex;
             gap: 12px;
             margin-top: 16px;
             justify-content: flex-start;
         }
+
         label {
             display: block;
             margin-bottom: 4px;
             font-weight: 500;
             color: var(--text-dark);
         }
+
         select, input[type='text'], input[type='number'] {
             width: 100%;
             padding: 8px 12px;
@@ -79,7 +89,39 @@
             border-radius: var(--radius);
             font-size: 14px;
             background: #fff;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231677FF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 16px;
+            padding-right: 30px;
         }
+
+        select:focus, input[type='text']:focus, input[type='number']:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.2);
+        }
+
+        select {
+            background-color: var(--light-blue);
+            border-color: var(--primary-blue);
+            color: var(--text-dark);
+        }
+
+        select option {
+            background-color: white;
+            color: var(--text-dark);
+        }
+
+        select:disabled {
+            background-color: #f5f5f5;
+            border-color: var(--border-gray);
+            color: #999;
+        }
+
         .btn, button {
             padding: 8px 16px;
             border: none;
@@ -89,27 +131,33 @@
             font-weight: 500;
             transition: background 0.2s;
         }
+
         .btn-primary {
             background: var(--primary-blue);
             color: #fff;
         }
+
         .btn-primary:hover {
             background: var(--accent-blue);
         }
+
         .btn-secondary {
             background: #fff;
             color: var(--primary-blue);
             border: 1px solid var(--primary-blue);
         }
+
         .btn-secondary:hover {
             background: var(--light-blue);
         }
+
         .btn-config {
             background: var(--accent-blue);
             color: white;
             padding: 6px 12px;
             font-size: 13px;
         }
+
         .btn-detail {
             padding: 4px 8px;
             font-size: 12px;
@@ -117,25 +165,30 @@
             color: var(--primary-blue);
             border: 1px solid var(--primary-blue);
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 16px 0;
             background: #fff;
         }
+
         th, td {
             padding: 12px;
             border: 1px solid var(--border-gray);
             text-align: left;
         }
+
         th {
             background: var(--light-blue);
             font-weight: 600;
             color: var(--text-dark);
         }
+
         tr:nth-child(even) {
             background: var(--bg-light);
         }
+
         .code-viewer {
             font-family: 'Courier New', monospace;
             font-size: 13px;
@@ -148,10 +201,12 @@
             line-height: 1.6;
             position: relative;
         }
+
         .code-line {
             display: flex;
             border-bottom: 1px solid #f0f0f0;
         }
+
         .line-number {
             min-width: 60px;
             padding-right: 12px;
@@ -160,18 +215,22 @@
             user-select: none;
             border-right: 1px solid #ddd;
         }
+
         .line-content {
             padding-left: 12px;
             white-space: pre;
         }
+
         .covered-line .line-number,
         .covered-line .line-content {
             background-color: #e6ffed;
         }
+
         .uncovered-line .line-number,
         .uncovered-line .line-content {
             background-color: #fff1f0;
         }
+
         .modal-mask {
             position: fixed;
             top: 0;
@@ -185,6 +244,7 @@
             padding: 16px;
             z-index: 1000;
         }
+
         .modal-container {
             background: #fff;
             width: 600px;
@@ -193,6 +253,7 @@
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
+
         .modal-header {
             background: var(--primary-blue);
             color: #fff;
@@ -201,11 +262,13 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .modal-body {
             padding: 16px;
             max-height: 70vh;
             overflow-y: auto;
         }
+
         .close-btn {
             background: transparent;
             border: none;
@@ -213,6 +276,7 @@
             color: #fff;
             cursor: pointer;
         }
+
         .message-toast {
             position: fixed;
             bottom: 24px;
@@ -226,21 +290,26 @@
             z-index: 1001;
             transform: translateY(20px);
         }
+
         .message-toast.show {
             opacity: 1;
             transform: translateY(0);
         }
+
         .message-toast.success {
             background: var(--success-green);
         }
+
         .message-toast.error {
             background: var(--error-red);
         }
+
         .tab-nav {
             display: flex;
             margin-bottom: 1rem;
             border-bottom: 1px solid #ddd;
         }
+
         .tab-btn {
             padding: 12px 24px;
             border: none;
@@ -251,21 +320,25 @@
             transition: all 0.3s;
             border-bottom: 2px solid transparent;
         }
+
         .tab-btn:hover {
             color: #333;
             background: #f5f5f5;
         }
+
         .tab-btn.active {
             color: #2196F3;
             border-bottom-color: #2196F3;
             font-weight: 500;
         }
+
         .chart-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 20px;
             margin: 20px 0;
         }
+
         .chart-box {
             height: 400px;
             background: #fff;
@@ -273,75 +346,91 @@
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
             padding: 15px;
         }
+
         .status-indicators {
             display: flex;
             gap: 20px;
             margin-bottom: 16px;
             flex-wrap: wrap;
         }
+
         .indicator {
             background-color: var(--light-blue);
             padding: 8px 12px;
             border-radius: var(--radius);
             border: 1px solid var(--primary-blue);
         }
+
         .indicator label {
             font-weight: bold;
             margin-right: 8px;
             color: var(--primary-blue);
         }
+
         .indicator span {
             font-weight: normal;
         }
+
         .status-success {
             color: var(--success-green);
             font-weight: bold;
         }
+
         .status-processing {
             color: var(--accent-blue);
             font-weight: bold;
         }
+
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
         }
+
         .coverage-search {
             display: flex;
             align-items: center;
             margin-bottom: 16px;
             gap: 12px;
         }
+
         .coverage-search input {
             max-width: 120px;
         }
+
         .coverage-search button {
             white-space: nowrap;
         }
+
         .coverage-legend {
             display: flex;
             gap: 20px;
             margin-bottom: 16px;
         }
+
         .legend-item {
             display: flex;
             align-items: center;
             gap: 8px;
         }
+
         .legend-color {
             width: 16px;
             height: 16px;
             border-radius: 4px;
         }
+
         .legend-color.covered {
             background-color: #e6ffed;
             border: 1px solid var(--success-green);
         }
+
         .legend-color.uncovered {
             background-color: #fff1f0;
             border: 1px solid var(--error-red);
         }
+
         .chromosome-genes {
             background-color: var(--light-blue);
             border: 1px solid var(--border-gray);
@@ -351,22 +440,39 @@
             max-height: 200px;
             overflow-y: auto;
         }
+
         .chromosome-genes h4 {
             margin-top: 0;
             margin-bottom: 8px;
             color: var(--primary-blue);
         }
+
         .gene-item {
             display: flex;
             margin-bottom: 4px;
         }
+
         .gene-key {
             font-weight: bold;
             margin-right: 8px;
-            min-width: 100px;
+            min-width: 40px;
         }
+
         .gene-value {
             flex: 1;
+        }
+
+        .gene-array {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .gene-array-item {
+            background-color: white;
+            border: 1px solid var(--primary-blue);
+            border-radius: 4px;
+            padding: 2px 8px;
         }
     </style>
 </head>
@@ -383,14 +489,16 @@
                 <label>选择目标类:</label>
                 <select @change="onClassChange" v-model="selectedClass">
                     <option value="">-- 请选择类 --</option>
-                    <option v-for="cls in classList" :key="cls.className" :value="cls.className">{{ cls.className }}</option>
+                    <option v-for="cls in classList" :key="cls.className" :value="cls.className">{{ cls.className }}
+                    </option>
                 </select>
             </div>
             <div class="form-group">
                 <label>选择目标方法:</label>
                 <select :disabled="!selectedClass" v-model="selectedMethod">
                     <option value="">-- 请选择方法 --</option>
-                    <option v-for="m in methodList" :key="m.methodName" :value="m.methodName">{{ m.methodName }}</option>
+                    <option v-for="m in methodList" :key="m.methodName" :value="m.methodName">{{ m.methodName }}
+                    </option>
                 </select>
             </div>
             <div class="action-group">
@@ -430,7 +538,9 @@
                 <div class="indicator"><label>当前代数:</label> <span>{{ generationIndex }}</span></div>
                 <div class="indicator"><label>覆盖率:</label> <span>{{ coverage.toFixed(2) }}%</span></div>
                 <div class="indicator"><label>种群规模:</label> <span>{{ populationSize }}</span></div>
-                <div class="indicator"><label>完成状态:</label> <span :class="finished ? 'status-success' : 'status-processing'">{{ finished ? '已完成' : '进行中' }}</span></div>
+                <div class="indicator"><label>完成状态:</label> <span
+                        :class="finished ? 'status-success' : 'status-processing'">{{ finished ? '已完成' : '进行中'
+                    }}</span></div>
             </div>
             <div class="generation-table">
                 <table>
@@ -470,7 +580,8 @@
                     <tr v-for="c in generationDetails" :key="c.id">
                         <td>{{ c.id }}</td>
                         <td class="gene-data">{{ formatGenes(c.genes) }}</td>
-                        <td>{{ typeof c.coveragePercent === 'number' ? c.coveragePercent.toFixed(2) + '%' : 'N/A' }}</td>
+                        <td>{{ typeof c.coveragePercent === 'number' ? c.coveragePercent.toFixed(2) + '%' : 'N/A' }}
+                        </td>
                         <td>{{ typeof c.fitness === 'number' ? c.fitness.toFixed(4) : 'N/A' }}</td>
                         <td>
                             <button @click="viewCoverage(c.id)" class="btn btn-detail">查看覆盖</button>
@@ -505,29 +616,41 @@
                 </div>
 
                 <!-- 染色体基因信息展示区域 -->
+                <!-- 当currentChromosomeGenes存在时，显示染色体基因信息 -->
                 <div v-if="currentChromosomeGenes" class="chromosome-genes">
-                    <h4>染色体 #{{ chromosomeSeq }} 基因信息</h4>
+                    <!-- 显示当前染色体的基因信息标题 -->
+                    <h4>染色体 #{{ chromosomeId || chromosomeSeq }} 基因信息</h4>
+                    <!-- 遍历currentChromosomeGenes对象，显示每个基因的关键字和值 -->
                     <div v-for="(value, key) in currentChromosomeGenes" :key="key" class="gene-item">
                         <div class="gene-key">{{ key }}:</div>
                         <div class="gene-value">{{ value }}</div>
                     </div>
                 </div>
 
+                <!-- 覆盖率图例展示区域 -->
                 <div class="coverage-legend">
+                    <!-- 显示“已覆盖”的图例项 -->
                     <div class="legend-item">
                         <div class="legend-color covered"></div>
                         <span>已覆盖</span>
                     </div>
+                    <!-- 显示“未覆盖”的图例项 -->
                     <div class="legend-item">
                         <div class="legend-color uncovered"></div>
                         <span>未覆盖</span>
                     </div>
                 </div>
 
+                <!-- 加载源代码提示区域 -->
+                <!-- 如果正在加载源代码，显示加载中的提示 -->
                 <p v-if="loading.sourceCode">加载源代码中...</p>
+                <!-- 如果没有源代码数据，提供可能的原因和建议 -->
                 <p v-else-if="!codeLines.length">暂无源代码数据，请确保已选择类和方法，并已开始算法执行。</p>
+                <!-- 源代码展示区域 -->
                 <div v-else class="code-viewer">
-                    <div v-for="line in codeLines" :key="line.lineNumber" :class="['code-line', getLineClass(line.lineNumber)]">
+                    <!-- 遍历codeLines数组，显示每行源代码 -->
+                    <div v-for="line in codeLines" :key="line.lineNumber"
+                         :class="['code-line', getLineClass(line.lineNumber)]">
                         <div class="line-number">{{ line.lineNumber }}</div>
                         <div class="line-content">{{ line.content }}</div>
                     </div>
@@ -551,28 +674,44 @@
 </div>
 
 <script>
-    const { createApp, ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } = Vue;
+    const {createApp, ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick} = Vue;
 
     const ConfigModal = {
         props: ['initialFormData'],
         emits: ['submit', 'close'],
-        setup(props, { emit }) {
+        setup(props, {emit}) {
             const localFormData = reactive({});
             const parameters = computed(() => [
-                { key: 'crossoverRate', label: '交叉率 (0-1)', type: 'number', step: 0.01, default: 0.8, min:0, max:1 },
-                { key: 'mutationRate', label: '变异率 (0-1)', type: 'number', step: 0.01, default: 0.1, min:0, max:1 },
-                { key: 'maxGenerationCount', label: '最大代数', type: 'number', default: 100, min:1 },
-                { key: 'targetCoverage', label: '目标覆盖率 (%)', type: 'number', default: 80, min:1, max:100 },
-                { key: 'noveltyWeight', label: '新颖性权重 (0-1)', type: 'number', step: 0.01, default: 0.2, min:0, max:1 },
-                { key: 'diversityPenalty', label: '多样性惩罚 (0-1)', type: 'number', step: 0.01, default: 0.1, min:0, max:1 },
-                { key: 'baseWeight', label: '基础权重 (0-1)', type: 'number', step: 0.01, default: 0.7, min:0, max:1 }
+                {key: 'crossoverRate', label: '交叉率 (0-1)', type: 'number', step: 0.01, default: 0.8, min: 0, max: 1},
+                {key: 'mutationRate', label: '变异率 (0-1)', type: 'number', step: 0.01, default: 0.1, min: 0, max: 1},
+                {key: 'maxGenerationCount', label: '最大代数', type: 'number', default: 100, min: 1},
+                {key: 'targetCoverage', label: '目标覆盖率 (%)', type: 'number', default: 80, min: 1, max: 100},
+                {
+                    key: 'noveltyWeight',
+                    label: '新颖性权重 (0-1)',
+                    type: 'number',
+                    step: 0.01,
+                    default: 0.2,
+                    min: 0,
+                    max: 1
+                },
+                {
+                    key: 'diversityPenalty',
+                    label: '多样性惩罚 (0-1)',
+                    type: 'number',
+                    step: 0.01,
+                    default: 0.1,
+                    min: 0,
+                    max: 1
+                },
+                {key: 'baseWeight', label: '基础权重 (0-1)', type: 'number', step: 0.01, default: 0.7, min: 0, max: 1}
             ]);
 
             watch(() => props.initialFormData, (newData) => {
                 parameters.value.forEach(param => {
                     localFormData[param.key] = newData && newData[param.key] !== undefined ? newData[param.key] : param.default;
                 });
-            }, { deep: true, immediate: true });
+            }, {deep: true, immediate: true});
 
             const handleSubmit = () => {
                 for (const param of parameters.value) {
@@ -590,11 +729,11 @@
                         return;
                     }
                 }
-                emit('submit', { ...localFormData });
+                emit('submit', {...localFormData});
             };
             const handleClose = () => emit('close');
 
-            return { localFormData, parameters, handleSubmit, handleClose };
+            return {localFormData, parameters, handleSubmit, handleClose};
         },
         template: `
           <div class="modal-mask">
@@ -700,6 +839,7 @@
             const coveredLines = ref([]);
             const uncoveredLines = ref([]);
             const chromosomeSeq = ref(null);
+            const chromosomeId = ref(null);
             const currentChromosomeGenes = ref(null);
 
             const activeTab = ref('evolution');
@@ -724,15 +864,15 @@
             const canEvolve = computed(() => sessionId.value && !finished.value && !loading.evolve);
 
             const tableColumns = ref([
-                { key: 'generationIndex', label: '代数' },
-                { key: 'coverage', label: '覆盖率 (%)' },
-                { key: 'populationSize', label: '种群规模' },
-                { key: 'actions', label: '操作' }
+                {key: 'generationIndex', label: '代数'},
+                {key: 'coverage', label: '覆盖率 (%)'},
+                {key: 'populationSize', label: '种群规模'},
+                {key: 'actions', label: '操作'}
             ]);
 
             const tabs = ref([
-                { id: 'evolution', label: '进化概览' },
-                { id: 'source', label: '源码分析' }
+                {id: 'evolution', label: '进化概览'},
+                {id: 'source', label: '源码分析'}
             ]);
 
             const toast = (message, type = 'success', duration = 3000) => {
@@ -740,7 +880,9 @@
                 toastType.value = type;
                 showToast.value = true;
                 console.log(`Toast (${type}): ${message}`);
-                setTimeout(() => { showToast.value = false; }, duration);
+                setTimeout(() => {
+                    showToast.value = false;
+                }, duration);
             };
 
             const handleError = (error, messagePrefix) => {
@@ -754,11 +896,24 @@
                 if (coverageChartEl.value && !coverageChart) {
                     console.log("Initializing Coverage Chart with element:", coverageChartEl.value);
                     coverageChart = new ChartManager(coverageChartEl.value, {
-                        title: { text: '覆盖率 vs 迭代数', left: 'center' },
-                        legend: { data: ['覆盖率 (%)'], top: 35 },
-                        xAxis: { type: 'category', name: '代数', boundaryGap: false, data: [] },
-                        yAxis: { name: '覆盖率 (%)', type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%' } },
-                        series: [{ name: '覆盖率 (%)', type: 'line', smooth: true, data: [], yAxisIndex: 0, color: '#5470C6' }]
+                        title: {text: '覆盖率 vs 迭代数', left: 'center'},
+                        legend: {data: ['覆盖率 (%)'], top: 35},
+                        xAxis: {type: 'category', name: '代数', boundaryGap: false, data: []},
+                        yAxis: {
+                            name: '覆盖率 (%)',
+                            type: 'value',
+                            min: 0,
+                            max: 100,
+                            axisLabel: {formatter: '{value}%'}
+                        },
+                        series: [{
+                            name: '覆盖率 (%)',
+                            type: 'line',
+                            smooth: true,
+                            data: [],
+                            yAxisIndex: 0,
+                            color: '#5470C6'
+                        }]
                     });
                 } else {
                     console.warn("Coverage chart element not found or chart already initialized during initializeCharts call.", coverageChartEl.value, coverageChart);
@@ -767,11 +922,11 @@
                 if (similarityChartEl.value && !similarityChart) {
                     console.log("Initializing Similarity Chart with element:", similarityChartEl.value);
                     similarityChart = new ChartManager(similarityChartEl.value, {
-                        title: { text: '平均染色体相似度 vs 迭代数', left: 'center' },
-                        legend: { data: ['平均染色体相似度'], top: 35 },
-                        xAxis: { type: 'category', name: '代数', boundaryGap: false, data: [] },
-                        yAxis: { name: '相似度', type: 'value', min: 0, max: 1, axisLabel: { formatter: '{value}' } },
-                        series: [{ name: '平均染色体相似度', type: 'line', smooth: true, data: [], color: '#FAC858' }]
+                        title: {text: '平均染色体相似度 vs 迭代数', left: 'center'},
+                        legend: {data: ['平均染色体相似度'], top: 35},
+                        xAxis: {type: 'category', name: '代数', boundaryGap: false, data: []},
+                        yAxis: {name: '相似度', type: 'value', min: 0, max: 1, axisLabel: {formatter: '{value}'}},
+                        series: [{name: '平均染色体相似度', type: 'line', smooth: true, data: [], color: '#FAC858'}]
                     });
                 } else {
                     console.warn("Similarity chart element not found or chart already initialized during initializeCharts call.", similarityChartEl.value, similarityChart);
@@ -782,12 +937,15 @@
                 loading.config = true;
                 toast('正在加载算法配置...', 'info');
                 try {
-                    const { data } = await axios.get('/api/param.json');
+                    const {data} = await axios.get('/api/param.json');
                     Object.assign(formData, data);
                     toast('算法配置已加载。', 'success');
                 } catch (error) {
                     handleError(error, '加载算法配置失败');
-                    const modalDefaults = (ConfigModal.setup({initialFormData:{}}, {emit:()=>{}})).parameters.value;
+                    const modalDefaults = (ConfigModal.setup({initialFormData: {}}, {
+                        emit: () => {
+                        }
+                    })).parameters.value;
                     modalDefaults.forEach(param => {
                         if (formData[param.key] === undefined) formData[param.key] = param.default;
                     });
@@ -801,7 +959,7 @@
                 loading.classes = true;
                 toast('正在加载类结构...', 'info');
                 try {
-                    const { data } = await axios.get('/api/java-structure');
+                    const {data} = await axios.get('/api/java-structure');
                     classList.value = data;
                     if (data.length > 0) {
                         selectedClass.value = data[0].className;
@@ -850,9 +1008,10 @@
                 uncoveredLines.value = [];
                 currentChromosomeGenes.value = null;
                 chromosomeSeq.value = null;
+                chromosomeId.value = null;
 
                 try {
-                    const { data } = await axios.get(`/api/java-structure/method-code?className=${selectedClass.value}&methodName=${selectedMethod.value}`);
+                    const {data} = await axios.get(`/api/java-structure/method-code?className=${selectedClass.value}&methodName=${selectedMethod.value}`);
                     if (data && data.codeLines) {
                         codeLines.value = data.codeLines;
                         toast('源代码加载成功。', 'success');
@@ -868,33 +1027,42 @@
                 }
             }
 
+            /**
+             * 异步函数：加载指定染色体的覆盖情况
+             * 此函数用于获取特定染色体的覆盖信息，包括覆盖的行数和未覆盖的行数，
+             * 以及相关的基因信息，并将这些信息更新到相应的变量中
+             */
             async function loadCoveredLines() {
+                // 检查会话ID和染色体序号是否有效
                 if (!sessionId.value || chromosomeSeq.value === null || chromosomeSeq.value < 0) {
                     toast('请输入有效的染色体序号', 'error');
                     return;
                 }
 
+                // 设置加载状态为true
                 loading.coverage = true;
+                // 显示加载信息
                 toast(`正在获取染色体 #${chromosomeSeq.value} 的覆盖情况...`, 'info');
 
                 try {
-                    const { data } = await axios.get(`/api/genetic-algorithm/covered?chromosomeSeq=${chromosomeSeq.value}`);
+                    // 发起请求，获取染色体覆盖数据
+                    const {data} = await axios.get(`/api/genetic-algorithm/covered?chromosomeSeq=${chromosomeSeq.value}`);
                     console.log('Covered lines response:', data);
 
+                    // 根据响应数据更新状态
                     if (data) {
+                        // 更新染色体ID
+                        chromosomeId.value = data.chromosomeId || chromosomeSeq.value;
+
                         // 更新覆盖行信息
                         if (Array.isArray(data.coveredLine)) {
                             coveredLines.value = data.coveredLine;
-
-                            // 计算未覆盖的行
-                            const allLineNumbers = codeLines.value.map(line => line.lineNumber);
-                            uncoveredLines.value = allLineNumbers.filter(lineNum => !coveredLines.value.includes(lineNum));
-
-                            toast(`染色体 #${chromosomeSeq.value} 的覆盖情况已更新，共覆盖 ${coveredLines.value.length} 行代码。`, 'success');
+                            uncoveredLines.value = data.unCoveredLine;
+                            toast(`染色体 #${chromosomeId.value} 的覆盖情况已更新，共覆盖 ${coveredLines.value.length} 行代码。`, 'success');
                         } else {
                             coveredLines.value = [];
                             uncoveredLines.value = [];
-                            toast(`未找到染色体 #${chromosomeSeq.value} 的覆盖数据。`, 'info');
+                            toast(`未找到染色体 #${chromosomeId.value} 的覆盖数据。`, 'info');
                         }
 
                         // 更新基因信息
@@ -905,30 +1073,49 @@
                             currentChromosomeGenes.value = null;
                         }
                     } else {
+                        // 如果未找到数据，重置相关状态
                         coveredLines.value = [];
                         uncoveredLines.value = [];
                         currentChromosomeGenes.value = null;
+                        chromosomeId.value = null;
                         toast(`未找到染色体 #${chromosomeSeq.value} 的数据。`, 'info');
                     }
                 } catch (error) {
+                    // 捕获错误，重置状态并显示错误信息
                     coveredLines.value = [];
                     uncoveredLines.value = [];
                     currentChromosomeGenes.value = null;
+                    chromosomeId.value = null;
                     handleError(error, '获取覆盖情况失败');
                 } finally {
+                    // 无论成功或失败，将加载状态设置为false
                     loading.coverage = false;
                 }
             }
 
+            /**
+             * 根据行号获取相应的CSS类名
+             * 此函数用于确定给定行号对应的是已覆盖代码还是未覆盖代码
+             * 它通过检查行号是否存在于已覆盖或未覆盖的行号数组中来实现
+             *
+             * @param {number} lineNumber - 代码行号
+             * @return {string} 返回'covered-line'表示已覆盖的行，返回'uncovered-line'表示未覆盖的行，如果 neither，则返回空字符串
+             */
             function getLineClass(lineNumber) {
+                // 检查已覆盖的行号数组中是否包含当前行号
                 if (coveredLines.value.includes(lineNumber)) {
                     return 'covered-line';
                 } else if (uncoveredLines.value.includes(lineNumber)) {
+                    // 检查未覆盖的行号数组中是否包含当前行号
                     return 'uncovered-line';
                 }
                 return '';
             }
 
+            /**
+             * 切换到指定染色体视图并加载其覆盖信息
+             * @param {string} chromosomeId - 染色体ID，用于标识特定的染色体序列
+             */
             function viewCoverage(chromosomeId) {
                 chromosomeSeq.value = chromosomeId;
                 activeTab.value = 'source';
@@ -943,17 +1130,31 @@
                 }
             }
 
+            /**
+             * 根据初始化数据更新全局状态
+             * @param {object} initData - 包含初始化信息的对象，用于更新全局状态
+             */
             function updateGlobalStateForInit(initData) {
+                // 验证并设置世代索引
                 if (typeof initData.generationIndex === 'number') {
                     generationIndex.value = initData.generationIndex;
                 } else {
                     console.warn('updateGlobalStateForInit: initData.generationIndex is invalid:', initData.generationIndex);
                     generationIndex.value = 0;
                 }
+                // 验证并设置覆盖率
                 coverage.value = typeof initData.coverage === 'number' ? initData.coverage : 0;
+                // 验证并设置种群大小
                 populationSize.value = typeof initData.populationSize === 'number' ? initData.populationSize : 0;
+                // 设置完成状态
                 finished.value = !!initData.finished;
-                console.log('Global state updated for init:', JSON.parse(JSON.stringify({generationIndex: generationIndex.value, coverage: coverage.value, populationSize: populationSize.value, finished: finished.value })));
+                // 输出更新后的全局状态
+                console.log('Global state updated for init:', JSON.parse(JSON.stringify({
+                    generationIndex: generationIndex.value,
+                    coverage: coverage.value,
+                    populationSize: populationSize.value,
+                    finished: finished.value
+                })));
             }
 
             async function initAlgorithm() {
@@ -961,8 +1162,14 @@
                 loading.init = true;
                 toast('开始初始化算法...', 'info');
 
-                if (coverageChart && coverageChart.instance) { coverageChart.dispose(); coverageChart = null; }
-                if (similarityChart && similarityChart.instance) { similarityChart.dispose(); similarityChart = null; }
+                if (coverageChart && coverageChart.instance) {
+                    coverageChart.dispose();
+                    coverageChart = null;
+                }
+                if (similarityChart && similarityChart.instance) {
+                    similarityChart.dispose();
+                    similarityChart = null;
+                }
 
                 generationSummaries.value = [];
                 generationDetails.value = [];
@@ -974,15 +1181,16 @@
                 coveredLines.value = [];
                 uncoveredLines.value = [];
                 chromosomeSeq.value = null;
+                chromosomeId.value = null;
                 currentChromosomeGenes.value = null;
 
                 try {
                     const payload = {
                         className: selectedClass.value,
                         methodName: selectedMethod.value,
-                        config: { ...formData }
+                        config: {...formData}
                     };
-                    const { data: initData } = await axios.post('/api/genetic-algorithm/init', payload);
+                    const {data: initData} = await axios.post('/api/genetic-algorithm/init', payload);
                     console.log('initAlgorithm response:', JSON.parse(JSON.stringify(initData)));
 
                     sessionId.value = initData.sessionId;
@@ -998,7 +1206,7 @@
                         similarity: undefined
                     };
                     generationSummaries.value = [initialSummaryEntry];
-                    console.log('Initial generationSummaries after init (before fetchViz):', JSON.parse(JSON.stringify(generationSummaries.value)));
+                    console.log('Initial generationSummaries after init:', JSON.parse(JSON.stringify(generationSummaries.value)));
 
                     toast(`算法已初始化, 会话ID: ${initData.sessionId}. 获取初始可视化数据...`, 'success');
                     await fetchVisualizationData();
@@ -1021,7 +1229,7 @@
                 toast(`开始执行第 ${nextGenDisplay} 代进化...`, 'info');
                 try {
                     const generationToEvolve = generationIndex.value;
-                    const { data: evolveData } = await axios.post('/api/genetic-algorithm/evolve', {
+                    const {data: evolveData} = await axios.post('/api/genetic-algorithm/evolve', {
                         sessionId: sessionId.value,
                         generationIndex: generationToEvolve
                     });
@@ -1032,7 +1240,12 @@
                     coverage.value = typeof evolveData.coverage === 'number' ? evolveData.coverage : 0;
                     populationSize.value = typeof evolveData.populationSize === 'number' ? evolveData.populationSize : 0;
                     finished.value = !!evolveData.finished;
-                    console.log('Global state updated for evolve:', JSON.parse(JSON.stringify({generationIndex: generationIndex.value, coverage: coverage.value, populationSize: populationSize.value, finished: finished.value })));
+                    console.log('Global state updated for evolve:', JSON.parse(JSON.stringify({
+                        generationIndex: generationIndex.value,
+                        coverage: coverage.value,
+                        populationSize: populationSize.value,
+                        finished: finished.value
+                    })));
 
                     const newSummaryEntry = {
                         generationIndex: newCompletedGenerationIndex,
@@ -1052,7 +1265,7 @@
                         generationSummaries.value.push(newSummaryEntry);
                     }
                     generationSummaries.value.sort((a, b) => a.generationIndex - b.generationIndex);
-                    console.log('generationSummaries after evolve (before fetchViz):', JSON.parse(JSON.stringify(generationSummaries.value)));
+                    console.log('generationSummaries after evolve:', JSON.parse(JSON.stringify(generationSummaries.value)));
 
                     toast(`第 ${newCompletedGenerationIndex} 代进化完成。正在更新可视化...`, 'success');
                     await fetchVisualizationData();
@@ -1069,7 +1282,7 @@
                 loading.visualization = true;
                 toast('正在获取并刷新可视化数据...', 'info', 2000);
                 try {
-                    const { data: vizHistory } = await axios.get(`/api/genetic-algorithm/visualization?sessionId=${sessionId.value}`);
+                    const {data: vizHistory} = await axios.get(`/api/genetic-algorithm/visualization?sessionId=${sessionId.value}`);
                     console.log('fetchVisualizationData response (vizHistory):', JSON.parse(JSON.stringify(vizHistory)));
 
                     const existingSummariesMap = new Map(generationSummaries.value.map(s => [s.generationIndex, s]));
@@ -1139,7 +1352,7 @@
                 newOption.xAxis.data = xAxisData;
                 newOption.series[0].data = seriesCoverageData;
 
-                console.log('Data for Coverage Chart update:', JSON.stringify({ xAxisData, seriesCoverageData })); // Log data being set
+                console.log('Data for Coverage Chart update:', JSON.stringify({xAxisData, seriesCoverageData})); // Log data being set
                 console.log('Complete new option for Coverage Chart update:', JSON.stringify(newOption));
                 coverageChart.setOption(newOption, true);
                 console.log('Coverage chart updated.');
@@ -1169,7 +1382,7 @@
                 newOption.xAxis.data = xAxisData;
                 newOption.series[0].data = seriesSimilarityData;
 
-                console.log('Data for Similarity Chart update:', JSON.stringify({ xAxisData, seriesSimilarityData })); // Log data being set
+                console.log('Data for Similarity Chart update:', JSON.stringify({xAxisData, seriesSimilarityData})); // Log data being set
                 console.log('Complete new option for Similarity Chart update:', JSON.stringify(newOption));
                 similarityChart.setOption(newOption, true);
                 console.log('Similarity chart updated.');
@@ -1196,8 +1409,20 @@
             }
 
             const formatGenes = (genes) => {
-                if (!genes || typeof genes !== 'object') return '';
-                return Object.entries(genes).map(([k, v]) => `${k}=${v}`).join(', ');
+                if (!genes) return '';
+
+                // 处理数组类型的基因
+                if (Array.isArray(genes)) {
+                    return genes.join(', ');
+                }
+
+                // 处理对象类型的基因
+                if (typeof genes === 'object') {
+                    return Object.entries(genes).map(([k, v]) => `${k}=${v}`).join(', ');
+                }
+
+                // 其他类型直接转字符串
+                return String(genes);
             };
 
             const handleResize = () => {
@@ -1238,15 +1463,50 @@
             });
 
             return {
-                classList, selectedClass, selectedMethod, sessionId, generationIndex, coverage, populationSize, finished, loading,
-                generationSummaries, generationDetails, detailGenIndex, codeLines, coveredLines, uncoveredLines, chromosomeSeq, currentChromosomeGenes,
-                activeTab, showModal, formData,
-                toastMessage, toastType, showToast,
-                coverageChartEl, similarityChartEl,
-                methodList, canStart, canEvolve, tableColumns, tabs,
-                loadClassStructure, initAlgorithm, evolveAlgorithm, showDetails, getLineClass, formatGenes, onClassChange,
-                loadMethodCode, loadCoveredLines, viewCoverage,
-                submitConfig, closeModal, toast,
+                classList,
+                selectedClass,
+                selectedMethod,
+                sessionId,
+                generationIndex,
+                coverage,
+                populationSize,
+                finished,
+                loading,
+                generationSummaries,
+                generationDetails,
+                detailGenIndex,
+                codeLines,
+                coveredLines,
+                uncoveredLines,
+                chromosomeSeq,
+                chromosomeId,
+                currentChromosomeGenes,
+                activeTab,
+                showModal,
+                formData,
+                toastMessage,
+                toastType,
+                showToast,
+                coverageChartEl,
+                similarityChartEl,
+                methodList,
+                canStart,
+                canEvolve,
+                tableColumns,
+                tabs,
+                loadClassStructure,
+                initAlgorithm,
+                evolveAlgorithm,
+                showDetails,
+                getLineClass,
+                formatGenes,
+                onClassChange,
+                loadMethodCode,
+                loadCoveredLines,
+                viewCoverage,
+                submitConfig,
+                closeModal,
+                toast,
             };
         }
     });

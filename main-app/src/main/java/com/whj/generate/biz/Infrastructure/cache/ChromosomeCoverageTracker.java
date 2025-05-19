@@ -71,7 +71,7 @@ public class ChromosomeCoverageTracker {
      * @return 该染色体覆盖的新行号集合
      */
     public Set<Integer> getNewLinesCovered(Chromosome chromosome, Set<Integer> currentUncovered) {
-        Set<Integer> covered = getLinesCoveredBy(chromosome);
+        Set<Integer> covered = getChromosomeCovered(chromosome);
         return intersection(covered, currentUncovered);
     }
 
@@ -97,9 +97,9 @@ public class ChromosomeCoverageTracker {
     public BitSet buildCoverageBitSet(Population population) {
         int length = endLine - startLine + 1;
         BitSet bitSet = new BitSet(length);
-        // 依赖 getLinesCoveredBy(chromosome) 返回 Set<Integer>
+        // 依赖 getChromosomeCovered(chromosome) 返回 Set<Integer>
         population.getChromosomeSet().stream()
-                .flatMapToInt(chromosome -> getLinesCoveredBy(chromosome).stream().mapToInt(Integer::intValue))
+                .flatMapToInt(chromosome -> getChromosomeCovered(chromosome).stream().mapToInt(Integer::intValue))
                 .filter(line -> line >= startLine && line <= endLine)
                 .map(line -> line - startLine)
                 .forEach(bitSet::set);
@@ -134,7 +134,7 @@ public class ChromosomeCoverageTracker {
      * @param chromosome
      * @return
      */
-    public Set<Integer> getLinesCoveredBy(Chromosome chromosome) {
+    public Set<Integer> getChromosomeCovered(Chromosome chromosome) {
         Map<Integer, Set<Chromosome>> methodCoverage = getMethodCoverage(chromosome);
         //如果集合中存在该行，则返回该行被哪些染色体覆盖
         if (methodCoverage == null) {
@@ -147,6 +147,41 @@ public class ChromosomeCoverageTracker {
             }
         }
         return lines;
+    }
+    /**
+     * 获取某个染色体覆盖的行
+     *
+     * @param chromosome
+     * @return
+     */
+    public Set<Integer> getChromosomeUnCovered(Chromosome chromosome) {
+        Map<Integer, Set<Chromosome>> methodCoverage = getMethodCoverage(chromosome);
+        //如果集合中存在该行，则返回该行被哪些染色体覆盖
+        if (methodCoverage == null) {
+            return Collections.emptySet();
+        }
+        Set<Integer> lines = new HashSet<>();
+        for (Integer key : methodCoverage.keySet()) {
+            if (!methodCoverage.get(key).contains(chromosome)) {
+                lines.add(key);
+            }
+        }
+        return lines;
+    }
+
+    /**
+     * 根据chromosomeSeq获取chromosome
+     * @param chromosomeSeq
+     * @return
+     */
+    public   Chromosome getChromosomeById(Integer chromosomeSeq) {
+        Chromosome chromosome = null;
+        for (Map.Entry<Chromosome, Integer> entry : chromosomeSequenceMap.entrySet()) {
+            if (Objects.equals(entry.getValue(), chromosomeSeq)) {
+                chromosome=entry.getKey();
+            }
+        }
+        return chromosome;
     }
 
     /**
@@ -278,7 +313,7 @@ public class ChromosomeCoverageTracker {
         List<Chromosome> chromosomes = Lists.newArrayList(pop.getChromosomeSet());
         // 收集每个染色体的覆盖行集合
         List<Set<Integer>> linesList = chromosomes.stream()
-                .map(this::getLinesCoveredBy)
+                .map(this::getChromosomeCovered)
                 .collect(Collectors.toList());
         // 调用工具类计算平均相似度
         return SimilarityUtils.averagePopulationSimilarity(linesList);
@@ -317,7 +352,7 @@ public class ChromosomeCoverageTracker {
      */
     public Set<Integer> getNewCovered(Nature nature, Population population, Chromosome chromosome) {
         Set<Integer> uncovered = getUncovered(nature, population);
-        Set<Integer> linesCoveredBy = getLinesCoveredBy(chromosome);
+        Set<Integer> linesCoveredBy = getChromosomeCovered(chromosome);
         return SetUtils.intersection(uncovered, linesCoveredBy);
     }
 

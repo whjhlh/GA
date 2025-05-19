@@ -18,10 +18,6 @@ public class Population extends PopulationBase {
      * 种群基因库
      */
     private final GenePool genePool;
-    /**
-     * 染色体组合分发策略
-     */
-    private final CombinationStrategy strategy;
 
     // 缓存优化
     private transient double[] cumulativeFitness;
@@ -29,10 +25,6 @@ public class Population extends PopulationBase {
 
     /**
      * 当前覆盖率
-     *
-     * @param targetClass
-     * @param targetMethod
-     * @param genePool
      */
     private long currentCoverage;
 
@@ -40,7 +32,6 @@ public class Population extends PopulationBase {
     public Population(Class<?> targetClass, Method targetMethod, GenePool genePool) {
         super(targetClass,  targetMethod);
         this.genePool = genePool;
-        this.strategy = new CombinationStrategy(genePool);
     }
 
     public GenePool getGenePool() {
@@ -67,11 +58,12 @@ public class Population extends PopulationBase {
      *
      * @param chromosome
      */
-    public void addChromosome(Chromosome chromosome) {
+    public boolean addChromosome(Chromosome chromosome) {
         if (!chromosome.getMethod().equals(super.getMethod())) {
-            throw new IllegalArgumentException(String.format("种群 %s 试图加入种群%s", chromosome.getMethod().getName(), super.getMethod().getName()));
+            return false;
         }
         chromosomeSet.add(chromosome);
+        return true;
     }
 
     /**
@@ -89,7 +81,7 @@ public class Population extends PopulationBase {
      */
     public Chromosome initChromosome() {
         Method method = super.getMethod();
-        Object[] chromosomeGenes = strategy.generateMinimalCombination();
+        Object[] chromosomeGenes = new Object[1];
         return new Chromosome(super.getTargetClass(), method, chromosomeGenes);
     }
 
