@@ -14,6 +14,7 @@ import com.whj.generate.utill.SimilarityUtils;
 import org.jacoco.agent.rt.internal_aeaf9ab.asm.Type;
 import org.jacoco.core.analysis.IClassCoverage;
 import org.jacoco.core.analysis.ICounter;
+import org.jacoco.core.analysis.ILine;
 import org.jacoco.core.analysis.IMethodCoverage;
 
 import java.lang.reflect.Method;
@@ -55,10 +56,10 @@ public class ChromosomeCoverageTracker {
      */
     public void init(Integer start, Integer end) {
         if (startLine == null) {
-            this.startLine = start;
+            startLine = start;
         }
         if (endLine == null) {
-            this.endLine = end;
+            endLine = end;
         }
     }
 
@@ -153,9 +154,9 @@ public class ChromosomeCoverageTracker {
      *
      * @param lineNumbers 覆盖的行号
      * @param chromosome  当前染色体
-     * @param method
      */
-    public void recordCoverage(List<Integer> lineNumbers, Chromosome chromosome, Method method) {
+    public void recordCoverage(List<Integer> lineNumbers, Chromosome chromosome) {
+        Method method =chromosome.getMethod();
         Map<Integer, Set<Chromosome>> lineMap = coverageMap.computeIfAbsent(method, k -> new HashMap<>());
         for (Integer line : lineNumbers) {
             Set<Chromosome> chromosomes = lineMap.computeIfAbsent(line, k -> new HashSet<>());
@@ -245,15 +246,18 @@ public class ChromosomeCoverageTracker {
         classCoverage.getMethods().stream()
                 .filter(mc -> isTargetMethod(mc, method))
                 .forEach(mc -> {
+                    init(mc.getFirstLine(), mc.getLastLine());
                     for (int i = mc.getFirstLine(); i <= mc.getLastLine(); i++) {
-                        init(mc.getFirstLine(), mc.getLastLine());
-                        if (mc.getLine(i).getStatus() == ICounter.FULLY_COVERED || mc.getLine(i).getStatus() == ICounter.PARTLY_COVERED) {
-                            coveredLines.add(i);
+                        ILine line = classCoverage.getLine(i);
+                        if (line != null) {
+                            if (line.getStatus() == ICounter.FULLY_COVERED || line.getStatus() == ICounter.PARTLY_COVERED) {
+                                coveredLines.add(i);
+                            }
                         }
                     }
                 });
-        // 调用追踪器的记录方法
-        recordCoverage(coveredLines, chromosome, chromosome.getMethod());
+        // 调用追踪器的记录数据方法
+        recordCoverage(coveredLines, chromosome);
     }
 
     /**

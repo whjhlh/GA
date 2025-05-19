@@ -91,9 +91,20 @@ public final class JaCoCoCoverageAnalyzer {
             builder.getClasses().forEach(cc -> {
                 coverageTracker.processClassCoverage(cc, method, chromosome);
             });
-
-            return calculateMaxCoverage(builder, method);
+            // 返回所有类中目标方法的最大覆盖率比率
+            return builder.getClasses().stream()
+                    // 将每个类的方法流合并为一个流
+                    .flatMap(cc -> cc.getMethods().stream())
+                    // 过滤出目标方法
+                    .filter(mc -> isTargetMethod(mc, method))
+                    // 计算每个目标方法的覆盖率比率并转换为Double流
+                    .mapToDouble(mc -> calculateCoverageRatio(mc.getLineCounter()))
+                    // 找出最大的覆盖率比率
+                    .max()
+                    // 如果没有目标方法，则默认返回0.0
+                    .orElse(0.0);
         }
+        
     }
 
 
@@ -114,22 +125,11 @@ public final class JaCoCoCoverageAnalyzer {
                     .orElse(0.0);
         }
     }
-    /**
-     * 计算最大覆盖率值
-     */
-    private static double calculateMaxCoverage(CoverageBuilder builder, Method method) {
-        return builder.getClasses().stream()
-                .flatMap(cc -> cc.getMethods().stream())
-                .filter(mc -> isTargetMethod(mc, method))
-                .mapToDouble(mc -> calculateCoverageRatio(mc.getLineCounter()))
-                .max()
-                .orElse(0.0);
-    }
 
     /**
      * 计算总覆盖率
      */
-    public  long calculateTotalCoverage(List<byte[]> coverageDataList, Method method) {
+    public long calculateTotalCoverage(List<byte[]> coverageDataList, Method method) {
         if (CollectionUtils.isEmpty(coverageDataList)) {
             return 0L;
         }

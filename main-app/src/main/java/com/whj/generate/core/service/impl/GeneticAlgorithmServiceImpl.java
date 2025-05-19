@@ -1,16 +1,15 @@
 package com.whj.generate.core.service.impl;
 
 import com.google.common.collect.Lists;
-import com.whj.generate.biz.Infrastructure.JaCoCoCoverageAnalyzer;
 import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.common.config.GeneticAlgorithmConfig;
 import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.GenePool;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
-import com.whj.generate.core.infrastructure.PoolLoader;
 import com.whj.generate.core.infrastructure.strategy.SelectionStrategy;
 import com.whj.generate.core.service.CoverageService;
+import com.whj.generate.core.service.GenPoolService;
 import com.whj.generate.core.service.GeneticAlgorithmService;
 import com.whj.generate.utill.ReflectionUtil;
 import org.slf4j.Logger;
@@ -41,10 +40,9 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     /**
      * 基因加载器
      */
-    private final PoolLoader<GenePool> poolLoader;
+    private final GenPoolService genPoolService;
     private final ForkJoinPool geneticThreadPool;
 
-    private final JaCoCoCoverageAnalyzer coverageAnalyzer;
     private final ChromosomeCoverageTracker coverageTracker;
     private final CoverageService coverageService;
 
@@ -52,13 +50,13 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
 
     @Autowired
     public GeneticAlgorithmServiceImpl(
-            PoolLoader<GenePool> poolLoader,
+            GenPoolService genPoolService,
+            ChromosomeCoverageTracker coverageTracker,
+            CoverageService coverageService,
             @Qualifier("geneticForkJoinPool") ForkJoinPool geneticThreadPool,
-            JaCoCoCoverageAnalyzer coverageAnalyzer, ChromosomeCoverageTracker coverageTracker, CoverageService coverageService,
             @Qualifier("eliteDiverseStrategy") SelectionStrategy selectionStrategy) {
-        this.poolLoader = poolLoader;
+        this.genPoolService = genPoolService;
         this.geneticThreadPool = geneticThreadPool;
-        this.coverageAnalyzer = coverageAnalyzer;
         this.coverageTracker = coverageTracker;
         this.coverageService = coverageService;
         this.selectionStrategy = selectionStrategy;
@@ -94,7 +92,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         Population newPopulation = createNewPopulation(population);
 
         // 精英保留（保留历史最优解）
-        preserveElites(nature,population, newPopulation);
+        preserveElites(nature, population, newPopulation);
 
         // 进化生成新个体
         evolveNewGeneration(population, newPopulation);
@@ -132,16 +130,29 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         return (int) Math.pow(genePool.getAverageGeneCount(), 0.5 * genePool.getParameterCount());
     }
 
+    /**
+     * 创建种群（初始化）
+     *
+     * @param clazz
+     * @param method
+     * @return
+     */
     private Population createPopulationModel(Class<?> clazz, Method method) {
-        GenePool genePool = poolLoader.initializePool(clazz, method);
+        GenePool genePool = genPoolService.initGenePool(clazz, method);
         return new Population(clazz, method, genePool);
     }
 
-    private Population createNewPopulation(Population old) {
+    /**
+     * 创建新种群（进化）
+     *
+     * @param src
+     * @return
+     */
+    private Population createNewPopulation(Population src) {
         return new Population(
-                old.getTargetClass(),
-                old.getTargetMethod(),
-                old.getGenePool() // 关键点：继承基因库
+                src.getTargetClass(),
+                src.getTargetMethod(),
+                src.getGenePool() // 关键点：继承基因库
         );
     }
 
@@ -181,7 +192,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
      * @param dest
      */
     private void preserveElites(Nature nature, Population src, Population dest) {
-        List<Chromosome> select = selectionStrategy.select(nature,src);
+        List<Chromosome> select = selectionStrategy.select(nature, src);
         dest.addChromosomeSet(select);
     }
 

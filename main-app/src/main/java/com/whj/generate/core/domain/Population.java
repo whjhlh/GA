@@ -45,16 +45,12 @@ public class Population {
      */
     private long currentCoverage;
 
-    // 新增参数快照
-    private PopulationParams params;
 
     public Population(Class<?> targetClass, Method targetMethod, GenePool genePool) {
         this.targetClass = targetClass;
         this.targetMethod = targetMethod;
         this.genePool = genePool;
         this.strategy = new CombinationStrategy(genePool);
-        // 创建时自动记录参数快照
-        this.params = PopulationParams.snapshot();
     }
 
 

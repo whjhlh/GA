@@ -3,12 +3,15 @@ package com.whj.generate.core.service.impl;
 import com.whj.generate.biz.Infrastructure.JaCoCoCoverageAnalyzer;
 import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.core.domain.Chromosome;
+import com.whj.generate.core.domain.GenePool;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 import com.whj.generate.core.exception.ExceptionWrapper;
 import com.whj.generate.core.exception.GenerateErrorEnum;
+import com.whj.generate.core.infrastructure.PoolLoader;
 import com.whj.generate.core.service.CoverageService;
 import com.whj.generate.core.service.FitnessCalculatorService;
+import com.whj.generate.core.service.GenPoolService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -61,6 +64,7 @@ public class CoverageServiceImpl implements CoverageService {
 
     /**
      * 获取种群总覆盖
+     *
      * @param nature
      * @param population
      * @return
@@ -74,15 +78,12 @@ public class CoverageServiceImpl implements CoverageService {
             chromosomes.forEach(chromosome -> {
                         // 处理单个染色体覆盖率数据
                         processChromosome(chromosome, coverageDataList);
-                        fitnessCalculator.calculate(nature,population,chromosome);
+                        fitnessCalculator.calculate(nature, population, chromosome);
                     }
             );
             return coverageAnalyzer.calculateTotalCoverage(coverageDataList, chromosomes.iterator().next().getMethod());
         }, GenerateErrorEnum.GET_OVERRIDE_FAIL, "种群覆盖率计算失败");
     }
-
-
-
 
 
     /**
@@ -118,19 +119,9 @@ public class CoverageServiceImpl implements CoverageService {
     public void processChromosome(Chromosome chromosome, List<byte[]> dataCollector) {
         final Method method = chromosome.getMethod();
         final byte[] coverageData = getOrCollectCoverageData(chromosome, method);
-        chromosome.setCoveragePercent(calculateChromosomePercentage(chromosome));
+        final double coverage = coverageAnalyzer.calculateCoveragePercentage(coverageData, chromosome);
+        chromosome.setCoveragePercent((long) coverage);
         dataCollector.add(coverageData);
-    }
-
-
-    /**
-     * 计算染色体适应度（新增追踪逻辑）
-     */
-    public long calculateChromosomePercentage(Chromosome chromosome) {
-        final Method method = chromosome.getMethod();
-        final byte[] data = getOrCollectCoverageData(chromosome, method);
-        final double coverage = coverageAnalyzer.calculateCoveragePercentage(data, chromosome);
-        return (long) coverage;
     }
 
     /**
