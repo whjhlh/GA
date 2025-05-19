@@ -21,25 +21,27 @@ import java.util.stream.Collectors;
 @Qualifier("eliteDiverseStrategy")
 public class EliteDiverseStrategy implements SelectionStrategy {
     private final FitnessCalculatorService fitnessCalculator;
+    private final ChromosomeCoverageTracker coverageTracker;
+
 
     @Autowired
-    public EliteDiverseStrategy(FitnessCalculatorService fitnessCalculator) {
+    public EliteDiverseStrategy(FitnessCalculatorService fitnessCalculator, ChromosomeCoverageTracker coverageTracker) {
         this.fitnessCalculator = fitnessCalculator;
+        this.coverageTracker = coverageTracker;
     }
 
     /**
      * 获取适应度最高的30%的基因组
      * @param population
-     * @param tracker
      * @return
      */
     @Override
-    public List<Chromosome> select(Population population, ChromosomeCoverageTracker tracker) {
-        Set<Integer> uncovered = tracker.getUncoveredLines(population.getTargetMethod());
+    public List<Chromosome> select(Population population) {
+        Set<Integer> uncovered = coverageTracker.getUncoveredLines(population.getTargetMethod());
         return population.getChromosomeSet().stream()
                 .sorted((a, b) -> Double.compare(
-                        fitnessCalculator.calculate(b, tracker, uncovered),
-                        fitnessCalculator.calculate(a, tracker, uncovered)
+                        fitnessCalculator.calculate(b, uncovered),
+                        fitnessCalculator.calculate(a, uncovered)
                 ))
                 .limit((long) (population.getChromosomeSet().size() * 0.3))
                 .collect(Collectors.toList());

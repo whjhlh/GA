@@ -1,6 +1,7 @@
 package com.whj.generate.common;
 
 
+import com.whj.generate.biz.Infrastructure.SessionManager;
 import com.whj.generate.biz.Infrastructure.cache.ChromosomeCoverageTracker;
 import com.whj.generate.common.config.GeneticAlgorithmConfig;
 import com.whj.generate.common.convert.ChromosomeConvertor;
@@ -14,11 +15,11 @@ import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 import com.whj.generate.core.service.GeneticAlgorithmService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -32,41 +33,39 @@ public class GeneticAlgorithmController {
      * 封装 GeneticAlgorithmService
      */
     private final GeneticAlgorithmService geneticAlgorithmService;
-    /**
-     * 会话存储：sessionId -> Nature
-     */
-    private final Map<String, Nature> sessions = new ConcurrentHashMap<>();
+    private final ChromosomeCoverageTracker coverageTracker;
+    private final SessionManager sessionManager;  // 新增会话管理组件
 
-
+    @Autowired
+    public GeneticAlgorithmController(GeneticAlgorithmService geneticAlgorithmService,
+                                      ChromosomeCoverageTracker coverageTracker,
+                                      SessionManager sessionManager) {
+        this.geneticAlgorithmService = geneticAlgorithmService;
+        this.coverageTracker = coverageTracker;
+        this.sessionManager = sessionManager;
+    }
 
     /**
      * 初始化环境，返回 sessionId 和初始种群信息。
      */
     @PostMapping("/init")
     @ResponseBody
-    public InitResponse init(@RequestBody AlgorithmRequest request) {
+    public InitResponse init(@RequestBody AlgorithmRequest request) throws ClassNotFoundException {
         System.out.println("POST init 被调用");
-        try {
+
             initTracker();
             Class<?> targetClass = Class.forName("com.whj.generate.whjtest." + request.getClassName());
             Nature nature = new Nature();
             // 初始化环境
             Population initialPop = geneticAlgorithmService.initEnvironment(nature, targetClass, request.getMethodName());
-            String sessionId = getSessionId(nature);
+            String sessionId = sessionManager.createSession(nature);
 
             // 构造响应
             return ChromosomeConvertor.getInitResponse(sessionId, initialPop);
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("未找到类: " + request.getClassName(), e);
-        } catch (Exception e) {
-            throw new RuntimeException("初始化失败: " + e.getMessage());
-        }
     }
 
     private void initTracker() {
-        if(geneticAlgorithmService.getCoverageTracker()!=null){
-            geneticAlgorithmService.getCoverageTracker().clear();
-        }
+        coverageTracker.clear();
     }
 
     /**
@@ -79,7 +78,7 @@ public class GeneticAlgorithmController {
         Nature nature = checkAndGetNature(request.getSessionId());
 
         int genIndex = request.getGenerationIndex();
-        if (genIndex < 0 ) {
+        if (genIndex < 0) {
             throw new IllegalArgumentException("无效的参数");
         }
         // 执行一次进化
@@ -119,18 +118,16 @@ public class GeneticAlgorithmController {
         System.out.println("GET population-visualization 被调用");
         Nature nature = checkAndGetNature(sessionId);
 
-        ChromosomeCoverageTracker tracker = geneticAlgorithmService.getCoverageTracker();
         List<Population> populations = nature.getPopulationList();
 
-        return buildVisualResult(populations, tracker);
+        return buildVisualResult(populations, coverageTracker);
     }
 
     @GetMapping("/covered")
     @ResponseBody
     public CoveredDTO getCovered(@RequestParam Integer chromosomeSeq) {
         System.out.println("GET /api/java-structure/covered 被调用");
-        ChromosomeCoverageTracker coverageTracker = geneticAlgorithmService.getCoverageTracker();
-        Map<Chromosome, Integer> chromosomeSequenceMap = coverageTracker.getChromosomeSequenceMap();
+        Map<Chromosome, Integer> chromosomeSequenceMap = getChromosomeSequenceMap();
         //查询value为chromosomeSeq的Integer
         for (Map.Entry<Chromosome, Integer> entry : chromosomeSequenceMap.entrySet()) {
             if (Objects.equals(entry.getValue(), chromosomeSeq)) {
@@ -138,6 +135,7 @@ public class GeneticAlgorithmController {
                 Chromosome chromosome = entry.getKey();
                 coveredDTO.setCoveredLine(coverageTracker.getLinesCoveredBy(chromosome));
                 coveredDTO.setGenes(chromosome.getGenes());
+                coveredDTO.setChromosomeId(entry.getValue().toString());
                 return coveredDTO;
             }
         }
@@ -145,12 +143,10 @@ public class GeneticAlgorithmController {
     }
 
     private Nature checkAndGetNature(String sessionId) {
-        Nature nature = sessions.get(sessionId);
-        if (nature == null || nature.getPopulationList().isEmpty()) {
-            throw new IllegalArgumentException("无效的 sessionId 或种群数据为空");
-        }
-        return nature;
+        return sessionManager.getNature(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("无效的sessionId"));
     }
+
     private static List<Map<String, Object>> buildVisualResult(List<Population> populations, ChromosomeCoverageTracker tracker) {
         List<Map<String, Object>> result = new ArrayList<>();
         double previousCoverage = 0.0;
@@ -176,19 +172,6 @@ public class GeneticAlgorithmController {
     }
 
     private Map<Chromosome, Integer> getChromosomeSequenceMap() {
-        ChromosomeCoverageTracker coverageTracker = geneticAlgorithmService.getCoverageTracker();
         return coverageTracker.getChromosomeSequenceMap();
-    }
-
-    private String getSessionId(Nature nature) {
-        // 生成 sessionId 并保存状态
-        String sessionId = UUID.randomUUID().toString();
-        sessions.put(sessionId, nature);
-        return sessionId;
-    }
-
-    // 构造函数注入
-    public GeneticAlgorithmController(GeneticAlgorithmService geneticAlgorithmService) {
-        this.geneticAlgorithmService = geneticAlgorithmService;
     }
 }

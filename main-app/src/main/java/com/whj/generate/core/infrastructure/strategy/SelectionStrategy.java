@@ -11,5 +11,5 @@ import java.util.List;
  * @date 2025-04-26 下午12:51
  */
 public interface SelectionStrategy {
-    List<Chromosome> select(Population population, ChromosomeCoverageTracker tracker);
+    List<Chromosome> select(Population population);
 }

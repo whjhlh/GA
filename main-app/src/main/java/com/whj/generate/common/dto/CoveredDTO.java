@@ -7,8 +7,26 @@ import java.util.Set;
  * @date 2025-05-17 上午11:26
  */
 public class CoveredDTO {
+    /**
+     * 染色体序号
+     */
+    String chromosomeId;
+    /**
+     * 覆盖行
+     */
     Set<Integer> coveredLine;
+    /**
+     * 基因
+     */
     Object[] genes;
+
+    public String getChromosomeId() {
+        return chromosomeId;
+    }
+
+    public void setChromosomeId(String chromosomeId) {
+        this.chromosomeId = chromosomeId;
+    }
 
     public Set<Integer> getCoveredLine() {
         return coveredLine;

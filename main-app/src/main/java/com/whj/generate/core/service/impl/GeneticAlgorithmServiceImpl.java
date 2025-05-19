@@ -10,6 +10,7 @@ import com.whj.generate.core.domain.Nature;
 import com.whj.generate.core.domain.Population;
 import com.whj.generate.core.infrastructure.PoolLoader;
 import com.whj.generate.core.infrastructure.strategy.SelectionStrategy;
+import com.whj.generate.core.service.CoverageService;
 import com.whj.generate.core.service.GeneticAlgorithmService;
 import com.whj.generate.utill.ReflectionUtil;
 import org.slf4j.Logger;
@@ -19,9 +20,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 
@@ -32,25 +35,30 @@ import java.util.stream.IntStream;
 @Service
 public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
     private static final Logger logger = LoggerFactory.getLogger(GeneticAlgorithmServiceImpl.class);
-
+    /**
+     * 基因加载器
+     */
     private final PoolLoader<GenePool> poolLoader;
     private final ForkJoinPool geneticThreadPool;
-    @Autowired
+
     private final JaCoCoCoverageAnalyzer coverageAnalyzer;
-    @Autowired
-    @Qualifier("eliteDiverseStrategy")
-    private SelectionStrategy selectionStrategy;
-    ExecutorService processPool = Executors.newWorkStealingPool();
+    private final ChromosomeCoverageTracker coverageTracker;
+    private final CoverageService coverageService;
+
+    private final SelectionStrategy selectionStrategy;
 
     @Autowired
     public GeneticAlgorithmServiceImpl(
             PoolLoader<GenePool> poolLoader,
             @Qualifier("geneticForkJoinPool") ForkJoinPool geneticThreadPool,
-            JaCoCoCoverageAnalyzer coverageAnalyzer
-    ) {
+            JaCoCoCoverageAnalyzer coverageAnalyzer, ChromosomeCoverageTracker coverageTracker, CoverageService coverageService,
+            @Qualifier("eliteDiverseStrategy")SelectionStrategy selectionStrategy) {
         this.poolLoader = poolLoader;
         this.geneticThreadPool = geneticThreadPool;
         this.coverageAnalyzer = coverageAnalyzer;
+        this.coverageTracker = coverageTracker;
+        this.coverageService = coverageService;
+        this.selectionStrategy = selectionStrategy;
     }
 
 
@@ -93,10 +101,6 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         return newPopulation;
     }
 
-    @Override
-    public ChromosomeCoverageTracker getCoverageTracker() {
-        return coverageAnalyzer.getCoverageTracker();
-    }
 
     /**
      * 处理种群数据
@@ -105,11 +109,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
      * @param newPopulation
      */
     private void populationDataHandle(Nature nature, Population newPopulation) {
-        coverageAnalyzer.calculatePopulationCoverage(nature, newPopulation);
-
-
-        // 构建染色体序列
-        ChromosomeCoverageTracker coverageTracker = coverageAnalyzer.getCoverageTracker();
+        coverageService.calculatePopulationCoverage(nature, newPopulation);
         Set<Chromosome> chromosomeSet = newPopulation.getChromosomeSet();
         coverageTracker.buildChromosomeSequenceMap(chromosomeSet);
     }
@@ -177,12 +177,13 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
      * @param dest
      */
     private void preserveElites(Population src, Population dest) {
-        List<Chromosome> select = selectionStrategy.select(src, coverageAnalyzer.getCoverageTracker());
+        List<Chromosome> select = selectionStrategy.select(src);
         dest.addChromosomeSet(select);
     }
 
     /**
      * 种群进化
+     *
      * @param nature
      * @param srcPopulation
      * @param destPopulation
@@ -213,20 +214,15 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
                             mutationRandoms[i]
                     ))
                     .toList();
-
-            for(Chromosome child:childList){
-                long percent = JaCoCoCoverageAnalyzer.calculateChromosomePercentage(nature, child);
-                child.setCoveragePercent(percent);
-                destSet.add(child);
-            }
+            destSet.addAll(childList);
         }
-
         // 最终更新种群
         destPopulation.addChromosomeSet(Lists.newArrayList(destSet));
     }
 
     /**
      * 子代生成
+     *
      * @param population
      * @param genePool
      * @param crossoverRandom
@@ -234,7 +230,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
      * @return
      */
     private Chromosome generateChild(Population population, GenePool genePool,
-                                              double crossoverRandom, double mutationRandom) {
+                                     double crossoverRandom, double mutationRandom) {
         // 批量选择父代（缓存提升）
         Chromosome[] parents = selectParentsBulk(population);
         return performGeneticOperations(
@@ -260,7 +256,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
 
         Set<Chromosome> chromosomeSet = population.getChromosomeSet();
         ArrayList<Chromosome> chromosomeLists = Lists.newArrayList(chromosomeSet);
-        return new Chromosome[] {
+        return new Chromosome[]{
                 chromosomeLists.get(index1),
                 chromosomeLists.get(index2)
         };
@@ -347,6 +343,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
 
     /**
      * 二分查找
+     *
      * @param totalFitness
      * @param cumulativeFitness
      * @return

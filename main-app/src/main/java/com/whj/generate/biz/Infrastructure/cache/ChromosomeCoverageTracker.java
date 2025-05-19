@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class ChromosomeCoverageTracker {
 
     // Method -> 行号 -> Set<Chromosome>
-    private final Map<Method, Map<Integer, Set<Chromosome>>> coverageMap = new HashMap<>();
+    private static final Map<Method, Map<Integer, Set<Chromosome>>> coverageMap = new HashMap<>();
     /**
      * 染色体序列号Map
      **/
@@ -28,11 +28,13 @@ public class ChromosomeCoverageTracker {
     /**
      * 起始行
      */
-    private Integer startLine;
+    private static Integer startLine;
     /**
      * 结束行
      */
-    private Integer endLine;
+    private static Integer endLine;
+
+    private Map<Chromosome, byte[]> chromosomeCoverageDataMap =new HashMap<>();
 
     // 私有工具方法
     private static <T> Set<T> intersection(Set<T> a, Set<T> b) {
@@ -145,9 +147,9 @@ public class ChromosomeCoverageTracker {
      *
      * @param lineNumbers 覆盖的行号
      * @param chromosome  当前染色体
+     * @param method
      */
-    public void recordCoverage(List<Integer> lineNumbers, Chromosome chromosome) {
-        Method method = chromosome.getMethod();
+    public void recordCoverage(List<Integer> lineNumbers, Chromosome chromosome, Method method) {
         Map<Integer, Set<Chromosome>> lineMap = coverageMap.computeIfAbsent(method, k -> new HashMap<>());
         for (Integer line : lineNumbers) {
             Set<Chromosome> chromosomes = lineMap.computeIfAbsent(line, k -> new HashSet<>());
@@ -168,7 +170,7 @@ public class ChromosomeCoverageTracker {
     /**
      * 获取某个方法覆盖情况
      */
-    public Map<Integer, Set<Chromosome>> getMethodCoverage(Method method) {
+    public static Map<Integer, Set<Chromosome>> getMethodCoverage(Method method) {
         return coverageMap.get(method);
     }
 
@@ -239,5 +241,27 @@ public class ChromosomeCoverageTracker {
         return SimilarityUtils.averagePopulationSimilarity(linesList);
     }
 
+    public static Integer getStartLine() {
+        return startLine;
+    }
 
+    public static void setStartLine(Integer startLine) {
+        ChromosomeCoverageTracker.startLine = startLine;
+    }
+
+    public static Integer getEndLine() {
+        return endLine;
+    }
+
+    public static void setEndLine(Integer endLine) {
+        ChromosomeCoverageTracker.endLine = endLine;
+    }
+
+    public Map<Chromosome, byte[]> getChromosomeCoverageDataMap() {
+        return chromosomeCoverageDataMap;
+    }
+
+    public void setChromosomeCoverageDataMap(Map<Chromosome, byte[]> chromosomeCoverageDataMap) {
+        this.chromosomeCoverageDataMap = chromosomeCoverageDataMap;
+    }
 }
