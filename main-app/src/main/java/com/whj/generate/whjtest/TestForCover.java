@@ -51,7 +51,7 @@ public class TestForCover {
             if (b == 13) {
                 if (c == 12) {
                 } else if (op.getCode().equals("minus")){
-                    System.out.print("");
+                    throw new RuntimeException("异常信息mock");
                 }
             }
         }

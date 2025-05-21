@@ -117,8 +117,8 @@ public class CoverageServiceImpl implements CoverageService {
      * 处理单个染色体覆盖率数据
      */
     public void processChromosome(Chromosome chromosome, List<byte[]> dataCollector) {
-        final Method method = chromosome.getMethod();
-        final byte[] coverageData = getOrCollectCoverageData(chromosome, method);
+
+        final byte[] coverageData = getOrCollectCoverageData(chromosome);
         final double coverage = coverageAnalyzer.calculateCoveragePercentage(coverageData, chromosome);
         chromosome.setCoveragePercent((long) coverage);
         dataCollector.add(coverageData);
@@ -127,14 +127,14 @@ public class CoverageServiceImpl implements CoverageService {
     /**
      * 获取或收集染色体覆盖率数据
      */
-    public byte[] getOrCollectCoverageData(Chromosome chromosome, Method method) {
+    public byte[] getOrCollectCoverageData(Chromosome chromosome) {
         Map<Chromosome, byte[]> chromosomeCoverageDataMap = coverageTracker.getChromosomeCoverageDataMap();
         // naturemap中获取或计算覆盖率数据
         return Optional.ofNullable(chromosomeCoverageDataMap)
                 .map(map -> map.computeIfAbsent(chromosome,
-                        k -> coverageAnalyzer.collectNewCoverageData(method, chromosome.getGenes())))
+                        k -> coverageAnalyzer.collectNewCoverageData(chromosome)))
                 .orElseGet(
-                        () -> coverageAnalyzer.collectNewCoverageData(method, chromosome.getGenes()));
+                        () -> coverageAnalyzer.collectNewCoverageData(chromosome));
     }
 
     /**

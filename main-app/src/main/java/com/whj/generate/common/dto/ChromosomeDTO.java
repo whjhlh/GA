@@ -10,19 +10,39 @@ public class ChromosomeDTO {
     private final double coveragePercent;
     private final double fitness;
     private final Object genes;
+    private final String errorMsg;
 
     public ChromosomeDTO(String id, String sequence, double coveragePercent,
-                         double fitness, Object genes) {
+                         double fitness, Object genes, String errorMsg) {
         this.id = id;
         this.sequence = sequence;
         this.coveragePercent = coveragePercent;
         this.fitness = fitness;
         this.genes = genes;
+        this.errorMsg = errorMsg;
     }
 
-    public String getId() { return id; }
-    public String getSequence() { return sequence; }
-    public double getCoveragePercent() { return coveragePercent; }
-    public double getFitness() { return fitness; }
-    public Object getGenes() { return genes; }
+    public String getErrorMsg() {
+        return errorMsg;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getSequence() {
+        return sequence;
+    }
+
+    public double getCoveragePercent() {
+        return coveragePercent;
+    }
+
+    public double getFitness() {
+        return fitness;
+    }
+
+    public Object getGenes() {
+        return genes;
+    }
 }

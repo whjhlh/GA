@@ -23,6 +23,10 @@ public class Chromosome extends ChromosomeBase {
      * 适应度
      */
     private long fitness;
+    /**
+     * 异常信息
+     */
+    private String errorMsg;
 
     /**
      * @param targetClass
@@ -60,6 +64,14 @@ public class Chromosome extends ChromosomeBase {
 
     public void setFitness(long fitness) {
         this.fitness = fitness;
+    }
+
+    public String getErrorMsg() {
+        return errorMsg;
+    }
+
+    public void setErrorMsg(String errorMsg) {
+        this.errorMsg = errorMsg;
     }
 
     @Override

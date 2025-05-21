@@ -573,6 +573,7 @@
                         <th>参数组合 (Genes)</th>
                         <th>覆盖率</th>
                         <th>适应度</th>
+                        <th>异常信息</th>
                         <th>操作</th>
                     </tr>
                     </thead>
@@ -583,6 +584,7 @@
                         <td>{{ typeof c.coveragePercent === 'number' ? c.coveragePercent.toFixed(2) + '%' : 'N/A' }}
                         </td>
                         <td>{{ typeof c.fitness === 'number' ? c.fitness.toFixed(4) : 'N/A' }}</td>
+                        <td>{{ c.errorMsg}}</td>
                         <td>
                             <button @click="viewCoverage(c.id)" class="btn btn-detail">查看覆盖</button>
                         </td>
@@ -1397,7 +1399,7 @@
                 loading.details = true;
                 toast(`正在加载第 ${genIdx} 代染色体详情...`, 'info');
                 try {
-                    const { data } = await axios.get(`/api/genetic-algorithm/generation-details?sessionId=${sessionId.value}&generationIndex=${genIdx}`);
+                    const {data} = await axios.get(`/api/genetic-algorithm/generation-details?sessionId=${sessionId.value}&generationIndex=${genIdx}`);
                     generationDetails.value = data.chromosomes || [];
                     toast(`已加载第 ${genIdx} 代的详细数据。`, 'success');
                 } catch (error) {
@@ -1439,7 +1441,7 @@
                     toast('算法配置已更新。', 'success');
                     showModal.value = false;
                     if (sessionId.value) {
-                        toast('配置已更新，如需应用到当前运行，请重新初始化算法。', 'info', 5000);
+                        toast('配置已更新', 'success', 5000);
                     }
                 } catch (error) {
                     handleError(error, '保存算法配置失败');
@@ -1516,3 +1518,4 @@
 </script>
 </body>
 </html>
+

@@ -7,6 +7,7 @@ import org.springframework.util.ClassUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.JarURLConnection;
@@ -48,33 +49,55 @@ public class ReflectionUtil {
 
     /**
      * 调用方法
+     *
      * @param method
      * @param params
      * @param instance
+     * @return
      */
-    public static void invokeSafe(Method method, Object[] params, Object instance) {
-        ExceptionWrapper.process(() -> {
-            // 参数转换逻辑
-            Object[] convertedParams = new Object[params.length];
+    public static String invokeSafe(Method method, Object[] params, Object instance) {
+        try {
+            // 参数数量检查
             Class<?>[] paramTypes = method.getParameterTypes();
+            if (params.length != paramTypes.length) {
+                return String.format("参数数量不匹配，预期: %d，实际: %d", paramTypes.length, params.length);
+            }
 
+            // 参数类型转换
+            Object[] convertedParams = new Object[params.length];
             for (int i = 0; i < params.length; i++) {
                 Object param = params[i];
                 Class<?> targetType = paramTypes[i];
 
-                // 转换逻辑
-                if (targetType == int.class || targetType == Integer.class) {
+                if (param == null) {
+                    convertedParams[i] = null;
+                } else if (targetType == int.class || targetType == Integer.class) {
                     convertedParams[i] = Integer.parseInt(param.toString());
                 } else if (targetType.isEnum()) {
                     String enumValue = param.toString().toUpperCase();
-                    convertedParams[i] = Enum.valueOf((Class<Enum>) targetType, enumValue);
+                    convertedParams[i] = Enum.valueOf(targetType.asSubclass(Enum.class), enumValue);
                 } else {
-                    convertedParams[i] = param; // 其他类型直接传递（需根据实际情况扩展）
+                    convertedParams[i] = param;
                 }
             }
-            return method.invoke(instance, convertedParams);
-        }, GenerateErrorEnum.REFLECTION_EXCEPTION, "反射调用%s方法异常%s", ClassUtils.getShortName(instance.getClass()), method.getName(), JsonUtil.toJson(params));
+
+            // 设置私有方法可访问
+            if (!method.isAccessible()) {
+                method.setAccessible(true);
+            }
+
+            method.invoke(instance, convertedParams);
+            return null; // 成功返回 null
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            return String.format("%s", cause != null ? cause.getMessage() : e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return String.format("参数类型错误：%s", e.getMessage());
+        } catch (Exception e) {
+            return String.format("反射调用异常：%s", e.getMessage());
+        }
     }
+
 
     /**
      * 判断是否是final方法
@@ -82,7 +105,7 @@ public class ReflectionUtil {
      * @param method
      */
     public static boolean isFinalMethod(Method method) {
-        if(null == method){
+        if (null == method) {
             return false;
         }
         return Modifier.isFinal(method.getModifiers());
@@ -94,16 +117,17 @@ public class ReflectionUtil {
      * @param clazz
      */
     public static boolean isFinalClass(Class<?> clazz) {
-        if(null == clazz){
+        if (null == clazz) {
             return false;
         }
         return Modifier.isFinal(clazz.getModifiers());
     }
+
     /**
      * 判断一个类是否实现一个或多个接口
      */
     public static boolean isImplementsInterface(Class<?> clazz) {
-        if(null == clazz){
+        if (null == clazz) {
             return false;
         }
         return clazz.getInterfaces().length > 0;
@@ -130,6 +154,7 @@ public class ReflectionUtil {
 
     /**
      * 获取代码
+     *
      * @param clazz
      * @param filePath
      * @return
@@ -141,6 +166,7 @@ public class ReflectionUtil {
             return new String(is.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
+
     public static Set<Class<?>> findClassesInPackage(String packageName) throws IOException {
         Set<Class<?>> classes = new HashSet<>();
         String path = packageName.replace('.', '/');
@@ -193,13 +219,15 @@ public class ReflectionUtil {
 
     /**
      * 获取class类种方法名为methodName的方法
+     *
      * @param methodName
      * @param clazz
      */
     public static Method findMethod(Class<?> clazz, String methodName) {
         Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods) {
-            if (method.getName().equals(methodName)) {return method;
+            if (method.getName().equals(methodName)) {
+                return method;
             }
         }
         return null;

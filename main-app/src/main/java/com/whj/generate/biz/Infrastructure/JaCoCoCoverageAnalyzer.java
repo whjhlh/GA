@@ -54,13 +54,18 @@ public final class JaCoCoCoverageAnalyzer {
     /**
      * 收集新的覆盖率数据（修正参数传递）
      */
-    public byte[] collectNewCoverageData(Method method, Object[] params) {
+    public byte[] collectNewCoverageData(Chromosome chromosome) {
         // 执行代码并收集覆盖率数据
         return ExceptionWrapper.process(() -> {
+            Object[] params = chromosome.getGenes();
+            final Method method = chromosome.getMethod();
             agent.reset();
             final Object instance = method.getDeclaringClass().getDeclaredConstructor().newInstance();
             //真实调用逻辑
-            ReflectionUtil.invokeSafe(method, params, instance);
+            String errorMsg = ReflectionUtil.invokeSafe(method, params, instance);
+            if (errorMsg != null) {
+                chromosome.setErrorMsg(errorMsg);
+            }
             return agent.getExecutionData(false);
         }, GenerateErrorEnum.COLLECT_COVERAGE_FAIL, "覆盖率数据收集失败");
     }

@@ -62,7 +62,8 @@ public class ChromosomeConvertor {
                 Arrays.toString(c.getGenes()),
                 c.getCoveragePercent(),
                 c.getFitness(),
-                c.getGenes()
+                c.getGenes(),
+                c.getErrorMsg()
         );
     }
 }
