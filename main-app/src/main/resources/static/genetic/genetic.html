@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>遗传算法测试用例生成系统</title>
+    <title>进化算法测试用例生成系统</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
@@ -479,7 +479,7 @@
 <body>
 <div class="container" id="app">
     <header class="header">
-        <h1>遗传算法测试用例生成系统</h1>
+        <h1>进化算法测试用例生成系统</h1>
         <button @click="showModal = true" class="btn btn-config">配置参数</button>
     </header>
 
@@ -690,7 +690,7 @@
                 {key: 'targetCoverage', label: '目标覆盖率 (%)', type: 'number', default: 80, min: 1, max: 100},
                 {
                     key: 'noveltyWeight',
-                    label: '新颖性权重 (0-1)',
+                    label: '新覆盖权重 (0-1)',
                     type: 'number',
                     step: 0.01,
                     default: 0.2,
@@ -982,21 +982,8 @@
                 if (cls && cls.methods && cls.methods.length > 0) {
                     selectedMethod.value = cls.methods[0].methodName;
                 }
-                if (activeTab.value === 'source') {
-                    loadMethodCode();
-                }
             };
 
-            watch(activeTab, (newTab) => {
-                if (newTab === 'source' && selectedClass.value && selectedMethod.value && sessionId.value) {
-                    loadMethodCode();
-                }
-            });
-            watch(selectedMethod, (newMethod) => {
-                if (activeTab.value === 'source' && selectedClass.value && newMethod && sessionId.value) {
-                    loadMethodCode();
-                }
-            });
 
             async function loadMethodCode() {
                 if (!selectedClass.value || !selectedMethod.value) {
@@ -1123,13 +1110,7 @@
                 activeTab.value = 'source';
 
                 // 确保源代码已加载
-                if (codeLines.value.length === 0) {
-                    loadMethodCode().then(() => {
-                        loadCoveredLines();
-                    });
-                } else {
-                    loadCoveredLines();
-                }
+                loadCoveredLines();
             }
 
             /**
@@ -1213,9 +1194,7 @@
                     toast(`算法已初始化, 会话ID: ${initData.sessionId}. 获取初始可视化数据...`, 'success');
                     await fetchVisualizationData();
 
-                    if (activeTab.value === 'source') {
-                        loadMethodCode();
-                    }
+                    loadMethodCode();
                 } catch (error) {
                     handleError(error, '初始化算法失败');
                     sessionId.value = null;

@@ -9,6 +9,7 @@ import com.whj.generate.core.domain.Chromosome;
 import com.whj.generate.core.domain.Population;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,6 +19,9 @@ import java.util.stream.Collectors;
  * @date 2025-05-06 上午1:54
  */
 public class ChromosomeConvertor {
+    private static final Comparator<ChromosomeDTO> CHROMOSOME_COMPARATOR =
+            Comparator.comparingDouble((ChromosomeDTO c) -> -c.getFitness())
+                    .thenComparingDouble(c -> -c.getCoveragePercent());
 
     public static InitResponse getInitResponse(String sessionId, Population initialPop) {
         return new InitResponse(
@@ -38,10 +42,13 @@ public class ChromosomeConvertor {
         );
     }
 
-    public static PopulationResponse getPopulationResponse(String sessionId, int generationIndex, Population pop,Map<Chromosome, Integer> chromosomeSequenceMap) {
+    public static PopulationResponse getPopulationResponse(String sessionId, int generationIndex, Population pop, Map<Chromosome, Integer> chromosomeSequenceMap) {
+
         List<ChromosomeDTO> list = pop.getChromosomeSet().stream()
                 .map(c -> getChromosomeDTO(chromosomeSequenceMap, c))
                 .collect(Collectors.toList());
+        //根据ChromosomeDTO的fitness适应度、coveragePercent覆盖率进行排序
+        list.sort(CHROMOSOME_COMPARATOR);
 
         return getPopulationResponse(sessionId, generationIndex, pop, list);
     }

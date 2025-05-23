@@ -21,7 +21,7 @@ public class GeneticAlgorithmConfig {
     /**
      * 最大迭代次数
      */
-    public static int MAX_GENERATION_COUNT = 10;
+    public static int MAX_GENERATION_COUNT = 100;
     /**
      * 覆盖率要求
      */
