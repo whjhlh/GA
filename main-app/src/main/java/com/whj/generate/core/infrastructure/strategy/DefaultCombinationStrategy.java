@@ -17,15 +17,19 @@ public class DefaultCombinationStrategy implements CombinationStrategy {
     private static final Logger logger = LoggerFactory.getLogger(DefaultCombinationStrategy.class);
     private final Map<Integer, GeneSource> geneSources;
 
+    public DefaultCombinationStrategy(GenePool genePool) {
+        Objects.requireNonNull(genePool, "GenePool cannot be null");
+        this.geneSources = initializeGeneSources(genePool);
+        if (geneSources.isEmpty()) {
+            logger.error("Empty gene sources initialized");
+            throw new IllegalArgumentException("No valid parameter indexes found");
+        }
+    }
+
     private Map<Integer, GeneSource> initializeGeneSources(GenePool pool) {
         return pool.getParameterIndexes().stream()
                 .filter(Objects::nonNull)
-                .peek(i -> {
-                    if (i < 0) {
-                        logger.warn("Negative parameter index detected: {}", i);
-                    }
-                })
-                .collect(Collectors.toConcurrentMap(
+                .collect(Collectors.toMap(
                         i -> i,
                         i -> {
                             Object[] values = pool.getThresholdValues(i);
@@ -34,52 +38,49 @@ public class DefaultCombinationStrategy implements CombinationStrategy {
                                 return new GeneSource(new Object[0], ConcurrentHashMap.newKeySet());
                             }
                             return new GeneSource(values, ConcurrentHashMap.newKeySet());
-                        },
-                        (existing, replacement) -> existing
+                        }
                 ));
-    }
-
-    public DefaultCombinationStrategy(GenePool genePool) {
-        Objects.requireNonNull(genePool, "GenePool cannot be null");
-        this.geneSources = initializeGeneSources(genePool);
-
-        if (geneSources.isEmpty()) {
-            logger.error("Empty gene sources initialized");
-            throw new IllegalArgumentException("No valid parameter indexes found");
-        }
     }
 
     @Override
     public Object[] generateCombination() {
         Object[] combination = new Object[geneSources.size()];
+        List<Integer> indices = new ArrayList<>(geneSources.keySet());
+        Collections.sort(indices); // 保持参数顺序一致性
 
-        geneSources.forEach((index, source) -> {
-            if (index >= combination.length) {
-                logger.error("Index {} exceeds combination size {}", index, combination.length);
-                return;
+        for (int pos = 0; pos < indices.size(); pos++) {
+            int paramIndex = indices.get(pos);
+            GeneSource source = geneSources.get(paramIndex);
+            Object[] available = source.availableGenes;
+            int len = available.length;
+            if (len == 0) continue;
+
+            // 随机起点遍历可用基因，优先使用未用的
+            Object selected = null;
+            int start = ThreadLocalRandom.current().nextInt(len);
+            for (int i = 0; i < len; i++) {
+                Object candidate = available[(start + i) % len];
+                if (!source.usedGenes.contains(candidate)) {
+                    selected = candidate;
+                    break;
+                }
             }
 
-            Optional<Object> candidate = Arrays.stream(source.availableGenes)
-                    .filter(gene -> !source.usedGenes.contains(gene))
-                    .findFirst();
-
-            combination[index] = candidate.orElseGet(() ->
-                    source.availableGenes[ThreadLocalRandom.current().nextInt(source.availableGenes.length)]
-            );
-
-            if (combination[index] == null) {
-                logger.warn("Selected null gene at index {}", index);
+            // fallback 到随机选择
+            if (selected == null) {
+                selected = available[ThreadLocalRandom.current().nextInt(len)];
             }
 
-            source.usedGenes.add(combination[index]);
-        });
+            combination[pos] = selected;
+            source.usedGenes.add(selected);
+        }
 
         return combination;
     }
 
     @Override
     public void resetUsageTracking() {
-
+        geneSources.values().forEach(source -> source.usedGenes.clear());
     }
 
     private static class GeneSource {

@@ -99,7 +99,7 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
         preserveElites(nature, population, newPopulation);
 
         // 进化生成新个体
-        evolveNewGeneration(population, newPopulation);
+        evolveNewGeneration(population, newPopulation,count);
 
         //计算种群适应度
         populationDataHandle(nature, newPopulation);
@@ -203,9 +203,10 @@ public class GeneticAlgorithmServiceImpl implements GeneticAlgorithmService {
      *
      * @param srcPopulation  源种群
      * @param destPopulation 目标种群
+     * @param count
      */
-    private void evolveNewGeneration(Population srcPopulation, Population destPopulation) {
-        final int targetSize = srcPopulation.getChromosomeSet().size();
+    private void evolveNewGeneration(Population srcPopulation, Population destPopulation, Integer count) {
+        final int targetSize = generateService.calculatePopulationSize(srcPopulation.getGenePool(),count);
         final GenePool genePool = srcPopulation.getGenePool();
 
         // 使用线程安全集合存储新染色体

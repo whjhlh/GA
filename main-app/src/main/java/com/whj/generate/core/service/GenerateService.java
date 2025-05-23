@@ -1,5 +1,6 @@
 package com.whj.generate.core.service;
 
+import com.whj.generate.core.domain.GenePool;
 import com.whj.generate.core.domain.Population;
 
 import java.lang.reflect.Method;
@@ -16,4 +17,7 @@ public interface GenerateService {
      * @return
      */
     Population genertatePopulation(Class<?> clazz, Method method);
+
+    // 种群规模计算
+    int calculatePopulationSize(GenePool genePool, int count);
 }

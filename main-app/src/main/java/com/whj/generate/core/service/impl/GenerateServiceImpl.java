@@ -63,7 +63,7 @@ public class GenerateServiceImpl implements GenerateService {
         CombinationStrategy strategy = strategyFactory.createStrategy(genePool);
         Population population = new Population(clazz, method, genePool);
 
-        int populationSize = calculatePopulationSize(genePool);
+        int populationSize = calculatePopulationSize(genePool,0);
 
         generateChromosomesParallel(population, strategy, populationSize);
         ensurePopulationSize(population, strategy, populationSize);
@@ -128,12 +128,13 @@ public class GenerateServiceImpl implements GenerateService {
 
         if (population.getChromosomeSet().size() < targetSize) {
             logger.error("经过 {} 次重试后仍未能达到目标种群大小", MAX_RETRIES);
-            throw new PopulationGenerationException("未能生成足够的染色体");
+            throw new PopulationGenerationException("未能生成足够的染色体:"+population.getChromosomeSet().size());
         }
     }
 
     // 种群规模计算
-    private int calculatePopulationSize(GenePool genePool) {
+    @Override
+    public int calculatePopulationSize(GenePool genePool, int count) {
         int paramCount = genePool.getParameterCount();
         double averageGenes = genePool.getAverageGeneCount();
 
@@ -142,8 +143,11 @@ public class GenerateServiceImpl implements GenerateService {
                     paramCount, averageGenes);
             throw new IllegalArgumentException("基因池参数必须有效");
         }
-
-        int size = (int) Math.pow(averageGenes, 0.5 * paramCount);
+        if(count>7){
+            count=7;
+        }
+        double increasePercent =Math.pow(1.11,count);
+        int size = (int) Math.pow(averageGenes, 0.25*increasePercent * paramCount);
         return Math.max(1, Math.min(size, 10000));  // 限制合理范围
     }
 

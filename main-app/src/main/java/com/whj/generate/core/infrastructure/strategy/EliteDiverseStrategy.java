@@ -45,7 +45,7 @@ public class EliteDiverseStrategy implements SelectionStrategy {
                         fitnessCalculator.calculate(nature,population,b),
                         fitnessCalculator.calculate(nature, population, a)
                 ))
-                .limit((long) (population.getChromosomeSet().size() * 0.3))
+                .limit((long) (population.getChromosomeSet().size() * 0.4))
                 .collect(Collectors.toList());
     }
 }
